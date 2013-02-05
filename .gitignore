@@ -1,0 +1,9 @@
+# Mac crap
+.DS_Store
+
+# intellij
+.idea
+*.iml
+
+out
+javadocs

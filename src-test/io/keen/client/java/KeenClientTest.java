@@ -1,0 +1,362 @@
+package io.keen.client.java;
+
+import io.keen.client.java.exceptions.KeenException;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static junit.framework.Assert.*;
+
+/**
+ * KeenClientTest
+ *
+ * @author dkador
+ * @since 1.0.0
+ */
+public class KeenClientTest {
+
+    @BeforeClass
+    public static void classSetUp() {
+        KeenLogging.enableLogging();
+    }
+
+    @Test
+    public void testKeenClientConstructor() {
+        runKeenClientConstructorTest(null, null, true, "null project id", "Invalid project ID specified: null");
+        runKeenClientConstructorTest("abc", null, true, "null api key", "Invalid API Key specified: null");
+        runKeenClientConstructorTest("", "def", true, "empty project id", "Invalid project ID specified: ");
+        runKeenClientConstructorTest("abc", "", true, "empty api key", "Invalid API Key specified: ");
+        runKeenClientConstructorTest("abc", "def", false, "everything is good", null);
+    }
+
+    private void runKeenClientConstructorTest(String projectId, String apiKey, boolean shouldFail, String msg,
+                                              String expectedMessage) {
+        try {
+            KeenClient client = new KeenClient(projectId, apiKey);
+            if (shouldFail) {
+                fail(msg);
+            } else {
+                doClientAssertions(projectId, apiKey, client);
+            }
+        } catch (IllegalArgumentException e) {
+            assertEquals(expectedMessage, e.getLocalizedMessage());
+        }
+    }
+
+    @Test
+    public void testSharedClient() {
+        // can't get client without first initializing it
+        try {
+            KeenClient.client();
+            fail("can't get client without first initializing it");
+        } catch (IllegalStateException e) {
+        }
+
+        // make sure bad values error correctly
+        try {
+            KeenClient.initialize(null, null);
+            fail("can't use bad values");
+        } catch (IllegalArgumentException e) {
+        }
+
+        KeenClient.initialize("abc", "def");
+        KeenClient client = KeenClient.client();
+        doClientAssertions("abc", "def", client);
+    }
+
+    @Test
+    public void testInvalidEventCollection() throws KeenException {
+        runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), "$asd", "collection can't start with $",
+                "An event collection name cannot start with the dollar sign ($) character.");
+
+        String tooLong = TestUtils.getString(257);
+        runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), tooLong, "collection can't be longer than 256 chars",
+                "An event collection name cannot be longer than 256 characters.");
+    }
+
+    @Test
+    public void testValidateAndBuildEvent() throws KeenException, IOException {
+        runValidateAndBuildEventTest(null, "foo", "null event",
+                "You must specify a non-null, non-empty event.");
+
+        runValidateAndBuildEventTest(new HashMap<String, Object>(), "foo", "empty event",
+                "You must specify a non-null, non-empty event.");
+
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("keen", "reserved");
+        runValidateAndBuildEventTest(event, "foo", "keen reserved",
+                "An event cannot contain a root-level property named 'keen'.");
+
+        event.remove("keen");
+        event.put("ab.cd", "whatever");
+        runValidateAndBuildEventTest(event, "foo", ". in property name",
+                "An event cannot contain a property with the period (.) character in it.");
+
+        event.remove("ab.cd");
+        event.put("$a", "whatever");
+        runValidateAndBuildEventTest(event, "foo", "$ at start of property name",
+                "An event cannot contain a property that starts with the dollar sign ($) character in it.");
+
+        event.remove("$a");
+        String tooLong = TestUtils.getString(257);
+        event.put(tooLong, "whatever");
+        runValidateAndBuildEventTest(event, "foo", "too long property name",
+                "An event cannot contain a property name longer than 256 characters.");
+
+        event.remove(tooLong);
+        tooLong = TestUtils.getString(10000);
+        event.put("long", tooLong);
+        runValidateAndBuildEventTest(event, "foo", "too long property value",
+                "An event cannot contain a string property value longer than 10,000 characters.");
+
+        // now do a basic add
+        event.remove("long");
+        event.put("valid key", "valid value");
+        KeenClient client = getClient();
+        Map<String, Object> builtEvent = client.validateAndBuildEvent("foo", event, null);
+        assertNotNull(builtEvent);
+        assertEquals("valid value", builtEvent.get("valid key"));
+        // also make sure the event has been timestamped
+        @SuppressWarnings("unchecked")
+        Map<String, Object> keenNamespace = (Map<String, Object>) builtEvent.get("keen");
+        assertNotNull(keenNamespace);
+        assertNotNull(keenNamespace.get("timestamp"));
+
+        // an event with a Calendar should work
+        Calendar now = Calendar.getInstance();
+        event.put("datetime", now);
+        client.validateAndBuildEvent("foo", event, null);
+
+        // an event with a nested property called "keen" should work
+        event = TestUtils.getSimpleEvent();
+        Map<String, Object> nested = new HashMap<String, Object>();
+        nested.put("keen", "value");
+        event.put("nested", nested);
+        client.validateAndBuildEvent("foo", event, null);
+    }
+
+    @Test
+    public void testAddEvent() throws KeenException, IOException, InterruptedException {
+        // this is the only test that does a full round-trip to the real API.
+        KeenClient client = getClient();
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("test key", "test value");
+        // setup a latch for our callback so we can verify the server got the request
+        final CountDownLatch latch = new CountDownLatch(1);
+        client.addEvent("foo", event, null, new AddEventCallback() {
+            @Override
+            public void onSuccess() {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(String responseBody) {
+            }
+        });
+        // send the event
+        client.addEvent("foo", event);
+        // make sure the event was sent to Keen IO
+        latch.await(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testRequestHandling() throws Exception {
+        InputStream stream = new ByteArrayInputStream("blah".getBytes("UTF-8"));
+
+        // if there's no callback, this shouldn't do anything (except log), regardless of status code
+        KeenHttpRequestRunnable.handleResult(stream, 201, null);
+        KeenHttpRequestRunnable.handleResult(stream, 200, null);
+        KeenHttpRequestRunnable.handleResult(stream, 500, null);
+
+        // if there's a callback, this SHOULD do something
+        runRequestHandlerTest("blah", 201, null);
+        runRequestHandlerTest("blah", 200, "blah");
+        runRequestHandlerTest("blah", 400, "blah");
+        runRequestHandlerTest("blah", 500, "blah");
+    }
+
+    private void runRequestHandlerTest(String response, int statusCode, String expectedError) throws Exception {
+        InputStream stream = new ByteArrayInputStream(response.getBytes("UTF-8"));
+        final CountDownLatch successLatch = new CountDownLatch(1);
+        final CountDownLatch errorLatch = new CountDownLatch(1);
+        MyCallback callback = new MyCallback(successLatch, errorLatch);
+        KeenHttpRequestRunnable.handleResult(stream, statusCode, callback);
+        if (expectedError == null) {
+            successLatch.await(10, TimeUnit.MILLISECONDS);
+            assertEquals(1, errorLatch.getCount());
+        } else {
+            errorLatch.await(10, TimeUnit.MILLISECONDS);
+            assertEquals(0, errorLatch.getCount());
+            assertEquals(expectedError, callback.errorResponse);
+        }
+    }
+
+    class MyCallback implements AddEventCallback {
+        final CountDownLatch successLatch;
+        final CountDownLatch errorLatch;
+        String errorResponse;
+
+        MyCallback(CountDownLatch successLatch, CountDownLatch errorLatch) {
+            this.successLatch = successLatch;
+            this.errorLatch = errorLatch;
+        }
+
+        @Override
+        public void onSuccess() {
+            successLatch.countDown();
+        }
+
+        @Override
+        public void onError(String responseBody) {
+            this.errorResponse = responseBody;
+            errorLatch.countDown();
+        }
+    }
+
+    @Test
+    public void testGlobalPropertiesMap() throws Exception {
+        // a null map should be okay
+        runGlobalPropertiesMapTest(null, 1);
+
+        // an empty map should be okay
+        runGlobalPropertiesMapTest(new HashMap<String, Object>(), 1);
+
+        // a map w/ non-conflicting property names should be okay
+        Map<String, Object> globals = new HashMap<String, Object>();
+        globals.put("default name", "default value");
+        Map<String, Object> builtEvent = runGlobalPropertiesMapTest(globals, 2);
+        assertEquals("default value", builtEvent.get("default name"));
+
+        // a map that returns a conflicting property name should not overwrite the property on the event
+        globals = new HashMap<String, Object>();
+        globals.put("a", "c");
+        builtEvent = runGlobalPropertiesMapTest(globals, 1);
+        assertEquals("b", builtEvent.get("a"));
+    }
+
+    private Map<String, Object> runGlobalPropertiesMapTest(Map<String, Object> globalProperties,
+                                              int expectedNumProperties) throws Exception {
+        KeenClient client = getClient();
+        client.setGlobalProperties(globalProperties);
+        Map<String, Object> event = TestUtils.getSimpleEvent();
+        String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(eventCollection, event, null);
+        assertEquals(expectedNumProperties + 1, builtEvent.size());
+        return builtEvent;
+    }
+
+    @Test
+    public void testGlobalPropertiesEvaluator() throws Exception {
+        // a null evaluator should be okay
+        runGlobalPropertiesEvaluatorTest(null, 1);
+
+        // an evaluator that returns an empty map should be okay
+        GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                return new HashMap<String, Object>();
+            }
+        };
+        runGlobalPropertiesEvaluatorTest(evaluator, 1);
+
+        // an evaluator that returns a map w/ non-conflicting property names should be okay
+        evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                Map<String, Object> globals = new HashMap<String, Object>();
+                globals.put("default name", "default value");
+                return globals;
+            }
+        };
+        Map<String, Object> builtEvent = runGlobalPropertiesEvaluatorTest(evaluator, 2);
+        assertEquals("default value", builtEvent.get("default name"));
+
+        // an evaluator that returns a map w/ conflicting property name should not overwrite the property on the event
+        evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                Map<String, Object> globals = new HashMap<String, Object>();
+                globals.put("a", "c");
+                return globals;
+            }
+        };
+        builtEvent = runGlobalPropertiesEvaluatorTest(evaluator, 1);
+        assertEquals("b", builtEvent.get("a"));
+    }
+
+    private Map<String, Object> runGlobalPropertiesEvaluatorTest(GlobalPropertiesEvaluator evaluator,
+                                                    int expectedNumProperties) throws Exception {
+        KeenClient client = getClient();
+        client.setGlobalPropertiesEvaluator(evaluator);
+        Map<String, Object> event = TestUtils.getSimpleEvent();
+        String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(eventCollection, event, null);
+        assertEquals(expectedNumProperties + 1, builtEvent.size());
+        return builtEvent;
+    }
+
+    @Test
+    public void testGlobalPropertiesTogether() throws Exception {
+        KeenClient client = getClient();
+
+        // properties from the evaluator should take precedence over properties from the map
+        // but properties from the event itself should take precedence over all
+        Map<String, Object> globalProperties = new HashMap<String, Object>();
+        globalProperties.put("default property", 5);
+        globalProperties.put("foo", "some new value");
+
+        GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("default property", 6);
+                map.put("foo", "some other value");
+                return map;
+            }
+        };
+
+        client.setGlobalProperties(globalProperties);
+        client.setGlobalPropertiesEvaluator(evaluator);
+
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("foo", "bar");
+        Map<String, Object> builtEvent = client.validateAndBuildEvent("apples", event, null);
+
+        assertEquals("bar", builtEvent.get("foo"));
+        assertEquals(6, builtEvent.get("default property"));
+        assertEquals(3, builtEvent.size());
+    }
+
+    private void runValidateAndBuildEventTest(Map<String, Object> event, String eventCollection, String msg,
+                                              String expectedMessage) {
+        KeenClient client = getClient();
+        try {
+            client.validateAndBuildEvent(eventCollection, event, null);
+            fail(msg);
+        } catch (KeenException e) {
+            assertEquals(expectedMessage, e.getLocalizedMessage());
+        }
+    }
+
+    private void doClientAssertions(String expectedProjectId, String expectedApiKey, KeenClient client) {
+        assertEquals(expectedProjectId, client.getProjectId());
+        assertEquals(expectedApiKey, client.getApiKey());
+    }
+
+    private KeenClient getClient() {
+        return getClient("508339b0897a2c4282000000", "80ce00d60d6443118017340c42d1cfaf");
+    }
+
+    private KeenClient getClient(String projectId, String apiKey) {
+        return new KeenClient(projectId, apiKey);
+    }
+
+}
