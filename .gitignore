@@ -4,6 +4,10 @@
 # intellij
 .idea
 *.iml
+*.ipr
+*.iws
 
 out
 javadocs
+build
+.gradle
