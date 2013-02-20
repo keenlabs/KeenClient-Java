@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
  * Example usage:
  * <p/>
  * <pre>
- *     KeenClient.initialize("my_project_id", "my_api_key");
+ *     KeenClient.initialize("my_project_token");
  *     Map<String, Object> myEvent = new HashMap<String, Object>();
  *     myEvent.put("property name", "property value");
  *     KeenClient.client().addEvent("purchases", myEvent);
@@ -47,17 +47,15 @@ public class KeenClient {
     }
 
     /**
-     * Call this to initialize the singleton instance of KeenClient and set its project ID and API key to the
-     * given parameters.
+     * Call this to initialize the singleton instance of KeenClient and set its Project Token.
      * <p/>
      * You'll generally want to call this at the very beginning of your application's lifecycle. Once you've called
      * this, you can then call KeenClient.client() afterwards.
      *
-     * @param projectId The ID of your project.
-     * @param apiKey    The API Key for your project.
+     * @param projectToken The Keen IO Project Token.
      */
-    public static void initialize(String projectId, String apiKey) {
-        ClientSingleton.INSTANCE.client = new KeenClient(projectId, apiKey);
+    public static void initialize(String projectToken) {
+        ClientSingleton.INSTANCE.client = new KeenClient(projectToken);
     }
 
     /**
@@ -76,8 +74,7 @@ public class KeenClient {
 
     /////////////////////////////////////////////
 
-    private final String projectId;
-    private final String apiKey;
+    private final String projectToken;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
@@ -85,19 +82,14 @@ public class KeenClient {
      * Call this if your code needs to use more than one Keen project and API Key (or if you don't want to use
      * the managed, singleton instance provided by this library).
      *
-     * @param projectId The ID of your project.
-     * @param apiKey    The API Key for your project.
+     * @param projectToken The Keen IO project token.
      */
-    public KeenClient(String projectId, String apiKey) {
-        if (projectId == null || projectId.length() == 0) {
-            throw new IllegalArgumentException("Invalid project ID specified: " + projectId);
-        }
-        if (apiKey == null || apiKey.length() == 0) {
-            throw new IllegalArgumentException("Invalid API Key specified: " + apiKey);
+    public KeenClient(String projectToken) {
+        if (projectToken == null || projectToken.length() == 0) {
+            throw new IllegalArgumentException("Invalid project token specified: " + projectToken);
         }
 
-        this.projectId = projectId;
-        this.apiKey = apiKey;
+        this.projectToken = projectToken;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
     }
@@ -233,21 +225,12 @@ public class KeenClient {
     }
 
     /**
-     * Getter for the Keen Project ID associated with this instance of the {@link KeenClient}.
+     * Getter for the Keen Project Token associated with this instance of the {@link KeenClient}.
      *
-     * @return the Keen Project ID
+     * @return the Keen Project Token
      */
-    public String getProjectId() {
-        return projectId;
-    }
-
-    /**
-     * Getter for the Keen API Key associated with this instance of the {@link KeenClient}.
-     *
-     * @return the Keen API Key
-     */
-    public String getApiKey() {
-        return apiKey;
+    public String getProjectToken() {
+        return projectToken;
     }
 
     /**

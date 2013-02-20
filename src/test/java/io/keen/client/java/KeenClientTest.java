@@ -31,21 +31,19 @@ public class KeenClientTest {
 
     @Test
     public void testKeenClientConstructor() {
-        runKeenClientConstructorTest(null, null, true, "null project id", "Invalid project ID specified: null");
-        runKeenClientConstructorTest("abc", null, true, "null api key", "Invalid API Key specified: null");
-        runKeenClientConstructorTest("", "def", true, "empty project id", "Invalid project ID specified: ");
-        runKeenClientConstructorTest("abc", "", true, "empty api key", "Invalid API Key specified: ");
-        runKeenClientConstructorTest("abc", "def", false, "everything is good", null);
+        runKeenClientConstructorTest(null, true, "null project token", "Invalid project token specified: null");
+        runKeenClientConstructorTest("", true, "empty project token", "Invalid project token specified: ");
+        runKeenClientConstructorTest("abc", false, "everything is good", null);
     }
 
-    private void runKeenClientConstructorTest(String projectId, String apiKey, boolean shouldFail, String msg,
+    private void runKeenClientConstructorTest(String projectToken, boolean shouldFail, String msg,
                                               String expectedMessage) {
         try {
-            KeenClient client = new KeenClient(projectId, apiKey);
+            KeenClient client = new KeenClient(projectToken);
             if (shouldFail) {
                 fail(msg);
             } else {
-                doClientAssertions(projectId, apiKey, client);
+                doClientAssertions(projectToken, client);
             }
         } catch (IllegalArgumentException e) {
             assertEquals(expectedMessage, e.getLocalizedMessage());
@@ -63,14 +61,14 @@ public class KeenClientTest {
 
         // make sure bad values error correctly
         try {
-            KeenClient.initialize(null, null);
+            KeenClient.initialize(null);
             fail("can't use bad values");
         } catch (IllegalArgumentException e) {
         }
 
-        KeenClient.initialize("abc", "def");
+        KeenClient.initialize("abc");
         KeenClient client = KeenClient.client();
-        doClientAssertions("abc", "def", client);
+        doClientAssertions("abc", client);
     }
 
     @Test
@@ -347,17 +345,16 @@ public class KeenClientTest {
         }
     }
 
-    private void doClientAssertions(String expectedProjectId, String expectedApiKey, KeenClient client) {
-        assertEquals(expectedProjectId, client.getProjectId());
-        assertEquals(expectedApiKey, client.getApiKey());
+    private void doClientAssertions(String expectedProjectToken, KeenClient client) {
+        assertEquals(expectedProjectToken, client.getProjectToken());
     }
 
     private KeenClient getClient() {
-        return getClient("508339b0897a2c4282000000", "80ce00d60d6443118017340c42d1cfaf");
+        return getClient("508339b0897a2c4282000000");
     }
 
-    private KeenClient getClient(String projectId, String apiKey) {
-        return new KeenClient(projectId, apiKey);
+    private KeenClient getClient(String projectToken) {
+        return new KeenClient(projectToken);
     }
 
 }
