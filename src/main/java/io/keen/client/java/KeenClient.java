@@ -132,7 +132,7 @@ public class KeenClient {
         // get the event
         Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
         // send the request as a callable in another thread
-        EXECUTOR_SERVICE.submit(new KeenHttpRequestRunnable(this, eventCollection, newEvent, callback));
+        processRunnableInNewThread(new KeenHttpRequestRunnable(this, eventCollection, newEvent, callback));
     }
 
     Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
@@ -320,5 +320,20 @@ public class KeenClient {
         this.globalProperties = globalProperties;
     }
 
-}
+    /**
+     * Responsible for taking a {@link Runnable} and running it a new thread.
+     * <p/>
+     * Default implementation uses an {@link ExecutorService} to manage a thread pool and submit jobs to that
+     * thread pool.
+     * <p/>
+     * Override this if you want to manage your own threads. Just make sure you eventually run every {@link Runnable}
+     * passed in. It's probably a good idea to set {@link KeenConfig}.NUM_THREADS_FOR_HTTP_REQUESTS to 0 if you do this.
+     *
+     * @param runnable The {@link Runnable} to run. In practice, this {@link Runnable} is responsible for
+     *                 uploading an event to Keen IO.
+     */
+    public void processRunnableInNewThread(Runnable runnable) {
+        EXECUTOR_SERVICE.submit(runnable);
+    }
 
+}
