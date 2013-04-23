@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.keen.client.java.exceptions.InvalidEventCollectionException;
 import io.keen.client.java.exceptions.InvalidEventException;
 import io.keen.client.java.exceptions.KeenException;
+import io.keen.client.java.exceptions.NoWriteKeyException;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
  * Example usage:
  * <p/>
  * <pre>
- *     KeenClient.initialize("my_project_token");
+ *     KeenClient.initialize("my_project_id", "my_write_key", "my_read_key");
  *     Map<String, Object> myEvent = new HashMap<String, Object>();
  *     myEvent.put("property name", "property value");
  *     KeenClient.client().addEvent("purchases", myEvent);
@@ -47,15 +48,17 @@ public class KeenClient {
     }
 
     /**
-     * Call this to initialize the singleton instance of KeenClient and set its Project Token.
+     * Call this to initialize the singleton instance of KeenClient and set its Project Id.
      * <p/>
      * You'll generally want to call this at the very beginning of your application's lifecycle. Once you've called
      * this, you can then call KeenClient.client() afterwards.
      *
-     * @param projectToken The Keen IO Project Token.
+     * @param projectId The Keen IO Project Id.
+     * @param writeKey  Your Keen IO Write Key.
+     * @param readKey   Your Keen IO Read Key.
      */
-    public static void initialize(String projectToken) {
-        ClientSingleton.INSTANCE.client = new KeenClient(projectToken);
+    public static void initialize(String projectId, String writeKey, String readKey) {
+        ClientSingleton.INSTANCE.client = new KeenClient(projectId, writeKey, readKey);
     }
 
     /**
@@ -74,7 +77,9 @@ public class KeenClient {
 
     /////////////////////////////////////////////
 
-    private final String projectToken;
+    private final String projectId;
+    private final String writeKey;
+    private final String readKey;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
@@ -82,14 +87,18 @@ public class KeenClient {
      * Call this if your code needs to use more than one Keen project and API Key (or if you don't want to use
      * the managed, singleton instance provided by this library).
      *
-     * @param projectToken The Keen IO project token.
+     * @param projectId The Keen IO Project ID.
+     * @param writeKey  Your Keen IO Write Key.
+     * @param readKey   Your Keen IO Read Key.
      */
-    public KeenClient(String projectToken) {
-        if (projectToken == null || projectToken.length() == 0) {
-            throw new IllegalArgumentException("Invalid project token specified: " + projectToken);
+    public KeenClient(String projectId, String writeKey, String readKey) {
+        if (projectId == null || projectId.length() == 0) {
+            throw new IllegalArgumentException("Invalid project id specified: " + projectId);
         }
 
-        this.projectToken = projectToken;
+        this.projectId = projectId;
+        this.writeKey = writeKey;
+        this.readKey = readKey;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
     }
@@ -137,6 +146,10 @@ public class KeenClient {
 
     Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
                                               Map<String, Object> keenProperties) throws KeenException {
+        if (getWriteKey() == null) {
+            throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
+        }
+
         validateEventCollection(eventCollection);
         validateEvent(event);
 
@@ -176,10 +189,12 @@ public class KeenClient {
 
     private void validateEventCollection(String eventCollection) throws InvalidEventCollectionException {
         if (eventCollection == null || eventCollection.length() == 0) {
-            throw new InvalidEventCollectionException("You must specify a non-null, non-empty event collection: " + eventCollection);
+            throw new InvalidEventCollectionException("You must specify a non-null, " +
+                                                              "non-empty event collection: " + eventCollection);
         }
         if (eventCollection.startsWith("$")) {
-            throw new InvalidEventCollectionException("An event collection name cannot start with the dollar sign ($) character.");
+            throw new InvalidEventCollectionException("An event collection name cannot start with the dollar sign ($)" +
+                                                              " character.");
         }
         if (eventCollection.length() > 256) {
             throw new InvalidEventCollectionException("An event collection name cannot be longer than 256 characters.");
@@ -204,10 +219,12 @@ public class KeenClient {
         for (Map.Entry<String, Object> entry : event.entrySet()) {
             String key = entry.getKey();
             if (key.contains(".")) {
-                throw new InvalidEventException("An event cannot contain a property with the period (.) character in it.");
+                throw new InvalidEventException("An event cannot contain a property with the period (.) character in " +
+                                                        "it.");
             }
             if (key.startsWith("$")) {
-                throw new InvalidEventException("An event cannot contain a property that starts with the dollar sign ($) character in it.");
+                throw new InvalidEventException("An event cannot contain a property that starts with the dollar sign " +
+                                                        "($) character in it.");
             }
             if (key.length() > 256) {
                 throw new InvalidEventException("An event cannot contain a property name longer than 256 characters.");
@@ -216,7 +233,8 @@ public class KeenClient {
             if (value instanceof String) {
                 String strValue = (String) value;
                 if (strValue.length() >= 10000) {
-                    throw new InvalidEventException("An event cannot contain a string property value longer than 10,000 characters.");
+                    throw new InvalidEventException("An event cannot contain a string property value longer than 10," +
+                                                            "000 characters.");
                 }
             } else if (value instanceof Map) {
                 validateEvent((Map<String, Object>) value, depth + 1);
@@ -225,12 +243,30 @@ public class KeenClient {
     }
 
     /**
-     * Getter for the Keen Project Token associated with this instance of the {@link KeenClient}.
+     * Getter for the Keen Project Id associated with this instance of the {@link KeenClient}.
      *
-     * @return the Keen Project Token
+     * @return the Keen Project Id
      */
-    public String getProjectToken() {
-        return projectToken;
+    public String getProjectId() {
+        return projectId;
+    }
+
+    /**
+     * Getter for the Keen Write Key associated with this instance of the {@link KeenClient}.
+     *
+     * @return the Keen Write Key
+     */
+    public String getWriteKey() {
+        return writeKey;
+    }
+
+    /**
+     * Getter for the Keen Read Key associated with this instance of the {@link KeenClient}.
+     *
+     * @return the Keen Read Key
+     */
+    public String getReadKey() {
+        return readKey;
     }
 
     /**

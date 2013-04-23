@@ -10,4 +10,5 @@
 out
 javadocs
 build
+classes
 .gradle

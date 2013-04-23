@@ -44,7 +44,7 @@ class KeenHttpRequestRunnable implements Runnable {
     HttpURLConnection sendEvent(String eventCollection, Map<String, Object> event) throws IOException {
         // just using basic JDK HTTP library
         String urlString = String.format("%s/%s/projects/%s/events/%s", KeenConstants.SERVER_ADDRESS,
-                KeenConstants.API_VERSION, keenClient.getProjectToken(), eventCollection);
+                KeenConstants.API_VERSION, keenClient.getProjectId(), eventCollection);
         URL url = new URL(urlString);
 
         // set up the POST
