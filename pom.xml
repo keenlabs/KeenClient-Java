@@ -4,8 +4,8 @@
 	<groupId>io.keen</groupId>
 	<artifactId>keen-client-api-java</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.0-SNAPSHOT</version>
-	<name>Keen.IO API in Java</name>
+	<version>1.0.1</version>
+	<name>Keen IO API in Java</name>
         <licenses>
                 <license>
                         <name>The Apache Software License, Version 2.0</name>
@@ -31,10 +31,10 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <description>Java Client API for keen.io</description>
+    <description>Java Client API for Keen IO</description>
     <organization>
         <url>http://www.keen.io</url>
-        <name>Keen.io</name>
+        <name>Keen IO</name>
     </organization>
     <build>
         <plugins>
@@ -90,9 +90,9 @@
     <url>www.keen.io</url>
     <developers>
         <developer>
-                <id>keenio</id>
-                <name>Keen IO</name>
-                <email>unknown@keen.io</email>
+                <id>dkador</id>
+                <name>Daniel Kador</name>
+                <email>dan@keen.io</email>
         </developer>
     </developers>
         <scm>
