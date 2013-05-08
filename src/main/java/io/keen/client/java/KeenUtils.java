@@ -1,6 +1,5 @@
 package io.keen.client.java;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Scanner;

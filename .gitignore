@@ -7,6 +7,12 @@
 *.ipr
 *.iws
 
+# eclipse
+.settings
+.project
+.classpath
+target
+
 out
 javadocs
 build
