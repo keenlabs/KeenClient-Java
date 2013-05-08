@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
  *     Map<String, Object> myEvent = new HashMap<String, Object>();
  *     myEvent.put("property name", "property value");
  *     KeenClient.client().addEvent("purchases", myEvent);
- *     KeenClient.client().upload(null);
  * </pre>
  *
  * @author dkador
@@ -106,10 +105,7 @@ public class KeenClient {
     /////////////////////////////////////////////
 
     /**
-     * Call this any time you want to add an event that will eventually be sent to the Keen IO server.
-     * <p/>
-     * The event will be stored on the local file system until you decide to upload (usually this will happen
-     * right before your app goes into the background, but it could be any time).
+     * Call this any time you want to add an event that will be sent to the Keen IO server.
      *
      * @param eventCollection The name of the event collection you want to put this event into.
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see docs).
@@ -121,11 +117,8 @@ public class KeenClient {
     }
 
     /**
-     * Call this any time you want to add an event that will eventually be sent to the Keen IO server AND
+     * Call this any time you want to add an event that will be sent to the Keen IO server AND
      * you want to override Keen-defaulted properties (like timestamp).
-     * <p/>
-     * The event will be stored on the local file system until you decide to upload (usually this will happen
-     * right before your app goes into the background, but it could be any time).
      *
      * @param eventCollection The name of the event collection you want to put this event into.
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see docs).

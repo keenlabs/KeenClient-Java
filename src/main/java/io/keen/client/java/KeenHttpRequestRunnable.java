@@ -52,6 +52,7 @@ class KeenHttpRequestRunnable implements Runnable {
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", keenClient.getWriteKey());
         // we're writing
         connection.setDoOutput(true);
         OutputStream out = connection.getOutputStream();

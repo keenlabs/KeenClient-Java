@@ -168,6 +168,7 @@ public class KeenClientTest {
         event.put("test key", "test value");
         // setup a latch for our callback so we can verify the server got the request
         final CountDownLatch latch = new CountDownLatch(1);
+        // send the event
         client.addEvent("foo", event, null, new AddEventCallback() {
             @Override
             public void onSuccess() {
@@ -178,8 +179,6 @@ public class KeenClientTest {
             public void onError(String responseBody) {
             }
         });
-        // send the event
-        client.addEvent("foo", event);
         // make sure the event was sent to Keen IO
         latch.await(2, TimeUnit.SECONDS);
     }
