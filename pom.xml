@@ -1,28 +1,27 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>io.keen</groupId>
-	<artifactId>keen-client-api-java</artifactId>
-	<packaging>jar</packaging>
-	<version>1.0.2</version>
-	<name>Keen IO API in Java</name>
-        <licenses>
-                <license>
-                        <name>The Apache Software License, Version 2.0</name>
-                        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-                        <distribution>repo</distribution>
-                </license>
-        </licenses>
-   	<dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.keen</groupId>
+    <artifactId>keen-client-api-java</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0.2-SNAPSHOT</version>
+    <name>Keen IO API in Java</name>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <dependencies>
         <dependency>
-        	<groupId>com.fasterxml.jackson.core</groupId>
-        	<artifactId>jackson-databind</artifactId>
-        	<version>2.1.0</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
-        	<groupId>com.fasterxml.jackson.core</groupId>
-        	<artifactId>jackson-annotations</artifactId>
-        	<version>2.1.0</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -88,28 +87,34 @@
         </plugins>
     </build>
     <url>www.keen.io</url>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
     <developers>
         <developer>
-                <id>dkador</id>
-                <name>Daniel Kador</name>
-                <email>dan@keen.io</email>
+            <id>dkador</id>
+            <name>Daniel Kador</name>
+            <email>dan@keen.io</email>
         </developer>
     </developers>
-        <scm>
-                <url>git@github.com:keenlabs/KeenClient-Java.git</url>
-                <connection>scm:git:git@github.com:keenlabs/KeenClient-Java.git</connection>
-        </scm>
-        <repositories>
-                <repository>
-                        <id>sonatype</id>
-                        <name>SonaType OSS</name>
-                        <url>https://oss.sonatype.org/content/repositories/public</url>
-                </repository>
-        </repositories>
-        <distributionManagement>
-                <repository>
-                        <id>sonatype-nexus-staging</id>
-                        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-        </distributionManagement>
+    <scm>
+        <url>git@github.com:keenlabs/KeenClient-Java.git</url>
+        <connection>scm:git:git@github.com:keenlabs/KeenClient-Java.git</connection>
+        <developerConnection>scm:git:git@github.com:keenlabs/KeenClient-Java.git</developerConnection>
+    </scm>
+    <!--<repositories>-->
+        <!--<repository>-->
+            <!--<id>sonatype</id>-->
+            <!--<name>SonaType OSS</name>-->
+            <!--<url>https://oss.sonatype.org/content/repositories/public</url>-->
+        <!--</repository>-->
+    <!--</repositories>-->
+    <!--<distributionManagement>-->
+        <!--<repository>-->
+            <!--<id>sonatype-nexus-staging</id>-->
+            <!--<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
+        <!--</repository>-->
+    <!--</distributionManagement>-->
 </project>
