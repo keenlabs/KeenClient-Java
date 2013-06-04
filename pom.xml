@@ -3,7 +3,7 @@
     <groupId>io.keen</groupId>
     <artifactId>keen-client-api-java</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3</version>
     <name>Keen IO API in Java</name>
     <licenses>
         <license>
