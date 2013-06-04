@@ -52,9 +52,23 @@ Here’s a very basic example for an app that tracks "purchases":
 
     TODO
 
+##### Generate a Scoped Key for Keen IO
+
+Here's a simple method to generate a Scoped Write Key:
+
+    public String getScopedWriteKey(String apiKey) throws ScopedKeyException {
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("allowed_operations", Arrays.asList("write"));
+        return ScopedKeys.encrypt(apiKey, options);
+    }
+
 That's it! After running your code, check your Keen IO Project to see the event has been added.
 
 ### Changelog
+
+##### 1.0.3
+
++ Add Scoped Keys implementation.
 
 ##### 1.0.2
 

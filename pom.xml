@@ -24,9 +24,14 @@
             <version>2.1.0</version>
         </dependency>
         <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -104,17 +109,4 @@
         <connection>scm:git:git@github.com:keenlabs/KeenClient-Java.git</connection>
         <developerConnection>scm:git:git@github.com:keenlabs/KeenClient-Java.git</developerConnection>
     </scm>
-    <!--<repositories>-->
-        <!--<repository>-->
-            <!--<id>sonatype</id>-->
-            <!--<name>SonaType OSS</name>-->
-            <!--<url>https://oss.sonatype.org/content/repositories/public</url>-->
-        <!--</repository>-->
-    <!--</repositories>-->
-    <!--<distributionManagement>-->
-        <!--<repository>-->
-            <!--<id>sonatype-nexus-staging</id>-->
-            <!--<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-        <!--</repository>-->
-    <!--</distributionManagement>-->
 </project>

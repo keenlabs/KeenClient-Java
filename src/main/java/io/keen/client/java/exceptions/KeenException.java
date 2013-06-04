@@ -10,4 +10,8 @@ public abstract class KeenException extends Exception {
     KeenException(String detailMessage) {
         super(detailMessage);
     }
+
+    public KeenException(String s, Throwable throwable) {
+        super(s, throwable);
+    }
 }
