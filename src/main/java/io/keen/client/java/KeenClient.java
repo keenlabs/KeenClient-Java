@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * KeenClient has static methods to return managed instances of itself and instance methods to collect new events
@@ -363,6 +364,24 @@ public class KeenClient {
      */
     public void processRunnableInNewThread(Runnable runnable) {
         EXECUTOR_SERVICE.submit(runnable);
+    }
+    
+    /**
+     * Shutdown the thread pool, with optional wait for all running threads to complete.
+     * <p/>
+     * New events submitted using addEvent will be rejected with a RejectedExecutionException.
+     * 
+     * @param timeout A non-zero timeout in millis will block the current thread while waiting for the current events to be
+     * 				  completed.
+     */
+    public void shutdown(long timeout) {
+    	EXECUTOR_SERVICE.shutdown();
+    	if (timeout > 0) {
+    		try {
+				EXECUTOR_SERVICE.awaitTermination(timeout, TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) {
+			}
+    	}
     }
 
 }
