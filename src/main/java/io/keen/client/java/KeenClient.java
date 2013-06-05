@@ -376,14 +376,12 @@ public class KeenClient {
      * @param timeout
      *            A non-zero timeout in millis will block the current thread
      *            while waiting for the current events to be completed.
+     * @throws InterruptedException if interrupted while waiting
      */
-    public void shutdown(long timeout) {
+    public void shutdown(long timeout) throws InterruptedException {
         EXECUTOR_SERVICE.shutdown();
         if (timeout > 0) {
-            try {
-                EXECUTOR_SERVICE.awaitTermination(timeout, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-            }
+            EXECUTOR_SERVICE.awaitTermination(timeout, TimeUnit.MILLISECONDS);
         }
     }
 
