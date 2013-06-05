@@ -66,6 +66,10 @@ That's it! After running your code, check your Keen IO Project to see the event 
 
 ### Changelog
 
+##### 1.0.4
+
++ Fix bug with padding in Scoped Keys implementation.
+
 ##### 1.0.3
 
 + Add Scoped Keys implementation.
