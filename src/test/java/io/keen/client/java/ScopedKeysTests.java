@@ -16,7 +16,7 @@ public class ScopedKeysTests {
 
         // create the options we'll use
         Map<String, Object> options = new HashMap<String, Object>();
-        options.put("allowed_operations", Arrays.asList("write"));
+        options.put("allowed_operations", Arrays.asList("read"));
         List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
         filters.add(getFilter("purchase.amount", "eq", 56));
         filters.add(getFilter("purchase.name", "ne", "Barbie"));
