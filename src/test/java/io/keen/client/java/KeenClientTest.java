@@ -182,6 +182,35 @@ public class KeenClientTest {
         // make sure the event was sent to Keen IO
         latch.await(2, TimeUnit.SECONDS);
     }
+    
+    @Test
+    public void testShutdown() throws KeenException, InterruptedException {
+        getClient();
+        
+        assertFalse("Executor service should not be shutdown at the beginning of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
+        
+        KeenClient.shutdown(2000);
+        
+        assertTrue("Executor service should be shutdown at the end of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
+        assertTrue("Executor service should be terminated at the end of the test", KeenClient.EXECUTOR_SERVICE.isTerminated());
+    }
+    
+    /**
+     * It is important to have two shutdown tests so we test that the KeenClient recovers after a shutdown.
+     * @throws KeenException
+     * @throws InterruptedException
+     */
+    @Test
+    public void testShutdownNoWait() throws KeenException, InterruptedException {
+        getClient();
+        
+        assertFalse("Executor service should not be shutdown at the beginning of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
+        
+        KeenClient.shutdown(0);
+        
+        assertTrue("Executor service should be shutdown at the end of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
+        // Don't test termination here as it is a race condition whether the EXECUTOR_SERVICE will be terminated or not.
+    }
 
     @Test
     public void testRequestHandling() throws Exception {
