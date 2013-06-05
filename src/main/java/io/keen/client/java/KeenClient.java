@@ -365,23 +365,26 @@ public class KeenClient {
     public void processRunnableInNewThread(Runnable runnable) {
         EXECUTOR_SERVICE.submit(runnable);
     }
-    
+
     /**
-     * Shutdown the thread pool, with optional wait for all running threads to complete.
+     * Shutdown the thread pool, with optional wait for all running threads to
+     * complete.
      * <p/>
-     * New events submitted using addEvent will be rejected with a RejectedExecutionException.
+     * New events submitted using addEvent will be rejected with a
+     * RejectedExecutionException.
      * 
-     * @param timeout A non-zero timeout in millis will block the current thread while waiting for the current events to be
-     * 				  completed.
+     * @param timeout
+     *            A non-zero timeout in millis will block the current thread
+     *            while waiting for the current events to be completed.
      */
     public void shutdown(long timeout) {
-    	EXECUTOR_SERVICE.shutdown();
-    	if (timeout > 0) {
-    		try {
-				EXECUTOR_SERVICE.awaitTermination(timeout, TimeUnit.MILLISECONDS);
-			} catch (InterruptedException e) {
-			}
-    	}
+        EXECUTOR_SERVICE.shutdown();
+        if (timeout > 0) {
+            try {
+                EXECUTOR_SERVICE.awaitTermination(timeout, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+            }
+        }
     }
 
 }
