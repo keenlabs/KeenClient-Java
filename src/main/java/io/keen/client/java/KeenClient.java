@@ -39,11 +39,31 @@ public class KeenClient {
         MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         EXECUTOR_SERVICE = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+
+        initialize();
     }
 
-    private enum ClientSingleton {
+    enum ClientSingleton {
         INSTANCE;
-        private KeenClient client;
+        KeenClient client;
+    }
+
+    /**
+     * Use this to attempt to initialize the client from environment variables.
+     */
+    public static void initialize() {
+        initialize(new Environment());
+    }
+
+    /**
+     * Used for tests.
+     */
+    static void initialize(Environment env) {
+        if (env.getKeenProjectId() != null) {
+            KeenClient.initialize(env.getKeenProjectId(),
+                                  env.getKeenWriteKey(),
+                                  env.getKeenReadKey());
+        }
     }
 
     /**
