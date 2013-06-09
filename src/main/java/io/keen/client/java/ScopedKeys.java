@@ -56,9 +56,6 @@ public class ScopedKeys {
             // json encode the options
             final String jsonOptions = KeenClient.MAPPER.writeValueAsString(options);
 
-            // pad the options
-            final String paddedJsonOptions = pad(jsonOptions);
-
             // setup the API key as the secret
             final SecretKey secret = new SecretKeySpec(paddedApiKey.getBytes("UTF-8"), "AES");
 
@@ -69,8 +66,8 @@ public class ScopedKeys {
             final AlgorithmParameters params = cipher.getParameters();
             // get a random IV for each encryption
             final byte[] iv = params.getParameterSpec(IvParameterSpec.class).getIV();
-            // do the actual encryption
-            final byte[] cipherText = cipher.doFinal(paddedJsonOptions.getBytes("UTF-8"));
+            // do the actual encryption (this also pads jsonOptions)
+            final byte[] cipherText = cipher.doFinal(jsonOptions.getBytes("UTF-8"));
 
             // now return the hexed iv + the hexed cipher text
             return new String(Hex.encodeHex(iv)) + new String(Hex.encodeHex(cipherText));
@@ -115,14 +112,11 @@ public class ScopedKeys {
             // do the decryption
             String plainText = new String(cipher.doFinal(cipherText), "UTF-8");
 
-            // unPad the plain text
-            String unPaddedPlainText = unPad(plainText);
-
             // do this to deal with type erasure
             MapType javaType = TypeFactory.defaultInstance().constructMapType(Map.class, String.class, Object.class);
 
             // return the JSON decoded options map
-            return KeenClient.MAPPER.readValue(unPaddedPlainText, javaType);
+            return KeenClient.MAPPER.readValue(plainText, javaType);
         } catch (Exception e) {
             throw new ScopedKeyException("An error occurred while attempting to decrypt a Scoped Key", e);
         }
@@ -146,11 +140,6 @@ public class ScopedKeys {
         }
 
         return input + padding;
-    }
-
-    private static String unPad(String input) {
-        int paddingSize = input.charAt(input.length() - 1);
-        return input.substring(0, input.length() - paddingSize);
     }
 
 }

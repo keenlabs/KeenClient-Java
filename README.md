@@ -21,14 +21,16 @@ To use this client with the Keen IO API, you have to configure your Keen IO Proj
 
 ##### Register Your Project ID and Access Keys
 
+Setting a write key is required for publishing events. Setting a read key is required for running queries. The recommended way to set this configuration information is via the environment. The keys you can set are `KEEN_PROJECT_ID`, `KEEN_WRITE_KEY`, and `KEEN_READ_KEY`.
+
+If you don't want to use environment variables for some reason, you can directly set values as follows:
+
     public void onInitialize() {
         // do other stuff...
 
-        // initialize the Keen Client with your Project Token.
-        KeenClient.initialize(KEEN_PROJECT_TOKEN);
+        // initialize the Keen Client
+        KeenClient.initialize(KEEN_PROJECT_ID, KEEN_WRITE_KEY, KEEN_READ_KEY);
     }
-
-The write key is required to send events to Keen IO - the read key is required to do analysis on Keen IO.
 
 ##### Send Events to Keen IO
 
@@ -65,6 +67,14 @@ Here's a simple method to generate a Scoped Write Key:
 That's it! After running your code, check your Keen IO Project to see the event has been added.
 
 ### Changelog
+
+##### 1.0.5
+
++ Support reading Project ID and access keys from environment variables.
+
+##### 1.0.4
+
++ Fix bug with padding in Scoped Keys implementation.
 
 ##### 1.0.3
 

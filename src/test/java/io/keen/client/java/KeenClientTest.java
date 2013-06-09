@@ -33,6 +33,53 @@ public class KeenClientTest {
     }
 
     @Test
+    public void testEnvironment() {
+        try {
+            KeenClient.client();
+            fail("Shouldn't be able to get client if no environment set.");
+        } catch (IllegalStateException e) {
+        }
+
+        try {
+            KeenClient.initialize(getEnvironment(null, null, null));
+            KeenClient.client();
+            fail("Shouldn't be able to get client if bad environment used.");
+        } catch (IllegalStateException e) {
+        }
+
+        try {
+            KeenClient.initialize(getEnvironment(null, "abc", "def"));
+            KeenClient.client();
+            fail("Shouldn't be able to get client if no project id in environment.");
+        } catch (IllegalStateException e) {
+        }
+
+        KeenClient.initialize(getEnvironment("project_id", "abc", "def"));
+        doClientAssertions("project_id", "abc", "def", KeenClient.client());
+
+        KeenClient.ClientSingleton.INSTANCE.client = null;
+    }
+
+    private Environment getEnvironment(final String projectId, final String writeKey, final String readKey) {
+        return new Environment() {
+            @Override
+            public String getKeenProjectId() {
+                return projectId;
+            }
+
+            @Override
+            public String getKeenWriteKey() {
+                return writeKey;
+            }
+
+            @Override
+            public String getKeenReadKey() {
+                return readKey;
+            }
+        };
+    }
+
+    @Test
     public void testKeenClientConstructor() {
         runKeenClientConstructorTest(null, null, null, true, "null project id", "Invalid project id specified: null");
         runKeenClientConstructorTest("", null, null, true, "empty project id", "Invalid project id specified: ");
