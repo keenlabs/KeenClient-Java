@@ -15,9 +15,9 @@ import java.util.Map;
  */
 class KeenHttpRequestRunnable implements Runnable {
     private static final int READ_TIMEOUT = 60000;
-	private static final int CONNECT_TIMEOUT = 60000;
-	
-	private final KeenClient keenClient;
+    private static final int CONNECT_TIMEOUT = 60000;
+    
+    private final KeenClient keenClient;
     private final String eventCollection;
     private final Map<String, Object> event;
     private final AddEventCallback callback;
@@ -35,9 +35,9 @@ class KeenHttpRequestRunnable implements Runnable {
             HttpURLConnection connection = sendEvent(this.eventCollection, this.event);
             InputStream inputStream = connection.getInputStream();
             try {
-            	handleResult(inputStream, connection.getResponseCode(), callback);
+                handleResult(inputStream, connection.getResponseCode(), callback);
             } finally {
-            	inputStream.close();
+                inputStream.close();
             }
         } catch (IOException e) {
             KeenLogging.log("There was an error while sending events to the Keen API.");
