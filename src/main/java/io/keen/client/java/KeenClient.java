@@ -64,11 +64,11 @@ public class KeenClient {
                                   env.getKeenReadKey());
         }
     }
-    
+
     protected ExecutorService createExecutorService() {
         return Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
     }
-    
+
     private void checkExecutorService() {
         if (EXECUTOR_SERVICE == null || EXECUTOR_SERVICE.isShutdown()) {
             EXECUTOR_SERVICE = createExecutorService();
@@ -108,6 +108,7 @@ public class KeenClient {
     private final String projectId;
     private final String writeKey;
     private final String readKey;
+    private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
@@ -127,9 +128,10 @@ public class KeenClient {
         this.projectId = projectId;
         this.writeKey = writeKey;
         this.readKey = readKey;
+        this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
-        
+
         checkExecutorService();
     }
 
@@ -294,6 +296,26 @@ public class KeenClient {
     }
 
     /**
+     * Getter for the base API URL associated with this instance of the {@link KeenClient}.
+     *
+     * @return the base API URL
+     */
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    /**
+     * Setter for the base API URL associated with this instance of the {@link KeenClient}.
+     * <p/>
+     * Use this if you want to disable SSL.
+     *
+     * @param baseUrl the new base URL (i.e. 'http://api.keen.io')
+     */
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    /**
      * Getter for the {@link GlobalPropertiesEvaluator} associated with this instance of the {@link KeenClient}.
      *
      * @return the {@link GlobalPropertiesEvaluator}
@@ -402,7 +424,7 @@ public class KeenClient {
      * <p/>
      * New events submitted using addEvent will be rejected with a
      * RejectedExecutionException on all currently instantiated KeenClients.
-     * 
+     *
      * @param timeout
      *            A non-zero timeout in millis will block the current thread
      *            while waiting for the current events to be completed.

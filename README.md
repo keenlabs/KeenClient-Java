@@ -68,6 +68,10 @@ That's it! After running your code, check your Keen IO Project to see the event 
 
 ### Changelog
 
+##### 1.0.6
+
++ Support changing base URL for API (mostly to support disabling SSL).
+
 ##### 1.0.5
 
 + Support reading Project ID and access keys from environment variables.

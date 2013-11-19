@@ -209,8 +209,32 @@ public class KeenClientTest {
 
     @Test
     public void testAddEvent() throws KeenException, IOException, InterruptedException {
-        // this is the only test that does a full round-trip to the real API.
+        // does a full round-trip to the real API.
         KeenClient client = getClient();
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("test key", "test value");
+        // setup a latch for our callback so we can verify the server got the request
+        final CountDownLatch latch = new CountDownLatch(1);
+        // send the event
+        client.addEvent("foo", event, null, new AddEventCallback() {
+            @Override
+            public void onSuccess() {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(String responseBody) {
+            }
+        });
+        // make sure the event was sent to Keen IO
+        latch.await(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testAddEventNonSSL() throws KeenException, IOException, InterruptedException {
+        // does a full round-trip to the real API.
+        KeenClient client = getClient();
+        client.setBaseUrl("http://api.keen.io");
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("test key", "test value");
         // setup a latch for our callback so we can verify the server got the request
