@@ -25,12 +25,14 @@ Setting a write key is required for publishing events. Setting a read key is req
 
 If you don't want to use environment variables for some reason, you can directly set values as follows:
 
+```java
     public void onInitialize() {
         // do other stuff...
 
         // initialize the Keen Client
         KeenClient.initialize(KEEN_PROJECT_ID, KEEN_WRITE_KEY, KEEN_READ_KEY);
     }
+```
 
 ##### Send Events to Keen IO
 
