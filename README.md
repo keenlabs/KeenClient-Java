@@ -25,17 +25,20 @@ Setting a write key is required for publishing events. Setting a read key is req
 
 If you don't want to use environment variables for some reason, you can directly set values as follows:
 
+```java
     public void onInitialize() {
         // do other stuff...
 
         // initialize the Keen Client
         KeenClient.initialize(KEEN_PROJECT_ID, KEEN_WRITE_KEY, KEEN_READ_KEY);
     }
+```
 
 ##### Send Events to Keen IO
 
 Here’s a very basic example for an app that tracks "purchases":
 
+```java
     protected void track() {
         // create an event to upload to Keen
         Map<String, Object> event = new HashMap<String, Object>();
@@ -49,20 +52,23 @@ Here’s a very basic example for an app that tracks "purchases":
             e.printStackTrace();
         }
     }
+```
 
 ##### Do analysis with Keen IO
 
-    TODO
+    TO DO
 
 ##### Generate a Scoped Key for Keen IO
 
 Here's a simple method to generate a Scoped Write Key:
 
+```java
     public String getScopedWriteKey(String apiKey) throws ScopedKeyException {
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("allowed_operations", Arrays.asList("write"));
         return ScopedKeys.encrypt(apiKey, options);
     }
+```
 
 That's it! After running your code, check your Keen IO Project to see the event has been added.
 
