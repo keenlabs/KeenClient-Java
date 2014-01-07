@@ -74,6 +74,10 @@ That's it! After running your code, check your Keen IO Project to see the event 
 
 ### Changelog
 
+##### 1.0.7
+
++ Make Maven happy.
+
 ##### 1.0.6
 
 + Support changing base URL for API (mostly to support disabling SSL).
