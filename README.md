@@ -54,6 +54,8 @@ Here’s a very basic example for an app that tracks "purchases":
     }
 ```
 
+That's it! After running your code, check your Keen IO Project to see the event has been added.
+
 ##### Do analysis with Keen IO
 
     TO DO
@@ -70,7 +72,11 @@ Here's a simple method to generate a Scoped Write Key:
     }
 ```
 
-That's it! After running your code, check your Keen IO Project to see the event has been added.
+Note for JDK 7 users: the default encryption settings for JDK7 don't allow using AES-256-CBC, which is the encryption methodology used for Keen IO Scoped Keys. To fix, download the file here:
+
+http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html
+
+Follow the install instructions and scoped key generation should work.
 
 ### Changelog
 
