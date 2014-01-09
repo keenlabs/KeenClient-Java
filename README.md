@@ -11,6 +11,20 @@ Use this library from any Java application where you want to record data using K
 
 ### Installation
 
+##### Maven
+
+Paste the following snippet into your pom.xml:
+
+```xml
+<dependency>
+  <groupId>io.keen</groupId>
+  <artifactId>keen-client-api-java</artifactId>
+  <version>1.0.7</version>
+</dependency>
+```
+
+##### JAR Download
+
 Just drop the jar we've created into your project and configure the project to use it. We recommend having a "libs" directory to contain external dependencies, but it's up to you.
 
 Download the jar [here](http://keen.io/static/code/KeenClient-Java.jar).
