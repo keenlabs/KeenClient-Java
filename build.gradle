@@ -1,6 +1,12 @@
+apply plugin: 'idea'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.10'
+}
+
 allprojects {
-    group = 'io.keen.client'
-    version = '2.0'
+    group = 'io.keen'
+    version = '2.0.0'
 }
 
 subprojects {
@@ -33,6 +39,3 @@ project(':java') {
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.10'
-}

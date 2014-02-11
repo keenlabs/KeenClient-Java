@@ -1,1 +1,2 @@
 // Build instructions for core library.
+archivesBaseName = "keen-client-java-core"

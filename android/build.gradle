@@ -42,3 +42,13 @@ dependencies {
 test {
     include '**/*Test.class'
 }
+
+jar {
+    from {
+        project(':core').configurations.archives.allArtifacts.files.collect {
+            zipTree(it)
+        }
+    }
+}
+
+archivesBaseName = "keen-client-api-android"

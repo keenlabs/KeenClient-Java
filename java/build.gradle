@@ -3,3 +3,13 @@
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
 }
+
+jar {
+    from {
+        project(':core').configurations.archives.allArtifacts.files.collect {
+            zipTree(it)
+        }
+    }
+}
+
+archivesBaseName = "keen-client-api-java"
