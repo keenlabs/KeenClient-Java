@@ -1,5 +1,6 @@
 package io.keen.client.java;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,4 +24,20 @@ class TestUtils {
         event.put("a", "b");
         return event;
     }
+
+    static void deleteRecursively(File file) {
+        if (!file.exists()) {
+            return;
+        }
+
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                deleteRecursively(child);
+            }
+        }
+        if (!file.delete()) {
+            throw new RuntimeException("Couldn't delete " + file.getAbsolutePath());
+        }
+    }
+
 }

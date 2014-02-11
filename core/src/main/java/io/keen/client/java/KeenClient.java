@@ -43,36 +43,36 @@ public class KeenClient {
 
     private static final String ENCODING = "UTF-8";
 
-    public interface KeenJsonHandler {
-        Map<String, Object> readJson(Reader reader) throws IOException;
-        void writeJson(Writer writer, Map<String, ?> value) throws IOException;
+    private static KeenJsonHandler jsonHandler;
+    public static KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
     }
-
-    public interface EventStore {
-        OutputStream getCacheOutputStream(String eventCollection) throws IOException;
-        CacheEntries retrieveCached() throws IOException;
-        void removeFromCache(Object handle) throws IOException;
-    }
-
-    public static class CacheEntries {
-        public final Map<String, List<Object>> handles;
-        public final Map<String, List<Map<String, Object>>> events;
-        public CacheEntries(Map<String, List<Object>> handles,
-                            Map<String, List<Map<String, Object>>> events) {
-            this.handles = handles;
-            this.events = events;
+    public synchronized static void setJsonHandler(KeenJsonHandler jsonHandler) {
+        if (KeenClient.jsonHandler != null) {
+            throw new IllegalStateException("JSON handler can be initialized at most once");
         }
+        KeenClient.jsonHandler = jsonHandler;
     }
-
-    public static class KeenClientInterfaces {
-        // TODO: Should these be public?
-        public KeenJsonHandler jsonHandler;
-        public EventStore eventStore;
-        public Executor publishExecutor;
+    private static KeenEventStore eventStore;
+    public static KeenEventStore getEventStore() {
+        return eventStore;
     }
-
-    // TODO: Should this be static?
-    public static KeenClientInterfaces interfaces;
+    public synchronized static void setEventStore(KeenEventStore eventStore) {
+        if (KeenClient.eventStore != null) {
+            throw new IllegalStateException("Event store can be initialized at most once");
+        }
+        KeenClient.eventStore = eventStore;
+    }
+    private static Executor publishExecutor;
+    public static Executor getPublishExecutor() {
+        return publishExecutor;
+    }
+    public synchronized static void setPublishExecutor(Executor publishExecutor) {
+        if (KeenClient.publishExecutor != null) {
+            throw new IllegalStateException("Publish executor can be initialized at most once");
+        }
+        KeenClient.publishExecutor = publishExecutor;
+    }
 
     static {
         initialize();
@@ -207,7 +207,7 @@ public class KeenClient {
     }
 
     public void addEventAsync(final String eventCollection, final Map<String, Object> event) throws KeenException {
-        interfaces.publishExecutor.execute(new Runnable() {
+        publishExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -230,9 +230,9 @@ public class KeenClient {
 
         OutputStreamWriter writer = null;
         try {
-            OutputStream out = interfaces.eventStore.getCacheOutputStream(eventCollection);
+            OutputStream out = eventStore.getCacheOutputStream(eventCollection);
             writer = new OutputStreamWriter(out, ENCODING);
-            interfaces.jsonHandler.writeJson(writer, newEvent);
+            jsonHandler.writeJson(writer, newEvent);
         } catch (IOException e) {
             // TODO: How should this be handled?
             KeenLogging.log("Failed to serialize event");
@@ -242,8 +242,13 @@ public class KeenClient {
     }
 
     public void sendQueuedEvents() throws KeenException {
+        sendQueuedEvents(null);
+    }
+
+    // TODO: Refactor AddEventCallback to a more generic callback?
+    public void sendQueuedEvents(AddEventCallback callback) throws KeenException {
         try {
-            CacheEntries entries = interfaces.eventStore.retrieveCached();
+            KeenEventStore.CacheEntries entries = eventStore.retrieveCached();
             Map<String, List<Map<String, Object>>> events = entries.events;
             String response = publishAll(events);
             if (response == null) {
@@ -255,10 +260,12 @@ public class KeenClient {
             // TODO: How should this be handled?
             KeenLogging.log("Failed to serialize event");
         }
+
+        // TODO: Use callback.
     }
 
     public void sendQueuedEventsAsync() throws KeenException {
-        interfaces.publishExecutor.execute(new Runnable() {
+        publishExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -401,7 +408,7 @@ public class KeenClient {
         OutputStreamWriter writer = null;
         try {
             writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
-            interfaces.jsonHandler.writeJson(writer, requestData);
+            jsonHandler.writeJson(writer, requestData);
         } finally {
             KeenUtils.closeQuietly(writer);
         }
@@ -470,7 +477,7 @@ public class KeenClient {
     private void handleAddEventsResponse(Map<String, List<Object>> handles, String response) throws IOException {
         // Parse the response into a map.
         StringReader reader = new StringReader(response);
-        Map<String, Object> responseMap = interfaces.jsonHandler.readJson(reader);
+        Map<String, Object> responseMap = jsonHandler.readJson(reader);
 
         // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
         // It's not obvious what the best way is to try and recover from them, but just hoping it
@@ -514,7 +521,7 @@ public class KeenClient {
                 if (removeCacheEntry) {
                     Object handle = collectionHandles.get(index);
                     // TODO: Error handling?
-                    interfaces.eventStore.removeFromCache(handle);
+                    eventStore.removeFromCache(handle);
                 }
                 index++;
             }

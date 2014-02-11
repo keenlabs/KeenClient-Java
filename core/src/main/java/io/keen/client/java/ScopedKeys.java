@@ -55,7 +55,7 @@ public class ScopedKeys {
 
             // json encode the options
             StringWriter writer = new StringWriter();
-            KeenClient.interfaces.jsonHandler.writeJson(writer, options);
+            KeenClient.getJsonHandler().writeJson(writer, options);
             final String jsonOptions = writer.toString();
 
             // setup the API key as the secret
@@ -115,7 +115,7 @@ public class ScopedKeys {
             String plainText = new String(cipher.doFinal(cipherText), "UTF-8");
 
             // return the JSON decoded options map
-            return KeenClient.interfaces.jsonHandler.readJson(new StringReader(plainText));
+            return KeenClient.getJsonHandler().readJson(new StringReader(plainText));
         } catch (Exception e) {
             throw new ScopedKeyException("An error occurred while attempting to decrypt a Scoped Key", e);
         }
