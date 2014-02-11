@@ -2,7 +2,11 @@ package io.keen.client.android;
 
 import android.util.Log;
 
-import java.util.logging.*;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 /**
  * KeenLogging is a wrapper around a logging module and provides, well, logging for the Keen Android SDK.
@@ -11,6 +15,7 @@ import java.util.logging.*;
  * @author dkador
  * @since 1.0.0
  */
+// TODO: Is this class actually necessary? In theory, android will work with java.util.logging.
 public class KeenLogging {
 
     private static final Logger LOGGER;

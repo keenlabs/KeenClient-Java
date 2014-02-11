@@ -32,12 +32,14 @@ public class FileEventStore implements KeenEventStore {
     private boolean isRunningTests;
 
     /**
+     * Constructs a new File-based event store.
      *
-     * @param root
-     * @param jsonHandler
-     * @throws IOException
+     * @param root The root directory in which to store queued event files.
+     * @param jsonHandler The JSON handler to use to write events to files, and to read them back.
+     * @throws IOException If the provided {@code root} isn't
      */
     public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
+        // TODO: Validate the root.
         this.root = root;
         this.jsonHandler = jsonHandler;
     }

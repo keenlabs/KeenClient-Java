@@ -1,6 +1,10 @@
 package io.keen.client.java;
 
-import java.util.logging.*;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 /**
  * KeenLogging is a wrapper around a logging module and provides, well, logging for the Keen Java SDK.

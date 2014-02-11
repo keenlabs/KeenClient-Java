@@ -1,12 +1,14 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.ScopedKeyException;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import io.keen.client.java.exceptions.ScopedKeyException;
 
 public class ScopedKeysTests {
 

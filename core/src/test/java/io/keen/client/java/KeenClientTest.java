@@ -1,20 +1,20 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.KeenException;
-import io.keen.client.java.exceptions.NoWriteKeyException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import io.keen.client.java.exceptions.KeenException;
+import io.keen.client.java.exceptions.NoWriteKeyException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 
 /**

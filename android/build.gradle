@@ -1,5 +1,5 @@
-// Copied from the Android Gradle plugin code.
-private String determineAndroidDirs() {
+// Adapted from the Android Gradle plugin code.
+private String getAndroidSdkDir() {
     def ant = project.ant
     def sdkDir
 
@@ -30,7 +30,7 @@ private String determineAndroidDirs() {
     return sdkDir
 }
 
-def sdkDir = determineAndroidDirs()
+def sdkDir = getAndroidSdkDir()
 // TODO: Handle Android SDK version robustly.
 def androidJar = new File(sdkDir, '/platforms/android-19/android.jar')
 

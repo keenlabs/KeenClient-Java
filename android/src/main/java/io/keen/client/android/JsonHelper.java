@@ -4,7 +4,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JSON utilities. This code was taken from:
@@ -41,7 +45,7 @@ class JsonHelper {
     }
 
     public static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap();
+        Map<String, Object> map = new HashMap<String, Object>();
         Iterator keys = object.keys();
         while (keys.hasNext()) {
             String key = (String) keys.next();
@@ -51,7 +55,7 @@ class JsonHelper {
     }
 
     public static List toList(JSONArray array) throws JSONException {
-        List list = new ArrayList();
+        List<Object> list = new ArrayList<Object>();
         for (int i = 0; i < array.length(); i++) {
             list.add(fromJson(array.get(i)));
         }

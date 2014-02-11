@@ -1,17 +1,17 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.ScopedKeyException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.security.AlgorithmParameters;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.security.AlgorithmParameters;
-import java.util.HashMap;
-import java.util.Map;
+import io.keen.client.java.exceptions.ScopedKeyException;
 
 /**
  * ScopedKeys is a utility class for dealing with Keen IO Scoped Keys. You'll probably only ever need the

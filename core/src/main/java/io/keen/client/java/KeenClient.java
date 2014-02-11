@@ -4,14 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringReader;
-import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +37,8 @@ import io.keen.client.java.exceptions.NoWriteKeyException;
  * @since 1.0.0
  */
 public class KeenClient {
+
+    private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     private static final String ENCODING = "UTF-8";
 
@@ -277,256 +276,6 @@ public class KeenClient {
         });
     }
 
-    private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-
-    Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
-                                              Map<String, Object> keenProperties) throws KeenException {
-        if (getWriteKey() == null) {
-            throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
-        }
-
-        validateEventCollection(eventCollection);
-        validateEvent(event);
-
-        KeenLogging.log(String.format("Adding event to collection: %s", eventCollection));
-
-        // build the event
-        Map<String, Object> newEvent = new HashMap<String, Object>();
-        // handle keen properties
-        Calendar currentTime = Calendar.getInstance();
-        String timestamp = ISO_8601_FORMAT.format(currentTime.getTime());
-        if (keenProperties == null) {
-            keenProperties = new HashMap<String, Object>();
-            keenProperties.put("timestamp", timestamp);
-        } else {
-            if (!keenProperties.containsKey("timestamp")) {
-                keenProperties.put("timestamp", timestamp);
-            }
-        }
-        newEvent.put("keen", keenProperties);
-
-        // handle global properties
-        Map<String, Object> globalProperties = getGlobalProperties();
-        if (globalProperties != null) {
-            newEvent.putAll(globalProperties);
-        }
-        GlobalPropertiesEvaluator globalPropertiesEvaluator = getGlobalPropertiesEvaluator();
-        if (globalPropertiesEvaluator != null) {
-            Map<String, Object> props = globalPropertiesEvaluator.getGlobalProperties(eventCollection);
-            if (props != null) {
-                newEvent.putAll(props);
-            }
-        }
-
-        // now handle user-defined properties
-        newEvent.putAll(event);
-        return newEvent;
-    }
-
-    private void validateEventCollection(String eventCollection) throws InvalidEventCollectionException {
-        if (eventCollection == null || eventCollection.length() == 0) {
-            throw new InvalidEventCollectionException("You must specify a non-null, " +
-                                                              "non-empty event collection: " + eventCollection);
-        }
-        if (eventCollection.startsWith("$")) {
-            throw new InvalidEventCollectionException("An event collection name cannot start with the dollar sign ($)" +
-                                                              " character.");
-        }
-        if (eventCollection.length() > 256) {
-            throw new InvalidEventCollectionException("An event collection name cannot be longer than 256 characters.");
-        }
-    }
-
-    private void validateEvent(Map<String, Object> event) throws InvalidEventException {
-        validateEvent(event, 0);
-    }
-
-    @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
-    private void validateEvent(Map<String, Object> event, int depth) throws InvalidEventException {
-        if (depth == 0) {
-            if (event == null || event.size() == 0) {
-                throw new InvalidEventException("You must specify a non-null, non-empty event.");
-            }
-            if (event.containsKey("keen")) {
-                throw new InvalidEventException("An event cannot contain a root-level property named 'keen'.");
-            }
-        }
-
-        for (Map.Entry<String, Object> entry : event.entrySet()) {
-            String key = entry.getKey();
-            if (key.contains(".")) {
-                throw new InvalidEventException("An event cannot contain a property with the period (.) character in " +
-                                                        "it.");
-            }
-            if (key.startsWith("$")) {
-                throw new InvalidEventException("An event cannot contain a property that starts with the dollar sign " +
-                                                        "($) character in it.");
-            }
-            if (key.length() > 256) {
-                throw new InvalidEventException("An event cannot contain a property name longer than 256 characters.");
-            }
-            Object value = entry.getValue();
-            if (value instanceof String) {
-                String strValue = (String) value;
-                if (strValue.length() >= 10000) {
-                    throw new InvalidEventException("An event cannot contain a string property value longer than 10," +
-                                                            "000 characters.");
-                }
-            } else if (value instanceof Map) {
-                validateEvent((Map<String, Object>) value, depth + 1);
-            }
-        }
-    }
-
-    private String publish(String eventCollection, Map<String, Object> event) throws IOException {
-        // just using basic JDK HTTP library
-        String urlString = String.format("%s/%s/projects/%s/events/%s", getBaseUrl(),
-                KeenConstants.API_VERSION, getProjectId(), eventCollection);
-        URL url = new URL(urlString);
-        return publishObject(url, event);
-    }
-
-    private String publishAll(Map<String, List<Map<String, Object>>> events) throws IOException {
-        // just using basic JDK HTTP library
-        String urlString = String.format("%s/%s/projects/%s/events", getBaseUrl(),
-                KeenConstants.API_VERSION, getProjectId());
-        URL url = new URL(urlString);
-        return publishObject(url, events);
-    }
-
-    private synchronized String publishObject(URL url, Map<String, ?> requestData) throws IOException {
-        // set up the POST
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Authorization", getWriteKey());
-
-        // write JSON to the output stream
-        OutputStreamWriter writer = null;
-        try {
-            writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
-            jsonHandler.writeJson(writer, requestData);
-        } finally {
-            KeenUtils.closeQuietly(writer);
-        }
-
-        int responseCode = connection.getResponseCode();
-        String response = null;
-        if (responseCode / 100 == 2) {
-            InputStream responseStream = connection.getInputStream();
-            try {
-                response = KeenUtils.convertStreamToString(responseStream);
-                KeenLogging.log("Response: " + response);
-            } finally {
-                KeenUtils.closeQuietly(responseStream);
-            }
-        } else {
-            InputStream errorStream = connection.getErrorStream();
-            try {
-                String error = KeenUtils.convertStreamToString(errorStream);
-                KeenLogging.log("Error: " + error);
-            } finally {
-                KeenUtils.closeQuietly(errorStream);
-            }
-        }
-
-        connection.disconnect();
-        return response;
-    }
-
-    /*
-    TODO: Is some of this logic useful for processing the error response? If so, make use of it
-    from publish and/or publishObject. Otherwise, remove this dead code.
-
-    private boolean parseAddEventResponse(String response) throws IOException {
-        // Parse the response into a map.
-        StringReader reader = new StringReader(response);
-        Map<String, Object> responseMap = interfaces.jsonHandler.readJson(reader);
-
-        // TODO: Move this logic into a shared helper? Unfortunately this is a bit tricky because
-        // of the different structure of the error responses.
-        boolean success = (Boolean) responseMap.get(KeenConstants.CREATED_PARAM);
-        if (!success) {
-            // grab error code and description
-            String errorCode = (String) responseMap.get(KeenConstants.ERROR_CODE_PARAM);
-            String description = (String) responseMap.get(KeenConstants.MESSAGE_PARAM);
-            if (errorCode.equals(KeenConstants.INVALID_COLLECTION_NAME_ERROR) ||
-                    errorCode.equals(KeenConstants.INVALID_PROPERTY_NAME_ERROR) ||
-                    errorCode.equals(KeenConstants.INVALID_PROPERTY_VALUE_ERROR)) {
-                KeenLogging.log("An invalid event was found. Deleting it. Error: " + description);
-            } else {
-                KeenLogging.log(String.format("The event could not be inserted for some reason. " +
-                        "Error name and description: %s %s", errorCode, description));
-            }
-        }
-
-        return success;
-    }
-    */
-
-    /**
-     *
-     * @param handles
-     * @param response
-     * @throws IOException
-     */
-    @SuppressWarnings("unchecked")
-    private void handleAddEventsResponse(Map<String, List<Object>> handles, String response) throws IOException {
-        // Parse the response into a map.
-        StringReader reader = new StringReader(response);
-        Map<String, Object> responseMap = jsonHandler.readJson(reader);
-
-        // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
-        // It's not obvious what the best way is to try and recover from them, but just hoping it
-        // doesn't happen is probably the wrong answer.
-
-        // Loop through all the event collections.
-        for (Map.Entry<String, Object> entry : responseMap.entrySet()) {
-            String collectionName = entry.getKey();
-
-            // Get the list of handles in this collection.
-            List<Object> collectionHandles = handles.get(collectionName);
-
-            // Iterate through the elements in the collection
-            List<Map<String, Object>> eventResults = (List<Map<String, Object>>) entry.getValue();
-            int index = 0;
-            for (Map<String, Object> eventResult : eventResults) {
-                // now loop through each event collection's individual results
-                boolean removeCacheEntry = true;
-                boolean success = (Boolean) eventResult.get(KeenConstants.SUCCESS_PARAM);
-                if (!success) {
-                    // grab error code and description
-                    Map errorDict = (Map) eventResult.get(KeenConstants.ERROR_PARAM);
-                    String errorCode = (String) errorDict.get(KeenConstants.NAME_PARAM);
-                    if (errorCode.equals(KeenConstants.INVALID_COLLECTION_NAME_ERROR) ||
-                            errorCode.equals(KeenConstants.INVALID_PROPERTY_NAME_ERROR) ||
-                            errorCode.equals(KeenConstants.INVALID_PROPERTY_VALUE_ERROR)) {
-                        removeCacheEntry = true;
-                        KeenLogging.log("An invalid event was found. Deleting it. Error: " +
-                                errorDict.get(KeenConstants.DESCRIPTION_PARAM));
-                    } else {
-                        String description = (String) errorDict.get(KeenConstants.DESCRIPTION_PARAM);
-                        removeCacheEntry = false;
-                        KeenLogging.log(String.format("The event could not be inserted for some reason. " +
-                                "Error name and description: %s %s", errorCode,
-                                description));
-                    }
-                }
-
-                // If the cache entry should be removed, get the handle at the appropriate index
-                // and ask the event store to remove it.
-                if (removeCacheEntry) {
-                    Object handle = collectionHandles.get(index);
-                    // TODO: Error handling?
-                    eventStore.removeFromCache(handle);
-                }
-                index++;
-            }
-        }
-    }
-
     /**
      * Getter for the Keen Project Id associated with this instance of the {@link KeenClient}.
      *
@@ -659,6 +408,258 @@ public class KeenClient {
      */
     public void setGlobalProperties(Map<String, Object> globalProperties) {
         this.globalProperties = globalProperties;
+    }
+
+    protected Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
+                                              Map<String, Object> keenProperties) throws KeenException {
+        if (getWriteKey() == null) {
+            throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
+        }
+
+        validateEventCollection(eventCollection);
+        validateEvent(event);
+
+        KeenLogging.log(String.format("Adding event to collection: %s", eventCollection));
+
+        // build the event
+        Map<String, Object> newEvent = new HashMap<String, Object>();
+        // handle keen properties
+        Calendar currentTime = Calendar.getInstance();
+        String timestamp = ISO_8601_FORMAT.format(currentTime.getTime());
+        if (keenProperties == null) {
+            keenProperties = new HashMap<String, Object>();
+            keenProperties.put("timestamp", timestamp);
+        } else {
+            if (!keenProperties.containsKey("timestamp")) {
+                keenProperties.put("timestamp", timestamp);
+            }
+        }
+        newEvent.put("keen", keenProperties);
+
+        // handle global properties
+        Map<String, Object> globalProperties = getGlobalProperties();
+        if (globalProperties != null) {
+            newEvent.putAll(globalProperties);
+        }
+        GlobalPropertiesEvaluator globalPropertiesEvaluator = getGlobalPropertiesEvaluator();
+        if (globalPropertiesEvaluator != null) {
+            Map<String, Object> props = globalPropertiesEvaluator.getGlobalProperties(eventCollection);
+            if (props != null) {
+                newEvent.putAll(props);
+            }
+        }
+
+        // now handle user-defined properties
+        newEvent.putAll(event);
+        return newEvent;
+    }
+
+    private void validateEventCollection(String eventCollection) throws InvalidEventCollectionException {
+        if (eventCollection == null || eventCollection.length() == 0) {
+            throw new InvalidEventCollectionException("You must specify a non-null, " +
+                    "non-empty event collection: " + eventCollection);
+        }
+        if (eventCollection.startsWith("$")) {
+            throw new InvalidEventCollectionException("An event collection name cannot start with the dollar sign ($)" +
+                    " character.");
+        }
+        if (eventCollection.length() > 256) {
+            throw new InvalidEventCollectionException("An event collection name cannot be longer than 256 characters.");
+        }
+    }
+
+    private void validateEvent(Map<String, Object> event) throws InvalidEventException {
+        validateEvent(event, 0);
+    }
+
+    @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
+    private void validateEvent(Map<String, Object> event, int depth) throws InvalidEventException {
+        if (depth == 0) {
+            if (event == null || event.size() == 0) {
+                throw new InvalidEventException("You must specify a non-null, non-empty event.");
+            }
+            if (event.containsKey("keen")) {
+                throw new InvalidEventException("An event cannot contain a root-level property named 'keen'.");
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : event.entrySet()) {
+            String key = entry.getKey();
+            if (key.contains(".")) {
+                throw new InvalidEventException("An event cannot contain a property with the period (.) character in " +
+                        "it.");
+            }
+            if (key.startsWith("$")) {
+                throw new InvalidEventException("An event cannot contain a property that starts with the dollar sign " +
+                        "($) character in it.");
+            }
+            if (key.length() > 256) {
+                throw new InvalidEventException("An event cannot contain a property name longer than 256 characters.");
+            }
+            Object value = entry.getValue();
+            if (value instanceof String) {
+                String strValue = (String) value;
+                if (strValue.length() >= 10000) {
+                    throw new InvalidEventException("An event cannot contain a string property value longer than 10," +
+                            "000 characters.");
+                }
+            } else if (value instanceof Map) {
+                validateEvent((Map<String, Object>) value, depth + 1);
+            }
+        }
+    }
+
+    private String publish(String eventCollection, Map<String, Object> event) throws IOException {
+        // just using basic JDK HTTP library
+        String urlString = String.format("%s/%s/projects/%s/events/%s", getBaseUrl(),
+                KeenConstants.API_VERSION, getProjectId(), eventCollection);
+        URL url = new URL(urlString);
+        return publishObject(url, event);
+    }
+
+    private String publishAll(Map<String, List<Map<String, Object>>> events) throws IOException {
+        // just using basic JDK HTTP library
+        String urlString = String.format("%s/%s/projects/%s/events", getBaseUrl(),
+                KeenConstants.API_VERSION, getProjectId());
+        URL url = new URL(urlString);
+        return publishObject(url, events);
+    }
+
+    private synchronized String publishObject(URL url, Map<String, ?> requestData) throws IOException {
+        // TODO: Don't do anything if the request data is empty.
+        // KeenLogging.log("No API calls were made because there were no events to upload");
+
+        // set up the POST
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", getWriteKey());
+
+        // write JSON to the output stream
+        OutputStreamWriter writer = null;
+        try {
+            writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
+            jsonHandler.writeJson(writer, requestData);
+        } finally {
+            KeenUtils.closeQuietly(writer);
+        }
+
+        int responseCode = connection.getResponseCode();
+        String response = null;
+        if (responseCode / 100 == 2) {
+            InputStream responseStream = connection.getInputStream();
+            try {
+                response = KeenUtils.convertStreamToString(responseStream);
+                KeenLogging.log("Response: " + response);
+            } finally {
+                KeenUtils.closeQuietly(responseStream);
+            }
+        } else {
+            KeenLogging.log(String.format("Response code was NOT 200. It was: %d", responseCode));
+            InputStream errorStream = connection.getErrorStream();
+            try {
+                String responseBody = KeenUtils.convertStreamToString(errorStream);
+                KeenLogging.log(String.format("Response body was: %s", responseBody));
+            } finally {
+                KeenUtils.closeQuietly(errorStream);
+            }
+        }
+
+        connection.disconnect();
+        return response;
+    }
+
+    /*
+    TODO: Is some of this logic useful for processing the error response? If so, make use of it
+    from publish and/or publishObject. Otherwise, remove this dead code.
+
+    private boolean parseAddEventResponse(String response) throws IOException {
+        // Parse the response into a map.
+        StringReader reader = new StringReader(response);
+        Map<String, Object> responseMap = interfaces.jsonHandler.readJson(reader);
+
+        // TODO: Move this logic into a shared helper? Unfortunately this is a bit tricky because
+        // of the different structure of the error responses.
+        boolean success = (Boolean) responseMap.get(KeenConstants.CREATED_PARAM);
+        if (!success) {
+            // grab error code and description
+            String errorCode = (String) responseMap.get(KeenConstants.ERROR_CODE_PARAM);
+            String description = (String) responseMap.get(KeenConstants.MESSAGE_PARAM);
+            if (errorCode.equals(KeenConstants.INVALID_COLLECTION_NAME_ERROR) ||
+                    errorCode.equals(KeenConstants.INVALID_PROPERTY_NAME_ERROR) ||
+                    errorCode.equals(KeenConstants.INVALID_PROPERTY_VALUE_ERROR)) {
+                KeenLogging.log("An invalid event was found. Deleting it. Error: " + description);
+            } else {
+                KeenLogging.log(String.format("The event could not be inserted for some reason. " +
+                        "Error name and description: %s %s", errorCode, description));
+            }
+        }
+
+        return success;
+    }
+    */
+
+    /**
+     *
+     * @param handles
+     * @param response
+     * @throws IOException
+     */
+    @SuppressWarnings("unchecked")
+    private void handleAddEventsResponse(Map<String, List<Object>> handles, String response) throws IOException {
+        // Parse the response into a map.
+        StringReader reader = new StringReader(response);
+        Map<String, Object> responseMap = jsonHandler.readJson(reader);
+
+        // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
+        // It's not obvious what the best way is to try and recover from them, but just hoping it
+        // doesn't happen is probably the wrong answer.
+
+        // Loop through all the event collections.
+        for (Map.Entry<String, Object> entry : responseMap.entrySet()) {
+            String collectionName = entry.getKey();
+
+            // Get the list of handles in this collection.
+            List<Object> collectionHandles = handles.get(collectionName);
+
+            // Iterate through the elements in the collection
+            List<Map<String, Object>> eventResults = (List<Map<String, Object>>) entry.getValue();
+            int index = 0;
+            for (Map<String, Object> eventResult : eventResults) {
+                // now loop through each event collection's individual results
+                boolean removeCacheEntry = true;
+                boolean success = (Boolean) eventResult.get(KeenConstants.SUCCESS_PARAM);
+                if (!success) {
+                    // grab error code and description
+                    Map errorDict = (Map) eventResult.get(KeenConstants.ERROR_PARAM);
+                    String errorCode = (String) errorDict.get(KeenConstants.NAME_PARAM);
+                    if (errorCode.equals(KeenConstants.INVALID_COLLECTION_NAME_ERROR) ||
+                            errorCode.equals(KeenConstants.INVALID_PROPERTY_NAME_ERROR) ||
+                            errorCode.equals(KeenConstants.INVALID_PROPERTY_VALUE_ERROR)) {
+                        removeCacheEntry = true;
+                        KeenLogging.log("An invalid event was found. Deleting it. Error: " +
+                                errorDict.get(KeenConstants.DESCRIPTION_PARAM));
+                    } else {
+                        String description = (String) errorDict.get(KeenConstants.DESCRIPTION_PARAM);
+                        removeCacheEntry = false;
+                        KeenLogging.log(String.format("The event could not be inserted for some reason. " +
+                                "Error name and description: %s %s", errorCode,
+                                description));
+                    }
+                }
+
+                // If the cache entry should be removed, get the handle at the appropriate index
+                // and ask the event store to remove it.
+                if (removeCacheEntry) {
+                    Object handle = collectionHandles.get(index);
+                    // TODO: Error handling?
+                    eventStore.removeFromCache(handle);
+                }
+                index++;
+            }
+        }
     }
 
 }
