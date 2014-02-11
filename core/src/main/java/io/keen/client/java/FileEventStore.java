@@ -21,14 +21,30 @@ import java.util.Map;
  */
 public class FileEventStore implements KeenEventStore {
 
+    /** The number of events that can be stored for a single collection before aging them out. */
+    private static final int MAX_EVENTS_PER_COLLECTION = 10000;
+
+    /** The number of events to drop when aging out. */
+    private static final int NUMBER_EVENTS_TO_FORGET = 100;
+
     private final File root;
     private final KeenJsonHandler jsonHandler;
+    private boolean isRunningTests;
 
+    /**
+     *
+     * @param root
+     * @param jsonHandler
+     * @throws IOException
+     */
     public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
         this.root = root;
         this.jsonHandler = jsonHandler;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public OutputStream getCacheOutputStream(String eventCollection) throws IOException {
         File dir = getEventDirectoryForEventCollection(eventCollection);
@@ -65,6 +81,9 @@ public class FileEventStore implements KeenEventStore {
         return new FileOutputStream(fileForEvent);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CacheEntries retrieveCached() throws IOException {
         File[] directories = getKeenCacheSubDirectories();
@@ -109,6 +128,9 @@ public class FileEventStore implements KeenEventStore {
         return new CacheEntries(handleMap, requestMap);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void removeFromCache(Object handle) throws IOException {
         if (!(handle instanceof File)) {
@@ -123,6 +145,8 @@ public class FileEventStore implements KeenEventStore {
             KeenLogging.log(String.format("Successfully deleted file: %s", eventFile.getAbsolutePath()));
         }
     }
+
+    /////////////////////////////////////////////
 
     private Map<String, Object> readMapFromJsonFile(File jsonFile) {
         try {
@@ -155,7 +179,7 @@ public class FileEventStore implements KeenEventStore {
         });
     }
 
-    File[] getFilesInDir(File dir) {
+    private File[] getFilesInDir(File dir) {
         return dir.listFiles(new FileFilter() {
             public boolean accept(File file) {
                 return file.isFile();
@@ -163,7 +187,7 @@ public class FileEventStore implements KeenEventStore {
         });
     }
 
-    File getEventDirectoryForEventCollection(String eventCollection) {
+    private File getEventDirectoryForEventCollection(String eventCollection) {
         File file = new File(getKeenCacheDirectory(), eventCollection);
         if (!file.exists()) {
             KeenLogging.log("Cache directory for event collection '" + eventCollection + "' doesn't exist. " +
@@ -175,7 +199,7 @@ public class FileEventStore implements KeenEventStore {
         return file;
     }
 
-    File[] getFilesForEventCollection(String eventCollection) {
+    private File[] getFilesForEventCollection(String eventCollection) {
         return getFilesInDir(getEventDirectoryForEventCollection(eventCollection));
     }
 
@@ -201,15 +225,7 @@ public class FileEventStore implements KeenEventStore {
             assert dir.mkdir();
         }
     }
-    /////////////////////////////////////////////
 
-    // TODO: Clean up the event caching logic/constants/helper methods.
-
-    // how many events can be stored for a single collection before aging them out
-    static final int MAX_EVENTS_PER_COLLECTION = 10000;
-    // how many events to drop when aging out
-    static final int NUMBER_EVENTS_TO_FORGET = 100;
-    private boolean isRunningTests;
     private int getMaxEventsPerCollection() {
         if (isRunningTests) {
             return 5;

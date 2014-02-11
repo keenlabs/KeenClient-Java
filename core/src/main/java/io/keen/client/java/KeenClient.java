@@ -402,7 +402,6 @@ public class KeenClient {
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Authorization", getWriteKey());
-        // TODO: Set a user agent?
 
         // write JSON to the output stream
         OutputStreamWriter writer = null;
