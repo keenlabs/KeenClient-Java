@@ -205,6 +205,9 @@ public class KeenClientTest {
         }
     }
 
+    /*
+     * TODO: Re-implement these tests with a mock JSON handler, or move them to the java
+     * package.
     @Test
     public void testAddEvent() throws KeenException, IOException, InterruptedException {
         // does a full round-trip to the real API.
@@ -251,6 +254,7 @@ public class KeenClientTest {
         // make sure the event was sent to Keen IO
         latch.await(2, TimeUnit.SECONDS);
     }
+    */
 
     /*
      TODO: Fix or get rid of this test.

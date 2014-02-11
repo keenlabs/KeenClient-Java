@@ -1,0 +1,44 @@
+// Copied from the Android Gradle plugin code.
+private String determineAndroidDirs() {
+    def ant = project.ant
+    def sdkDir
+
+    ant.property(file: 'local.properties')
+
+    // Determine the sdkDir value.
+    // First, let's try the sdk.dir property in local.properties file.
+    try {
+        sdkDir = ant['sdk.dir']
+    } catch (MissingPropertyException e) {
+        sdkDir = null
+    }
+
+    if (sdkDir == null || sdkDir.length() == 0) {
+        // No local.properties and/or no sdk.dir property: let's try ANDROID_HOME
+        sdkDir = System.getenv("ANDROID_HOME")
+        // Propagate it to the Gradle's Ant environment
+        if (sdkDir != null) {
+            ant.setProperty("sdk.dir", sdkDir)
+        }
+    }
+
+    // Check for sdkDir correctly valued, and in case throw an error
+    if (sdkDir == null || sdkDir.length() == 0) {
+        throw new MissingPropertyException("Unable to find location of Android SDK. Please read documentation.")
+    }
+
+    return sdkDir
+}
+
+def sdkDir = determineAndroidDirs()
+// TODO: Handle Android SDK version robustly.
+def androidJar = new File(sdkDir, '/platforms/android-19/android.jar')
+
+dependencies {
+    compile files(androidJar)
+    testCompile 'org.mockito:mockito-all:1.9.5'
+}
+
+test {
+    include '**/*Test.class'
+}

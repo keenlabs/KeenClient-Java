@@ -1,3 +1,8 @@
+allprojects {
+    group = 'io.keen.client'
+    version = '2.0'
+}
+
 subprojects {
     apply plugin: 'java'
 
@@ -9,11 +14,25 @@ subprojects {
         testCompile 'junit:junit:4.11'
     }
 
-    version = '2.0'
-
     jar {
         manifest {
             attributes("Implementation-Vendor": "Keen.io", "Implementation-Version": version)
         }
     }
+}
+
+project(':android') {
+    dependencies {
+        compile project(':core')
+    }
+}
+
+project(':java') {
+    dependencies {
+        compile project(':core')
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.10'
 }
