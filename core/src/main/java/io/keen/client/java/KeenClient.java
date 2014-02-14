@@ -17,8 +17,8 @@ import java.util.concurrent.Executor;
 
 import io.keen.client.java.exceptions.InvalidEventCollectionException;
 import io.keen.client.java.exceptions.InvalidEventException;
-import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
+import io.keen.client.java.exceptions.ServerException;
 
 /**
  * KeenClient has static methods to return managed instances of itself and instance methods to collect new events
@@ -68,6 +68,10 @@ public class KeenClient {
         return ClientSingleton.INSTANCE.client;
     }
 
+    public static void setDebugMode(boolean isDebugMode) {
+        KeenClient.isDebugMode = isDebugMode;
+    }
+
     ///// STATIC INITIALIZATION /////
 
     /*
@@ -109,10 +113,14 @@ public class KeenClient {
      * @param eventCollection The name of the event collection you want to put this event into.
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see docs).
      *                        Nested Maps and lists are acceptable (and encouraged!).
-     * @throws KeenException
      */
-    public void addEvent(String eventCollection, Map<String, Object> event) throws KeenException {
-        addEvent(eventCollection, event, null, null);
+    public void addEvent(String eventCollection, Map<String, Object> event) {
+        addEvent(eventCollection, event, null);
+    }
+
+    public void addEvent(String eventCollection, Map<String, Object> event,
+                         Map<String, Object> keenProperties) {
+        addEvent(eventCollection, event, keenProperties, null);
     }
 
     /**
@@ -124,99 +132,147 @@ public class KeenClient {
      *                        Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
      *                        ex: "timestamp" -> Calendar.getInstance()
-     * @param callback        An instance of AddEventCallback. Will invoke onSuccess when adding the event succeeds.
+     * @param callback        An instance of KeenCallback. Will invoke onSuccess when adding the event succeeds.
      *                        Will invoke onError when adding the event fails.
-     * @throws KeenException
      */
-    public void addEvent(String eventCollection, Map<String, Object> event, Map<String, Object> keenProperties,
-                         AddEventCallback callback) throws KeenException {
-        // Build the event
-        Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+    public void addEvent(String eventCollection, Map<String, Object> event,
+                         Map<String, Object> keenProperties, KeenCallback callback) {
 
-        try {
-            String response = publish(eventCollection, newEvent);
-            if (response == null) {
-                // TODO: Handle failure.
-            } else {
-                // TODO: Handle success.
-            }
-        } catch (IOException e) {
-            // TODO: How should this be handled?
-            KeenLogging.log("Failed to serialize event");
+        if (!isActive) {
+            handleLibraryInactive(callback);
+            return;
         }
 
-        // TODO: Use the callback.
+        try {
+            // Build the event.
+            Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+
+            // Publish the event.
+            String response = publish(eventCollection, newEvent);
+            // TODO: Validate the response?
+            handleSuccess(callback);
+        } catch (Exception e) {
+            handleFailure(callback, e);
+        }
     }
 
-    public void addEventAsync(final String eventCollection, final Map<String, Object> event) throws KeenException {
-        publishExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    addEvent(eventCollection, event);
-                } catch (KeenException e) {
-                    // TODO: Decide how to handle exceptions here.
+    public void addEventAsync(String eventCollection, Map<String, Object> event) {
+        addEventAsync(eventCollection, event, null);
+    }
+
+    public void addEventAsync(String eventCollection, Map<String, Object> event,
+                              final Map<String, Object> keenProperties) {
+        addEventAsync(eventCollection, event, keenProperties, null);
+    }
+
+    public void addEventAsync(final String eventCollection, final Map<String, Object> event,
+                              final Map<String, Object> keenProperties, final KeenCallback callback) {
+
+        if (!isActive) {
+            handleLibraryInactive(callback);
+            return;
+        }
+
+        // Wrap the asynchronous execute in a try/catch block in case the executor throws a
+        // RejectedExecutionException (or anything else).
+        try {
+            publishExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    addEvent(eventCollection, event, keenProperties, callback);
                 }
-            }
-        });
+            });
+        } catch (Exception e) {
+            handleFailure(callback, e);
+        }
     }
 
-    public void queueEvent(String eventCollection, Map<String, Object> event) throws KeenException {
+    public void queueEvent(String eventCollection, Map<String, Object> event) {
         queueEvent(eventCollection, event, null);
     }
 
     public void queueEvent(String eventCollection, Map<String, Object> event,
-                           Map<String, Object> keenProperties) throws KeenException {
-        // Build the event
-        Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+                           Map<String, Object> keenProperties) {
+        queueEvent(eventCollection, event, keenProperties, null);
+    }
+
+    public void queueEvent(String eventCollection, Map<String, Object> event,
+                           Map<String, Object> keenProperties, final KeenCallback callback) {
+
+        if (!isActive) {
+            handleLibraryInactive(callback);
+            return;
+        }
 
         OutputStreamWriter writer = null;
         try {
+            // Build the event
+            Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+
+            // Write the event out to the event store.
             OutputStream out = eventStore.getCacheOutputStream(eventCollection);
             writer = new OutputStreamWriter(out, ENCODING);
             jsonHandler.writeJson(writer, newEvent);
-        } catch (IOException e) {
-            // TODO: How should this be handled?
-            KeenLogging.log("Failed to serialize event");
+            handleSuccess(callback);
+        } catch (Exception e) {
+            handleFailure(callback, e);
         } finally {
             KeenUtils.closeQuietly(writer);
         }
     }
 
-    public void sendQueuedEvents() throws KeenException {
+    public void sendQueuedEvents() {
         sendQueuedEvents(null);
     }
 
-    // TODO: Refactor AddEventCallback to a more generic callback?
-    public void sendQueuedEvents(AddEventCallback callback) throws KeenException {
+    public void sendQueuedEvents(KeenCallback callback) {
+
+        if (!isActive) {
+            handleLibraryInactive(callback);
+            return;
+        }
+
         try {
             KeenEventStore.CacheEntries entries = eventStore.retrieveCached();
             Map<String, List<Map<String, Object>>> events = entries.events;
             String response = publishAll(events);
-            if (response == null) {
-                // TODO: Handle request failure.
-            } else {
-                handleAddEventsResponse(entries.handles, response);
-            }
-        } catch (IOException e) {
-            // TODO: How should this be handled?
-            KeenLogging.log("Failed to serialize event");
-        }
-
-        // TODO: Use callback.
-    }
-
-    public void sendQueuedEventsAsync() throws KeenException {
-        publishExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
+            if (response != null) {
                 try {
-                    sendQueuedEvents();
-                } catch (KeenException e) {
-                    // TODO: Return this or call a handler or something?
+                    handleAddEventsResponse(entries.handles, response);
+                } catch (Exception e) {
+                    // Errors handling the response are non-fatal; just log them.
+                    KeenLogging.log("Error handling response to batch publish: " + e.getMessage());
                 }
             }
-        });
+            handleSuccess(callback);
+        } catch (Exception e) {
+            handleFailure(callback, e);
+        }
+    }
+
+    public void sendQueuedEventsAsync() {
+        sendQueuedEventsAsync(null);
+    }
+
+    public void sendQueuedEventsAsync(final KeenCallback callback) {
+
+        if (!isActive) {
+            handleLibraryInactive(callback);
+            return;
+        }
+
+        // Wrap the asynchronous execute in a try/catch block in case the executor throws a
+        // RejectedExecutionException (or anything else).
+        try {
+            publishExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    sendQueuedEvents(callback);
+                }
+            });
+        } catch (Exception e) {
+            handleFailure(callback, e);
+        }
     }
 
     /**
@@ -355,6 +411,14 @@ public class KeenClient {
 
     ///// DEFAULT ACCESS STATIC METHODS /////
 
+    /*
+     * The methods in this section are used to initialize the pluggable interfaces used by the Keen
+     * library to interact with the runtime, such as reading/writing JSON and caching events in
+     * between publishing. These are default access because they are not intended to be used by
+     * external callers; instead, clients of the library should use a KeenInitializer to
+     * configure these interfaces.
+     */
+
     static KeenJsonHandler getJsonHandler() {
         return jsonHandler;
     }
@@ -412,7 +476,7 @@ public class KeenClient {
     ///// PROTECTED METHODS /////
 
     protected Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
-                                              Map<String, Object> keenProperties) throws KeenException {
+                                              Map<String, Object> keenProperties) {
         if (getWriteKey() == null) {
             throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
         }
@@ -462,16 +526,20 @@ public class KeenClient {
         KeenClient client;
     }
 
-    ///// PRIVATE STATIC FIELDS /////
-
-    private static Executor publishExecutor;
-    private static KeenEventStore eventStore;
-    private static KeenJsonHandler jsonHandler;
-
     ///// PRIVATE CONSTANTS /////
 
     private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static final String ENCODING = "UTF-8";
+
+    ///// PRIVATE STATIC FIELDS /////
+
+    // TODO: Convert this class to a true singleton and make this fields non-static.
+    private static Executor publishExecutor;
+    private static KeenEventStore eventStore;
+    private static KeenJsonHandler jsonHandler;
+    // TODO: Set this flag to false if the library is not operational for any reason.
+    private static boolean isActive = true;
+    private static boolean isDebugMode;
 
     ///// PRIVATE FIELDS /////
 
@@ -482,9 +550,46 @@ public class KeenClient {
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
+    ///// PRIVATE STATIC METHODS /////
+
+    private static void handleSuccess(KeenCallback callback) {
+        if (callback != null) {
+            try {
+                callback.onSuccess();
+            } catch (Exception userException) {
+                // Do nothing.
+            }
+        }
+    }
+
+    private static void handleFailure(KeenCallback callback, Exception e) {
+        if (isDebugMode) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } else {
+            KeenLogging.log("Encountered error: " + e.getMessage());
+            if (callback != null) {
+                try {
+                    callback.onFailure(e);
+                } catch (Exception userException) {
+                    // Do nothing.
+                }
+            }
+        }
+    }
+
+    // TODO: Cap how many times this failure is reported, and after that just fail silently.
+    private static void handleLibraryInactive(KeenCallback callback) {
+        handleFailure(callback, new IllegalStateException("The Keen library failed to initialize " +
+                "properly and is inactive"));
+    }
+
     ///// PRIVATE METHODS /////
 
-    private void validateEventCollection(String eventCollection) throws InvalidEventCollectionException {
+    private void validateEventCollection(String eventCollection) {
         if (eventCollection == null || eventCollection.length() == 0) {
             throw new InvalidEventCollectionException("You must specify a non-null, " +
                     "non-empty event collection: " + eventCollection);
@@ -498,12 +603,12 @@ public class KeenClient {
         }
     }
 
-    private void validateEvent(Map<String, Object> event) throws InvalidEventException {
+    private void validateEvent(Map<String, Object> event) {
         validateEvent(event, 0);
     }
 
     @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
-    private void validateEvent(Map<String, Object> event, int depth) throws InvalidEventException {
+    private void validateEvent(Map<String, Object> event, int depth) {
         if (depth == 0) {
             if (event == null || event.size() == 0) {
                 throw new InvalidEventException("You must specify a non-null, non-empty event.");
@@ -557,7 +662,10 @@ public class KeenClient {
 
     private synchronized String publishObject(URL url, Map<String, ?> requestData) throws IOException {
         // TODO: Don't do anything if the request data is empty.
-        // KeenLogging.log("No API calls were made because there were no events to upload");
+        if (requestData == null || requestData.size() == 0) {
+            KeenLogging.log("No API calls were made because there were no events to upload");
+            return null;
+        }
 
         // set up the POST
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -576,8 +684,9 @@ public class KeenClient {
             KeenUtils.closeQuietly(writer);
         }
 
+        // Check whether the response succeeded.
         int responseCode = connection.getResponseCode();
-        String response = null;
+        String response = "";
         if (responseCode / 100 == 2) {
             InputStream responseStream = connection.getInputStream();
             try {
@@ -585,19 +694,28 @@ public class KeenClient {
                 KeenLogging.log("Response: " + response);
             } finally {
                 KeenUtils.closeQuietly(responseStream);
+                connection.disconnect();
             }
         } else {
             KeenLogging.log(String.format("Response code was NOT 200. It was: %d", responseCode));
+
+            // Initialize the response to a default string, in case the error message can't be read.
+            response = "Server error: " + responseCode;
+
+            // Try to read the error message.
             InputStream errorStream = connection.getErrorStream();
             try {
-                String responseBody = KeenUtils.convertStreamToString(errorStream);
-                KeenLogging.log(String.format("Response body was: %s", responseBody));
+                response = KeenUtils.convertStreamToString(errorStream);
+                KeenLogging.log(String.format("Error response body was: %s", response));
             } finally {
                 KeenUtils.closeQuietly(errorStream);
+                connection.disconnect();
             }
+
+            // Throw an exception to indicate the request failed.
+            throw new ServerException(response);
         }
 
-        connection.disconnect();
         return response;
     }
 
@@ -641,7 +759,8 @@ public class KeenClient {
     private void handleAddEventsResponse(Map<String, List<Object>> handles, String response) throws IOException {
         // Parse the response into a map.
         StringReader reader = new StringReader(response);
-        Map<String, Object> responseMap = jsonHandler.readJson(reader);
+        Map<String, Object> responseMap;
+        responseMap = jsonHandler.readJson(reader);
 
         // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
         // It's not obvious what the best way is to try and recover from them, but just hoping it
@@ -684,8 +803,13 @@ public class KeenClient {
                 // and ask the event store to remove it.
                 if (removeCacheEntry) {
                     Object handle = collectionHandles.get(index);
-                    // TODO: Error handling?
-                    eventStore.removeFromCache(handle);
+                    // Try to remove the object from the cache. Catch and log exceptions to prevent
+                    // a single failure from derailing the rest of the cleanup.
+                    try {
+                        eventStore.removeFromCache(handle);
+                    } catch (IOException e) {
+                        KeenLogging.log("Failed to remove object '" + handle + "' from cache");
+                    }
                 }
                 index++;
             }

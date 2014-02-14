@@ -7,7 +7,21 @@ package io.keen.client.java.exceptions;
  * @since 2.0.0
  */
 public class KeenInitializationException extends KeenException {
-    public KeenInitializationException(String detailMessage) {
-        super(detailMessage);
+    private static final long serialVersionUID = 891176564876927569L;
+
+    public KeenInitializationException() {
+        super();
+    }
+
+    public KeenInitializationException(Throwable cause) {
+        super(cause);
+    }
+
+    public KeenInitializationException(String message) {
+        super(message);
+    }
+
+    public KeenInitializationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

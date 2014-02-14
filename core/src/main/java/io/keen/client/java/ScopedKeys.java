@@ -35,6 +35,8 @@ public class ScopedKeys {
 
     private static final int BLOCK_SIZE = 32;
 
+    // TODO: Review exceptions from this class.
+
     /**
      * Encrypts the given options with a Keen IO API Key and creates a Scoped Key.
      *

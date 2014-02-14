@@ -193,6 +193,8 @@ public class KeenClientTest {
 
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
+        // TODO: Don't special-case using debug mode here.
+        KeenClient.setDebugMode(true);
         KeenClient client = getClient("508339b0897a2c4282000000", null, null);
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("test key", "test value");
@@ -201,7 +203,9 @@ public class KeenClientTest {
             fail("add event without write key should fail");
         } catch (NoWriteKeyException e) {
             assertEquals("You can't send events to Keen IO if you haven't set a write key.",
-                         e.getLocalizedMessage());
+                    e.getLocalizedMessage());
+        } finally {
+            KeenClient.setDebugMode(false);
         }
     }
 
@@ -326,10 +330,10 @@ public class KeenClientTest {
     }
     */
 
-    class MyCallback implements AddEventCallback {
+    class MyCallback implements KeenCallback {
         final CountDownLatch successLatch;
         final CountDownLatch errorLatch;
-        String errorResponse;
+        Exception e;
 
         MyCallback(CountDownLatch successLatch, CountDownLatch errorLatch) {
             this.successLatch = successLatch;
@@ -342,8 +346,8 @@ public class KeenClientTest {
         }
 
         @Override
-        public void onError(String responseBody) {
-            this.errorResponse = responseBody;
+        public void onFailure(Exception e) {
+            this.e = e;
             errorLatch.countDown();
         }
     }
