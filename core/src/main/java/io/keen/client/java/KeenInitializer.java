@@ -15,21 +15,16 @@ public abstract class KeenInitializer {
     ///// PUBLIC METHODS /////
 
     public synchronized void initialize() throws KeenInitializationException {
-        initialize(true);
-    }
-
-    public synchronized void initialize(boolean createStaticInstance)
-            throws KeenInitializationException {
-        initializeInterfaces();
-        if (createStaticInstance) {
-            KeenClient.createStaticInstance();
-        }
+        initialize(new Environment());
     }
 
     public synchronized void initialize(String projectId, String writeKey, String readKey)
             throws KeenInitializationException {
-        initializeInterfaces();
-        KeenClient.createStaticInstance(projectId, writeKey, readKey);
+        initializeClient();
+        if (projectId != null) {
+            KeenProject defaultProject = new KeenProject(projectId, writeKey, readKey);
+            KeenClient.client().setDefaultProject(defaultProject);
+        }
     }
 
     public synchronized KeenInitializer withJsonHandler(KeenJsonHandler jsonHandler) {
@@ -53,37 +48,35 @@ public abstract class KeenInitializer {
     protected abstract KeenEventStore buildDefaultEventStore() throws KeenInitializationException;
     protected abstract KeenJsonHandler buildDefaultJsonHandler() throws KeenInitializationException;
 
+    ///// DEFAULT ACCESS METHODS /////
+
+    synchronized void initialize(Environment env) {
+        initialize(env.getKeenProjectId(), env.getKeenWriteKey(), env.getKeenReadKey());
+    }
+
     ///// PRIVATE FIELDS /////
 
     // TODO: Make this private once FileEventStore doesn't need it anymore.
     protected KeenJsonHandler jsonHandler;
     private KeenEventStore eventStore;
     private Executor publishExecutor;
-    private boolean isInitializeCalled;
 
     ///// PRIVATE METHODS /////
 
-    private synchronized void initializeInterfaces() throws KeenInitializationException {
-        if (isInitializeCalled) {
-            throw new IllegalStateException("Initialize may only be called once");
-        }
-
+    private synchronized void initializeClient() throws KeenInitializationException {
         if (jsonHandler == null) {
             jsonHandler = buildDefaultJsonHandler();
         }
-        KeenClient.setJsonHandler(jsonHandler);
 
         if (eventStore == null) {
             eventStore = buildDefaultEventStore();
         }
-        KeenClient.setEventStore(eventStore);
 
         if (publishExecutor == null) {
             publishExecutor = buildDefaultPublishExecutor();
         }
-        KeenClient.setPublishExecutor(publishExecutor);
 
-        isInitializeCalled = true;
+        KeenClient.initialize(jsonHandler, eventStore, publishExecutor);
     }
 
 }

@@ -1,5 +1,6 @@
 package io.keen.client.java;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -8,8 +9,11 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import io.keen.client.java.exceptions.KeenException;
+import io.keen.client.java.exceptions.KeenInitializationException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 
 import static org.junit.Assert.assertEquals;
@@ -25,58 +29,35 @@ import static org.junit.Assert.fail;
  */
 public class KeenClientTest {
 
+    private static final KeenProject TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
+            "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
+
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
+        new KeenInitializer() {
+            @Override
+            protected Executor buildDefaultPublishExecutor() throws KeenInitializationException {
+                return Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+            }
+            @Override
+            protected KeenEventStore buildDefaultEventStore() throws KeenInitializationException {
+                return new RamEventStore();
+            }
+            @Override
+            protected KeenJsonHandler buildDefaultJsonHandler() throws KeenInitializationException {
+                return null;
+            }
+        }.initialize();
     }
 
-    @Test
-    public void testEnvironment() {
-        try {
-            KeenClient.client();
-            fail("Shouldn't be able to get client if no environment set.");
-        } catch (IllegalStateException e) {
-        }
-
-        try {
-            KeenClient.createStaticInstance(getEnvironment(null, null, null));
-            KeenClient.client();
-            fail("Shouldn't be able to get client if bad environment used.");
-        } catch (IllegalStateException e) {
-        }
-
-        try {
-            KeenClient.createStaticInstance(getEnvironment(null, "abc", "def"));
-            KeenClient.client();
-            fail("Shouldn't be able to get client if no project id in environment.");
-        } catch (IllegalStateException e) {
-        }
-
-        KeenClient.createStaticInstance(getEnvironment("project_id", "abc", "def"));
-        doClientAssertions("project_id", "abc", "def", KeenClient.client());
-
-        KeenClient.clearStaticInstance();
+    @Before
+    public void setup() {
+        KeenClient.client().setDefaultProject(TEST_PROJECT);
     }
 
-    private Environment getEnvironment(final String projectId, final String writeKey, final String readKey) {
-        return new Environment() {
-            @Override
-            public String getKeenProjectId() {
-                return projectId;
-            }
-
-            @Override
-            public String getKeenWriteKey() {
-                return writeKey;
-            }
-
-            @Override
-            public String getKeenReadKey() {
-                return readKey;
-            }
-        };
-    }
-
+    /*
+    TODO: Re-implement constructor tests.
     @Test
     public void testKeenClientConstructor() {
         runKeenClientConstructorTest(null, null, null, true, "null project id", "Invalid project id specified: null");
@@ -118,6 +99,7 @@ public class KeenClientTest {
         KeenClient client = KeenClient.client();
         doClientAssertions("abc", "def", "ghi", client);
     }
+    */
 
     @Test
     public void testInvalidEventCollection() throws KeenException {
@@ -168,8 +150,8 @@ public class KeenClientTest {
         // now do a basic add
         event.remove("long");
         event.put("valid key", "valid value");
-        KeenClient client = getClient();
-        Map<String, Object> builtEvent = client.validateAndBuildEvent("foo", event, null);
+        KeenClient client = KeenClient.client();
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
         assertNotNull(builtEvent);
         assertEquals("valid value", builtEvent.get("valid key"));
         // also make sure the event has been timestamped
@@ -181,21 +163,22 @@ public class KeenClientTest {
         // an event with a Calendar should work
         Calendar now = Calendar.getInstance();
         event.put("datetime", now);
-        client.validateAndBuildEvent("foo", event, null);
+        client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
 
         // an event with a nested property called "keen" should work
         event = TestUtils.getSimpleEvent();
         Map<String, Object> nested = new HashMap<String, Object>();
         nested.put("keen", "value");
         event.put("nested", nested);
-        client.validateAndBuildEvent("foo", event, null);
+        client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
     }
 
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
         // TODO: Don't special-case using debug mode here.
         KeenClient.setDebugMode(true);
-        KeenClient client = getClient("508339b0897a2c4282000000", null, null);
+        KeenClient client = KeenClient.client();
+        client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, null));
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("test key", "test value");
         try {
@@ -375,11 +358,11 @@ public class KeenClientTest {
 
     private Map<String, Object> runGlobalPropertiesMapTest(Map<String, Object> globalProperties,
                                                            int expectedNumProperties) throws Exception {
-        KeenClient client = getClient();
+        KeenClient client = KeenClient.client();
         client.setGlobalProperties(globalProperties);
         Map<String, Object> event = TestUtils.getSimpleEvent();
         String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
-        Map<String, Object> builtEvent = client.validateAndBuildEvent(eventCollection, event, null);
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), eventCollection, event, null);
         assertEquals(expectedNumProperties + 1, builtEvent.size());
         return builtEvent;
     }
@@ -425,18 +408,18 @@ public class KeenClientTest {
 
     private Map<String, Object> runGlobalPropertiesEvaluatorTest(GlobalPropertiesEvaluator evaluator,
                                                                  int expectedNumProperties) throws Exception {
-        KeenClient client = getClient();
+        KeenClient client = KeenClient.client();
         client.setGlobalPropertiesEvaluator(evaluator);
         Map<String, Object> event = TestUtils.getSimpleEvent();
         String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
-        Map<String, Object> builtEvent = client.validateAndBuildEvent(eventCollection, event, null);
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), eventCollection, event, null);
         assertEquals(expectedNumProperties + 1, builtEvent.size());
         return builtEvent;
     }
 
     @Test
     public void testGlobalPropertiesTogether() throws Exception {
-        KeenClient client = getClient();
+        KeenClient client = KeenClient.client();
 
         // properties from the evaluator should take precedence over properties from the map
         // but properties from the event itself should take precedence over all
@@ -459,7 +442,7 @@ public class KeenClientTest {
 
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("foo", "bar");
-        Map<String, Object> builtEvent = client.validateAndBuildEvent("apples", event, null);
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "apples", event, null);
 
         assertEquals("bar", builtEvent.get("foo"));
         assertEquals(6, builtEvent.get("default property"));
@@ -468,9 +451,9 @@ public class KeenClientTest {
 
     private void runValidateAndBuildEventTest(Map<String, Object> event, String eventCollection, String msg,
                                               String expectedMessage) {
-        KeenClient client = getClient();
+        KeenClient client = KeenClient.client();
         try {
-            client.validateAndBuildEvent(eventCollection, event, null);
+            client.validateAndBuildEvent(client.getDefaultProject(), eventCollection, event, null);
             fail(msg);
         } catch (KeenException e) {
             assertEquals(expectedMessage, e.getLocalizedMessage());
@@ -479,18 +462,15 @@ public class KeenClientTest {
 
     private void doClientAssertions(String expectedProjectId, String expectedWriteKey,
                                     String expectedReadKey, KeenClient client) {
-        assertEquals(expectedProjectId, client.getProjectId());
-        assertEquals(expectedWriteKey, client.getWriteKey());
-        assertEquals(expectedReadKey, client.getReadKey());
+        KeenProject project = client.getDefaultProject();
+        assertEquals(expectedProjectId, project.getProjectId());
+        assertEquals(expectedWriteKey, project.getWriteKey());
+        assertEquals(expectedReadKey, project.getReadKey());
     }
 
-    private KeenClient getClient() {
-        return getClient("508339b0897a2c4282000000", "80ce00d60d6443118017340c42d1cfaf",
-                         "80ce00d60d6443118017340c42d1cfaf");
-    }
-
-    private KeenClient getClient(String projectId, String writeKey, String readKey) {
-        return new KeenClient(projectId, writeKey, readKey);
+    private KeenProject getTestProject() {
+        return new KeenProject("508339b0897a2c4282000000", "80ce00d60d6443118017340c42d1cfaf",
+                "80ce00d60d6443118017340c42d1cfaf");
     }
 
 }

@@ -40,18 +40,16 @@ public class KeenClient {
 
     ///// PUBLIC STATIC METHODS /////
 
+    // TODO: Move this out of the public methods section.
     /**
      * Use this to attempt to initialize the client from environment variables.
      */
-    public static void createStaticInstance() {
-        createStaticInstance(new Environment());
-    }
-
-    /**
-     * TODO: Documentation.
-     */
-    public static void createStaticInstance(String projectId, String writeKey, String readKey) {
-        ClientSingleton.INSTANCE.client = new KeenClient(projectId, writeKey, readKey);
+    static void initialize(KeenJsonHandler jsonHandler, KeenEventStore eventStore,
+                           Executor publishExecutor) {
+        if (ClientSingleton.INSTANCE.client != null) {
+            throw new IllegalStateException("The Keen library is already initialized!");
+        }
+        ClientSingleton.INSTANCE.client = new KeenClient(jsonHandler, eventStore, publishExecutor);
     }
 
     /**
@@ -63,46 +61,13 @@ public class KeenClient {
      */
     public static KeenClient client() {
         if (ClientSingleton.INSTANCE.client == null) {
-            throw new IllegalStateException("Please call KeenClient.initialize() before requesting the shared client.");
+            throw new IllegalStateException("Please call KeenInitializer.initialize() before requesting the shared client.");
         }
         return ClientSingleton.INSTANCE.client;
     }
 
     public static void setDebugMode(boolean isDebugMode) {
-        KeenClient.isDebugMode = isDebugMode;
-    }
-
-    ///// STATIC INITIALIZATION /////
-
-    /*
-     * By default, try to initialize the static client using environment variables. Clients of the
-     * SDK can create a new static instance (which will replace this one) if they choose to.
-     */
-    static {
-        createStaticInstance();
-    }
-
-    ///// PUBLIC CONSTRUCTORS /////
-
-    /**
-     * Call this if your code needs to use more than one Keen project and API Key (or if you don't want to use
-     * the managed, singleton instance provided by this library).
-     *
-     * @param projectId The Keen IO Project ID.
-     * @param writeKey  Your Keen IO Write Key.
-     * @param readKey   Your Keen IO Read Key.
-     */
-    public KeenClient(String projectId, String writeKey, String readKey) {
-        if (projectId == null || projectId.length() == 0) {
-            throw new IllegalArgumentException("Invalid project id specified: " + projectId);
-        }
-
-        this.projectId = projectId;
-        this.writeKey = writeKey;
-        this.readKey = readKey;
-        this.baseUrl = KeenConstants.SERVER_ADDRESS;
-        this.globalPropertiesEvaluator = null;
-        this.globalProperties = null;
+        KeenClient.client().isDebugMode = isDebugMode;
     }
 
     ///// PUBLIC METHODS //////
@@ -120,7 +85,7 @@ public class KeenClient {
 
     public void addEvent(String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties) {
-        addEvent(eventCollection, event, keenProperties, null);
+        addEvent(null, eventCollection, event, keenProperties, null);
     }
 
     /**
@@ -135,7 +100,7 @@ public class KeenClient {
      * @param callback        An instance of KeenCallback. Will invoke onSuccess when adding the event succeeds.
      *                        Will invoke onError when adding the event fails.
      */
-    public void addEvent(String eventCollection, Map<String, Object> event,
+    public void addEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties, KeenCallback callback) {
 
         if (!isActive) {
@@ -143,12 +108,19 @@ public class KeenClient {
             return;
         }
 
+        if (project == null && defaultProject == null) {
+            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            return;
+        }
+        KeenProject useProject = (project == null? defaultProject : project);
+
         try {
             // Build the event.
-            Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+            Map<String, Object> newEvent =
+                    validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Publish the event.
-            String response = publish(eventCollection, newEvent);
+            String response = publish(project, eventCollection, newEvent);
             // TODO: Validate the response?
             handleSuccess(callback);
         } catch (Exception e) {
@@ -162,16 +134,24 @@ public class KeenClient {
 
     public void addEventAsync(String eventCollection, Map<String, Object> event,
                               final Map<String, Object> keenProperties) {
-        addEventAsync(eventCollection, event, keenProperties, null);
+        addEventAsync(null, eventCollection, event, keenProperties, null);
     }
 
-    public void addEventAsync(final String eventCollection, final Map<String, Object> event,
-                              final Map<String, Object> keenProperties, final KeenCallback callback) {
+    public void addEventAsync(final KeenProject project, final String eventCollection,
+                              final Map<String, Object> event,
+                              final Map<String, Object> keenProperties,
+                              final KeenCallback callback) {
 
         if (!isActive) {
             handleLibraryInactive(callback);
             return;
         }
+
+        if (project == null && defaultProject == null) {
+            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            return;
+        }
+        final KeenProject useProject = (project == null? defaultProject : project);
 
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
@@ -179,7 +159,7 @@ public class KeenClient {
             publishExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    addEvent(eventCollection, event, keenProperties, callback);
+                    addEvent(useProject, eventCollection, event, keenProperties, callback);
                 }
             });
         } catch (Exception e) {
@@ -193,10 +173,10 @@ public class KeenClient {
 
     public void queueEvent(String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties) {
-        queueEvent(eventCollection, event, keenProperties, null);
+        queueEvent(null, eventCollection, event, keenProperties, null);
     }
 
-    public void queueEvent(String eventCollection, Map<String, Object> event,
+    public void queueEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties, final KeenCallback callback) {
 
         if (!isActive) {
@@ -204,10 +184,17 @@ public class KeenClient {
             return;
         }
 
+        if (project == null && defaultProject == null) {
+            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            return;
+        }
+        KeenProject useProject = (project == null? defaultProject : project);
+
         OutputStreamWriter writer = null;
         try {
             // Build the event
-            Map<String, Object> newEvent = validateAndBuildEvent(eventCollection, event, keenProperties);
+            Map<String, Object> newEvent =
+                    validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Write the event out to the event store.
             OutputStream out = eventStore.getCacheOutputStream(eventCollection);
@@ -221,21 +208,32 @@ public class KeenClient {
         }
     }
 
+
     public void sendQueuedEvents() {
         sendQueuedEvents(null);
     }
 
-    public void sendQueuedEvents(KeenCallback callback) {
+    public void sendQueuedEvents(KeenProject project) {
+        sendQueuedEvents(project, null);
+    }
+
+    public void sendQueuedEvents(KeenProject project, KeenCallback callback) {
 
         if (!isActive) {
             handleLibraryInactive(callback);
             return;
         }
 
+        if (project == null && defaultProject == null) {
+            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            return;
+        }
+        KeenProject useProject = (project == null? defaultProject : project);
+
         try {
             KeenEventStore.CacheEntries entries = eventStore.retrieveCached();
             Map<String, List<Map<String, Object>>> events = entries.events;
-            String response = publishAll(events);
+            String response = publishAll(useProject, events);
             if (response != null) {
                 try {
                     handleAddEventsResponse(entries.handles, response);
@@ -254,12 +252,22 @@ public class KeenClient {
         sendQueuedEventsAsync(null);
     }
 
-    public void sendQueuedEventsAsync(final KeenCallback callback) {
+    public void sendQueuedEventsAsync(final KeenProject project) {
+        sendQueuedEventsAsync(project, null);
+    }
+
+    public void sendQueuedEventsAsync(final KeenProject project, final KeenCallback callback) {
 
         if (!isActive) {
             handleLibraryInactive(callback);
             return;
         }
+
+        if (project == null && defaultProject == null) {
+            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            return;
+        }
+        final KeenProject useProject = (project == null? defaultProject : project);
 
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
@@ -267,7 +275,7 @@ public class KeenClient {
             publishExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    sendQueuedEvents(callback);
+                    sendQueuedEvents(useProject, callback);
                 }
             });
         } catch (Exception e) {
@@ -276,30 +284,23 @@ public class KeenClient {
     }
 
     /**
-     * Getter for the Keen Project Id associated with this instance of the {@link KeenClient}.
+     * Getter for the default project that this {@link KeenClient} will use if no project is
+     * specified.
      *
-     * @return the Keen Project Id
+     * @return the default project.
      */
-    public String getProjectId() {
-        return projectId;
+    public KeenProject getDefaultProject() {
+        return defaultProject;
     }
 
     /**
-     * Getter for the Keen Write Key associated with this instance of the {@link KeenClient}.
+     * Setter for the default project that this {@link KeenClient} should use if no project is
+     * specified.
      *
-     * @return the Keen Write Key
+     * @param defaultProject the new default project.
      */
-    public String getWriteKey() {
-        return writeKey;
-    }
-
-    /**
-     * Getter for the Keen Read Key associated with this instance of the {@link KeenClient}.
-     *
-     * @return the Keen Read Key
-     */
-    public String getReadKey() {
-        return readKey;
+    public void setDefaultProject(KeenProject defaultProject) {
+        this.defaultProject = defaultProject;
     }
 
     /**
@@ -409,75 +410,12 @@ public class KeenClient {
         this.globalProperties = globalProperties;
     }
 
-    ///// DEFAULT ACCESS STATIC METHODS /////
-
-    /*
-     * The methods in this section are used to initialize the pluggable interfaces used by the Keen
-     * library to interact with the runtime, such as reading/writing JSON and caching events in
-     * between publishing. These are default access because they are not intended to be used by
-     * external callers; instead, clients of the library should use a KeenInitializer to
-     * configure these interfaces.
-     */
-
-    static KeenJsonHandler getJsonHandler() {
-        return jsonHandler;
-    }
-
-    synchronized static void setJsonHandler(KeenJsonHandler jsonHandler) {
-        if (KeenClient.jsonHandler != null) {
-            throw new IllegalStateException("JSON handler can be initialized at most once");
-        }
-        KeenClient.jsonHandler = jsonHandler;
-    }
-
-    static KeenEventStore getEventStore() {
-        return eventStore;
-    }
-
-    synchronized static void setEventStore(KeenEventStore eventStore) {
-        if (KeenClient.eventStore != null) {
-            throw new IllegalStateException("Event store can be initialized at most once");
-        }
-        KeenClient.eventStore = eventStore;
-    }
-
-    static Executor getPublishExecutor() {
-        return publishExecutor;
-    }
-
-    synchronized static void setPublishExecutor(Executor publishExecutor) {
-        if (KeenClient.publishExecutor != null) {
-            throw new IllegalStateException("Publish executor can be initialized at most once");
-        }
-        KeenClient.publishExecutor = publishExecutor;
-    }
-
-    /**
-     * Creates a static instance using the project ID and keys contained in the specified
-     * environment.
-     *
-     * This method is a hook to allow a test environment to inject values into the initialization
-     * process.
-     *
-     * @param env The environment from which to get the project ID and keys.
-     */
-    static void createStaticInstance(Environment env) {
-        if (env.getKeenProjectId() != null) {
-            createStaticInstance(env.getKeenProjectId(),
-                    env.getKeenWriteKey(),
-                    env.getKeenReadKey());
-        }
-    }
-
-    synchronized static void clearStaticInstance() {
-        ClientSingleton.INSTANCE.client = null;
-    }
-
     ///// PROTECTED METHODS /////
 
-    protected Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
-                                              Map<String, Object> keenProperties) {
-        if (getWriteKey() == null) {
+    protected Map<String, Object> validateAndBuildEvent(KeenProject project,
+            String eventCollection, Map<String, Object> event, Map<String, Object> keenProperties) {
+
+        if (project.getWriteKey() == null) {
             throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
         }
 
@@ -519,6 +457,10 @@ public class KeenClient {
         return newEvent;
     }
 
+    protected KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
+    }
+
     ///// PRIVATE TYPES /////
 
     private enum ClientSingleton {
@@ -531,60 +473,34 @@ public class KeenClient {
     private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private static final String ENCODING = "UTF-8";
 
-    ///// PRIVATE STATIC FIELDS /////
-
-    // TODO: Convert this class to a true singleton and make this fields non-static.
-    private static Executor publishExecutor;
-    private static KeenEventStore eventStore;
-    private static KeenJsonHandler jsonHandler;
-    // TODO: Set this flag to false if the library is not operational for any reason.
-    private static boolean isActive = true;
-    private static boolean isDebugMode;
-
     ///// PRIVATE FIELDS /////
 
+    // TODO: Set this flag to false if the library is not operational for any reason.
+    private boolean isActive = true;
+    private boolean isDebugMode;
+    private final Executor publishExecutor;
+    private final KeenEventStore eventStore;
+    private final KeenJsonHandler jsonHandler;
+    private KeenProject defaultProject;
     private String baseUrl;
-    private final String projectId;
-    private final String readKey;
-    private final String writeKey;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
-    ///// PRIVATE STATIC METHODS /////
+    ///// PRIVATE CONSTRUCTORS /////
 
-    private static void handleSuccess(KeenCallback callback) {
-        if (callback != null) {
-            try {
-                callback.onSuccess();
-            } catch (Exception userException) {
-                // Do nothing.
-            }
-        }
-    }
-
-    private static void handleFailure(KeenCallback callback, Exception e) {
-        if (isDebugMode) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
-        } else {
-            KeenLogging.log("Encountered error: " + e.getMessage());
-            if (callback != null) {
-                try {
-                    callback.onFailure(e);
-                } catch (Exception userException) {
-                    // Do nothing.
-                }
-            }
-        }
-    }
-
-    // TODO: Cap how many times this failure is reported, and after that just fail silently.
-    private static void handleLibraryInactive(KeenCallback callback) {
-        handleFailure(callback, new IllegalStateException("The Keen library failed to initialize " +
-                "properly and is inactive"));
+    /**
+     * Constructs the singleton instance of the Keen client. This constructor is private to prevent
+     * additional instances from being created.
+     */
+    private KeenClient(KeenJsonHandler jsonHandler, KeenEventStore eventStore,
+                       Executor publishExecutor) {
+        // TODO: Validate that JSON handler exists?
+        this.jsonHandler = jsonHandler;
+        this.eventStore = eventStore;
+        this.publishExecutor = publishExecutor;
+        this.baseUrl = KeenConstants.SERVER_ADDRESS;
+        this.globalPropertiesEvaluator = null;
+        this.globalProperties = null;
     }
 
     ///// PRIVATE METHODS /////
@@ -644,24 +560,26 @@ public class KeenClient {
         }
     }
 
-    private String publish(String eventCollection, Map<String, Object> event) throws IOException {
+    private String publish(KeenProject project, String eventCollection,
+                           Map<String, Object> event) throws IOException {
         // just using basic JDK HTTP library
         String urlString = String.format("%s/%s/projects/%s/events/%s", getBaseUrl(),
-                KeenConstants.API_VERSION, getProjectId(), eventCollection);
+                KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
         URL url = new URL(urlString);
-        return publishObject(url, event);
+        return publishObject(project, url, event);
     }
 
-    private String publishAll(Map<String, List<Map<String, Object>>> events) throws IOException {
+    private String publishAll(KeenProject project,
+                              Map<String, List<Map<String, Object>>> events) throws IOException {
         // just using basic JDK HTTP library
         String urlString = String.format("%s/%s/projects/%s/events", getBaseUrl(),
-                KeenConstants.API_VERSION, getProjectId());
+                KeenConstants.API_VERSION, project.getProjectId());
         URL url = new URL(urlString);
-        return publishObject(url, events);
+        return publishObject(project, url, events);
     }
 
-    private synchronized String publishObject(URL url, Map<String, ?> requestData) throws IOException {
-        // TODO: Don't do anything if the request data is empty.
+    private synchronized String publishObject(KeenProject project, URL url,
+                                              Map<String, ?> requestData) throws IOException {
         if (requestData == null || requestData.size() == 0) {
             KeenLogging.log("No API calls were made because there were no events to upload");
             return null;
@@ -673,7 +591,7 @@ public class KeenClient {
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Authorization", getWriteKey());
+        connection.setRequestProperty("Authorization", project.getWriteKey());
 
         // write JSON to the output stream
         OutputStreamWriter writer = null;
@@ -686,7 +604,7 @@ public class KeenClient {
 
         // Check whether the response succeeded.
         int responseCode = connection.getResponseCode();
-        String response = "";
+        String response = null;
         if (responseCode / 100 == 2) {
             InputStream responseStream = connection.getInputStream();
             try {
@@ -718,36 +636,6 @@ public class KeenClient {
 
         return response;
     }
-
-    /*
-    TODO: Is some of this logic useful for processing the error response? If so, make use of it
-    from publish and/or publishObject. Otherwise, remove this dead code.
-
-    private boolean parseAddEventResponse(String response) throws IOException {
-        // Parse the response into a map.
-        StringReader reader = new StringReader(response);
-        Map<String, Object> responseMap = interfaces.jsonHandler.readJson(reader);
-
-        // TODO: Move this logic into a shared helper? Unfortunately this is a bit tricky because
-        // of the different structure of the error responses.
-        boolean success = (Boolean) responseMap.get(KeenConstants.CREATED_PARAM);
-        if (!success) {
-            // grab error code and description
-            String errorCode = (String) responseMap.get(KeenConstants.ERROR_CODE_PARAM);
-            String description = (String) responseMap.get(KeenConstants.MESSAGE_PARAM);
-            if (errorCode.equals(KeenConstants.INVALID_COLLECTION_NAME_ERROR) ||
-                    errorCode.equals(KeenConstants.INVALID_PROPERTY_NAME_ERROR) ||
-                    errorCode.equals(KeenConstants.INVALID_PROPERTY_VALUE_ERROR)) {
-                KeenLogging.log("An invalid event was found. Deleting it. Error: " + description);
-            } else {
-                KeenLogging.log(String.format("The event could not be inserted for some reason. " +
-                        "Error name and description: %s %s", errorCode, description));
-            }
-        }
-
-        return success;
-    }
-    */
 
     /**
      *
@@ -814,6 +702,41 @@ public class KeenClient {
                 index++;
             }
         }
+    }
+
+    private void handleSuccess(KeenCallback callback) {
+        if (callback != null) {
+            try {
+                callback.onSuccess();
+            } catch (Exception userException) {
+                // Do nothing.
+            }
+        }
+    }
+
+    private void handleFailure(KeenCallback callback, Exception e) {
+        if (isDebugMode) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } else {
+            KeenLogging.log("Encountered error: " + e.getMessage());
+            if (callback != null) {
+                try {
+                    callback.onFailure(e);
+                } catch (Exception userException) {
+                    // Do nothing.
+                }
+            }
+        }
+    }
+
+    // TODO: Cap how many times this failure is reported, and after that just fail silently.
+    private void handleLibraryInactive(KeenCallback callback) {
+        handleFailure(callback, new IllegalStateException("The Keen library failed to initialize " +
+                "properly and is inactive"));
     }
 
 }
