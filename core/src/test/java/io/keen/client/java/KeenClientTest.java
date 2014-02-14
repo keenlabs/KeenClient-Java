@@ -39,23 +39,23 @@ public class KeenClientTest {
         }
 
         try {
-            KeenClient.initialize(getEnvironment(null, null, null));
+            KeenClient.createStaticInstance(getEnvironment(null, null, null));
             KeenClient.client();
             fail("Shouldn't be able to get client if bad environment used.");
         } catch (IllegalStateException e) {
         }
 
         try {
-            KeenClient.initialize(getEnvironment(null, "abc", "def"));
+            KeenClient.createStaticInstance(getEnvironment(null, "abc", "def"));
             KeenClient.client();
             fail("Shouldn't be able to get client if no project id in environment.");
         } catch (IllegalStateException e) {
         }
 
-        KeenClient.initialize(getEnvironment("project_id", "abc", "def"));
+        KeenClient.createStaticInstance(getEnvironment("project_id", "abc", "def"));
         doClientAssertions("project_id", "abc", "def", KeenClient.client());
 
-        KeenClient.ClientSingleton.INSTANCE.client = null;
+        KeenClient.clearStaticInstance();
     }
 
     private Environment getEnvironment(final String projectId, final String writeKey, final String readKey) {
@@ -109,12 +109,12 @@ public class KeenClientTest {
 
         // make sure bad values error correctly
         try {
-            KeenClient.initialize(null, null, null);
+            KeenClient.createStaticInstance(null, null, null);
             fail("can't use bad values");
         } catch (IllegalArgumentException e) {
         }
 
-        KeenClient.initialize("abc", "def", "ghi");
+        KeenClient.createStaticInstance("abc", "def", "ghi");
         KeenClient client = KeenClient.client();
         doClientAssertions("abc", "def", "ghi", client);
     }

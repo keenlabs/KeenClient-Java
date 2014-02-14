@@ -38,6 +38,7 @@ public class FileEventStore implements KeenEventStore {
      * @param jsonHandler The JSON handler to use to write events to files, and to read them back.
      * @throws IOException If the provided {@code root} isn't
      */
+    // TODO: Try to refactor this so a JsonHandler is not required in the event store logic.
     public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
         // TODO: Validate the root.
         this.root = root;

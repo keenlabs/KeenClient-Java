@@ -38,79 +38,19 @@ import io.keen.client.java.exceptions.NoWriteKeyException;
  */
 public class KeenClient {
 
-    private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-
-    private static final String ENCODING = "UTF-8";
-
-    private static KeenJsonHandler jsonHandler;
-    public static KeenJsonHandler getJsonHandler() {
-        return jsonHandler;
-    }
-    public synchronized static void setJsonHandler(KeenJsonHandler jsonHandler) {
-        if (KeenClient.jsonHandler != null) {
-            throw new IllegalStateException("JSON handler can be initialized at most once");
-        }
-        KeenClient.jsonHandler = jsonHandler;
-    }
-    private static KeenEventStore eventStore;
-    public static KeenEventStore getEventStore() {
-        return eventStore;
-    }
-    public synchronized static void setEventStore(KeenEventStore eventStore) {
-        if (KeenClient.eventStore != null) {
-            throw new IllegalStateException("Event store can be initialized at most once");
-        }
-        KeenClient.eventStore = eventStore;
-    }
-    private static Executor publishExecutor;
-    public static Executor getPublishExecutor() {
-        return publishExecutor;
-    }
-    public synchronized static void setPublishExecutor(Executor publishExecutor) {
-        if (KeenClient.publishExecutor != null) {
-            throw new IllegalStateException("Publish executor can be initialized at most once");
-        }
-        KeenClient.publishExecutor = publishExecutor;
-    }
-
-    static {
-        initialize();
-    }
-
-    enum ClientSingleton {
-        INSTANCE;
-        KeenClient client;
-    }
+    ///// PUBLIC STATIC METHODS /////
 
     /**
      * Use this to attempt to initialize the client from environment variables.
      */
-    public static void initialize() {
-        initialize(new Environment());
+    public static void createStaticInstance() {
+        createStaticInstance(new Environment());
     }
 
     /**
-     * Used for tests.
+     * TODO: Documentation.
      */
-    static void initialize(Environment env) {
-        if (env.getKeenProjectId() != null) {
-            KeenClient.initialize(env.getKeenProjectId(),
-                    env.getKeenWriteKey(),
-                    env.getKeenReadKey());
-        }
-    }
-
-    /**
-     * Call this to initialize the singleton instance of KeenClient and set its Project Id.
-     * <p/>
-     * You'll generally want to call this at the very beginning of your application's lifecycle. Once you've called
-     * this, you can then call KeenClient.client() afterwards.
-     *
-     * @param projectId The Keen IO Project Id.
-     * @param writeKey  Your Keen IO Write Key.
-     * @param readKey   Your Keen IO Read Key.
-     */
-    public static void initialize(String projectId, String writeKey, String readKey) {
+    public static void createStaticInstance(String projectId, String writeKey, String readKey) {
         ClientSingleton.INSTANCE.client = new KeenClient(projectId, writeKey, readKey);
     }
 
@@ -128,14 +68,17 @@ public class KeenClient {
         return ClientSingleton.INSTANCE.client;
     }
 
-    /////////////////////////////////////////////
+    ///// STATIC INITIALIZATION /////
 
-    private final String projectId;
-    private final String writeKey;
-    private final String readKey;
-    private String baseUrl;
-    private GlobalPropertiesEvaluator globalPropertiesEvaluator;
-    private Map<String, Object> globalProperties;
+    /*
+     * By default, try to initialize the static client using environment variables. Clients of the
+     * SDK can create a new static instance (which will replace this one) if they choose to.
+     */
+    static {
+        createStaticInstance();
+    }
+
+    ///// PUBLIC CONSTRUCTORS /////
 
     /**
      * Call this if your code needs to use more than one Keen project and API Key (or if you don't want to use
@@ -158,7 +101,7 @@ public class KeenClient {
         this.globalProperties = null;
     }
 
-    /////////////////////////////////////////////
+    ///// PUBLIC METHODS //////
 
     /**
      * Call this any time you want to add an event that will be sent to the Keen IO server.
@@ -410,6 +353,64 @@ public class KeenClient {
         this.globalProperties = globalProperties;
     }
 
+    ///// DEFAULT ACCESS STATIC METHODS /////
+
+    static KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
+    }
+
+    synchronized static void setJsonHandler(KeenJsonHandler jsonHandler) {
+        if (KeenClient.jsonHandler != null) {
+            throw new IllegalStateException("JSON handler can be initialized at most once");
+        }
+        KeenClient.jsonHandler = jsonHandler;
+    }
+
+    static KeenEventStore getEventStore() {
+        return eventStore;
+    }
+
+    synchronized static void setEventStore(KeenEventStore eventStore) {
+        if (KeenClient.eventStore != null) {
+            throw new IllegalStateException("Event store can be initialized at most once");
+        }
+        KeenClient.eventStore = eventStore;
+    }
+
+    static Executor getPublishExecutor() {
+        return publishExecutor;
+    }
+
+    synchronized static void setPublishExecutor(Executor publishExecutor) {
+        if (KeenClient.publishExecutor != null) {
+            throw new IllegalStateException("Publish executor can be initialized at most once");
+        }
+        KeenClient.publishExecutor = publishExecutor;
+    }
+
+    /**
+     * Creates a static instance using the project ID and keys contained in the specified
+     * environment.
+     *
+     * This method is a hook to allow a test environment to inject values into the initialization
+     * process.
+     *
+     * @param env The environment from which to get the project ID and keys.
+     */
+    static void createStaticInstance(Environment env) {
+        if (env.getKeenProjectId() != null) {
+            createStaticInstance(env.getKeenProjectId(),
+                    env.getKeenWriteKey(),
+                    env.getKeenReadKey());
+        }
+    }
+
+    synchronized static void clearStaticInstance() {
+        ClientSingleton.INSTANCE.client = null;
+    }
+
+    ///// PROTECTED METHODS /////
+
     protected Map<String, Object> validateAndBuildEvent(String eventCollection, Map<String, Object> event,
                                               Map<String, Object> keenProperties) throws KeenException {
         if (getWriteKey() == null) {
@@ -453,6 +454,35 @@ public class KeenClient {
         newEvent.putAll(event);
         return newEvent;
     }
+
+    ///// PRIVATE TYPES /////
+
+    private enum ClientSingleton {
+        INSTANCE;
+        KeenClient client;
+    }
+
+    ///// PRIVATE STATIC FIELDS /////
+
+    private static Executor publishExecutor;
+    private static KeenEventStore eventStore;
+    private static KeenJsonHandler jsonHandler;
+
+    ///// PRIVATE CONSTANTS /////
+
+    private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private static final String ENCODING = "UTF-8";
+
+    ///// PRIVATE FIELDS /////
+
+    private String baseUrl;
+    private final String projectId;
+    private final String readKey;
+    private final String writeKey;
+    private GlobalPropertiesEvaluator globalPropertiesEvaluator;
+    private Map<String, Object> globalProperties;
+
+    ///// PRIVATE METHODS /////
 
     private void validateEventCollection(String eventCollection) throws InvalidEventCollectionException {
         if (eventCollection == null || eventCollection.length() == 0) {

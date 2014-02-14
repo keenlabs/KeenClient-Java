@@ -7,9 +7,10 @@ import java.io.IOException;
 import java.util.concurrent.Executor;
 
 import io.keen.client.java.FileEventStore;
-import io.keen.client.java.KeenClient;
 import io.keen.client.java.KeenEventStore;
+import io.keen.client.java.KeenInitializer;
 import io.keen.client.java.KeenJsonHandler;
+import io.keen.client.java.exceptions.KeenInitializationException;
 
 /**
  * TODO: Documentation
@@ -17,64 +18,44 @@ import io.keen.client.java.KeenJsonHandler;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class AndroidKeenInitializer {
+public class AndroidKeenInitializer extends KeenInitializer {
 
-    private final Context context;
-    private KeenJsonHandler jsonHandler;
-    private KeenEventStore eventStore;
-    private Executor publishExecutor;
-    private boolean isInitializeCalled;
+    ///// CONSTRUCTORS /////
 
     public AndroidKeenInitializer(Context context) {
         // TODO: Is it right to use the application context? Probably but revisit this just in case.
         this.context = context.getApplicationContext();
     }
 
-    public synchronized void initialize(String projectId, String writeKey, String readKey) {
-        if (isInitializeCalled) {
-            throw new IllegalStateException("Initialize may only be called once");
-        }
+    ///// KeenInitializer METHODS /////
 
-        if (jsonHandler == null) {
-            jsonHandler = new AndroidJsonHandler();
-        }
-
-        if (eventStore == null) {
-            try {
-                eventStore = new FileEventStore(getDeviceCacheDirectory(), jsonHandler);
-            } catch (IOException e) {
-                // TODO: throw KeenInitializationException?
-            }
-        }
-
-        if (publishExecutor == null) {
-            publishExecutor = new AsyncTaskExecutor();
-        }
-
-        KeenClient.initialize(projectId, writeKey, readKey);
-        isInitializeCalled = true;
+    @Override
+    protected Executor buildDefaultPublishExecutor() {
+        return new AsyncTaskExecutor();
     }
 
-    public synchronized AndroidKeenInitializer withJsonHandler(KeenJsonHandler jsonHandler) {
-        this.jsonHandler = jsonHandler;
-        return this;
+    @Override
+    protected KeenEventStore buildDefaultEventStore() throws KeenInitializationException {
+        try {
+            return new FileEventStore(getDeviceCacheDirectory(), jsonHandler);
+        } catch (IOException e) {
+            // TODO: throw KeenInitializationException?
+            throw new KeenInitializationException("Error building file event store");
+        }
     }
 
-    public synchronized AndroidKeenInitializer withEventStore(KeenEventStore eventStore) {
-        this.eventStore = eventStore;
-        return this;
+    @Override
+    protected KeenJsonHandler buildDefaultJsonHandler() {
+        return new AndroidJsonHandler();
     }
 
-    public synchronized AndroidKeenInitializer withPublishExecutor(Executor publishExecutor) {
-        this.publishExecutor = publishExecutor;
-        return this;
-    }
+    ///// PRIVATE FIELDS /////
 
-    /////////////////////////////////////////////
-    // FILE IO
-    /////////////////////////////////////////////
+    private final Context context;
 
-    File getDeviceCacheDirectory() {
+    ///// PRIVATE METHODS /////
+
+    private File getDeviceCacheDirectory() {
         return context.getCacheDir();
     }
 
