@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -16,10 +17,114 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * DOCUMENT
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @since 2.0.0
  */
 public class FileEventStore implements KeenEventStore {
+
+    ///// PUBLIC CONSTRUCTORS /////
+
+    /**
+     * Constructs a new File-based event store.
+     *
+     * @param root The root directory in which to store queued event files.
+     * @param jsonHandler The JSON handler to use to write events to files, and to read them back.
+     * @throws IOException If the provided {@code root} isn't an existing directory.
+     */
+    public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
+        if (!root.exists() || !root.isDirectory()) {
+            throw new IOException("Event store root '" + root + "' must exist and be a directory");
+        }
+
+        this.root = root;
+        this.jsonHandler = jsonHandler;
+    }
+
+    ///// PUBLIC METHODS /////
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object store(String eventCollection, Map<String, Object> event) throws IOException {
+        // Prepare the collection cache directory.
+        prepareCache(eventCollection);
+
+        // Create the cache file.
+        Calendar timestamp = Calendar.getInstance();
+        File cacheFile = getFileForEvent(eventCollection, timestamp);
+
+        // Write the event to the cache file.
+        OutputStream out = new FileOutputStream(cacheFile);
+        jsonHandler.writeJson(new OutputStreamWriter(out, ENCODING), event);
+
+        // Return the file as the handle to use for retrieving/removing the event.
+        return cacheFile;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, Object> get(Object handle) throws IOException {
+        if (!(handle instanceof File)) {
+            throw new IllegalArgumentException("Expected File, but was " + handle.getClass());
+        }
+
+        File eventFile = (File) handle;
+        return readMapFromJsonFile(eventFile);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void remove(Object handle) throws IOException {
+        if (!(handle instanceof File)) {
+            throw new IllegalArgumentException("Expected File, but was " + handle.getClass());
+        }
+
+        File eventFile = (File) handle;
+        if (!eventFile.delete()) {
+            KeenLogging.log(String.format("CRITICAL ERROR: Could not remove event at %s",
+                    eventFile.getAbsolutePath()));
+        } else {
+            KeenLogging.log(String.format("Successfully deleted file: %s", eventFile.getAbsolutePath()));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, List<Object>> getHandles() throws IOException {
+        File[] directories = getKeenCacheSubDirectories();
+
+        Map<String, List<Object>> handleMap = new HashMap<String, List<Object>>();
+        if (directories != null) {
+            // iterate through the directories
+            for (File directory : directories) {
+                String collectionName = directory.getName();
+                File[] files = getFilesInDir(directory);
+                if (files != null) {
+                    List<Object> handleList = new ArrayList<Object>();
+                    handleList.addAll(Arrays.asList(files));
+                    handleMap.put(collectionName, handleList);
+                } else {
+                    KeenLogging.log("Directory was null while getting event handles: " + collectionName);
+                }
+            }
+        }
+
+        return handleMap;
+    }
+
+    ///// PRIVATE CONSTANTS /////
+
+    /** The encoding to use when writing events to files. */
+    private static final String ENCODING = "UTF-8";
 
     /** The number of events that can be stored for a single collection before aging them out. */
     private static final int MAX_EVENTS_PER_COLLECTION = 10000;
@@ -27,29 +132,177 @@ public class FileEventStore implements KeenEventStore {
     /** The number of events to drop when aging out. */
     private static final int NUMBER_EVENTS_TO_FORGET = 100;
 
+    ///// PRIVATE FIELDS /////
+
+    private boolean isRunningTests;
     private final File root;
     private final KeenJsonHandler jsonHandler;
-    private boolean isRunningTests;
+
+    ///// PRIVATE METHODS /////
 
     /**
-     * Constructs a new File-based event store.
+     * DOCUMENT
      *
-     * @param root The root directory in which to store queued event files.
-     * @param jsonHandler The JSON handler to use to write events to files, and to read them back.
-     * @throws IOException If the provided {@code root} isn't
+     * @param jsonFile
+     * @return
      */
-    // TODO: Try to refactor this so a JsonHandler is not required in the event store logic.
-    public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
-        // TODO: Validate the root.
-        this.root = root;
-        this.jsonHandler = jsonHandler;
+    private Map<String, Object> readMapFromJsonFile(File jsonFile) {
+        try {
+            return jsonHandler.readJson(new FileReader(jsonFile));
+        } catch (IOException e) {
+            KeenLogging.log(String.format(
+                    "There was an error when attempting to deserialize the contents of %s into JSON.",
+                    jsonFile.getAbsolutePath()));
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * DOCUMENT
+     *
+     * @return
      */
-    @Override
-    public OutputStream getCacheOutputStream(String eventCollection) throws IOException {
+    private File getKeenCacheDirectory() throws IOException {
+        File file = new File(root, "keen");
+        if (!file.exists()) {
+            boolean dirMade = file.mkdir();
+            if (!dirMade) {
+                throw new IOException("Could not make keen cache directory at: " + file.getAbsolutePath());
+            }
+        }
+        return file;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    private File[] getKeenCacheSubDirectories() throws IOException {
+        return getKeenCacheDirectory().listFiles(new FileFilter() { // Can return null if there are no events
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        });
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param dir
+     * @return
+     */
+    private File[] getFilesInDir(File dir) {
+        return dir.listFiles(new FileFilter() {
+            public boolean accept(File file) {
+                return file.isFile();
+            }
+        });
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @return
+     */
+    private File getEventDirectoryForEventCollection(String eventCollection) throws IOException {
+        File file = new File(getKeenCacheDirectory(), eventCollection);
+        if (!file.exists()) {
+            KeenLogging.log("Cache directory for event collection '" + eventCollection + "' doesn't exist. " +
+                    "Creating it.");
+            if (!file.mkdirs()) {
+                KeenLogging.log("Can't create dir: " + file.getAbsolutePath());
+            }
+        }
+        return file;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @return
+     */
+    private File[] getFilesForEventCollection(String eventCollection) throws IOException {
+        return getFilesInDir(getEventDirectoryForEventCollection(eventCollection));
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param timestamp
+     * @return
+     */
+    private File getFileForEvent(String eventCollection, Calendar timestamp) throws IOException {
+        File dir = getEventDirectoryForEventCollection(eventCollection);
+        int counter = 0;
+        File eventFile = getNextFileForEvent(dir, timestamp, counter);
+        while (eventFile.exists()) {
+            eventFile = getNextFileForEvent(dir, timestamp, counter);
+            counter++;
+        }
+        return eventFile;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param dir
+     * @param timestamp
+     * @param counter
+     * @return
+     */
+    private File getNextFileForEvent(File dir, Calendar timestamp, int counter) {
+        long timestampInMillis = timestamp.getTimeInMillis();
+        String name = Long.toString(timestampInMillis);
+        return new File(dir, name + "." + counter);
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param dir
+     */
+    private void createDirIfItDoesNotExist(File dir) {
+        if (!dir.exists()) {
+            assert dir.mkdir();
+        }
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    private int getMaxEventsPerCollection() {
+        if (isRunningTests) {
+            return 5;
+        }
+        return MAX_EVENTS_PER_COLLECTION;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    private int getNumberEventsToForget() {
+        if (isRunningTests) {
+            return 2;
+        }
+        return NUMBER_EVENTS_TO_FORGET;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @throws IOException
+     */
+    private void prepareCache(String eventCollection) throws IOException {
         File dir = getEventDirectoryForEventCollection(eventCollection);
 
         // make sure it exists
@@ -78,169 +331,6 @@ public class FileEventStore implements KeenEventStore {
                 }
             }
         }
-
-        Calendar timestamp = Calendar.getInstance();
-        File fileForEvent = getFileForEvent(eventCollection, timestamp);
-        return new FileOutputStream(fileForEvent);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public CacheEntries retrieveCached() throws IOException {
-        File[] directories = getKeenCacheSubDirectories();
-
-        Map<String, List<Map<String, Object>>> requestMap = null;
-        Map<String, List<Object>> handleMap = new HashMap<String, List<Object>>();
-        if (directories != null) {
-            // this map will hold the eventual API request we send off to the Keen API
-            requestMap = new HashMap<String, List<Map<String, Object>>>();
-
-            // this map will hold references from a single directory to all its children
-
-            // iterate through the directories
-            for (File directory : directories) {
-                // get their files
-                File[] files = getFilesInDir(directory);
-                if (files != null) {
-
-                    // build up the list of maps (i.e. events) based on those files
-                    List<Map<String, Object>> requestList = new ArrayList<Map<String, Object>>();
-                    // also remember what files we looked at
-                    List<Object> handleList = new ArrayList<Object>();
-                    for (File file : files) {
-                        // iterate through the files, deserialize them from JSON, and then add them to the list
-                        Map<String, Object> eventDict = readMapFromJsonFile(file);
-                        requestList.add(eventDict);
-                        handleList.add(file);
-                    }
-
-                    String collectionName = directory.getName();
-                    if (!requestList.isEmpty()) {
-                        requestMap.put(collectionName, requestList);
-                    }
-                    handleMap.put(collectionName, handleList);
-
-                } else {
-                    KeenLogging.log("During upload the files list in the directory was null.");
-                }
-            }
-        }
-
-        return new CacheEntries(handleMap, requestMap);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void removeFromCache(Object handle) throws IOException {
-        if (!(handle instanceof File)) {
-            throw new IllegalArgumentException("Expected File, but was " + handle.getClass());
-        }
-
-        File eventFile = (File) handle;
-        if (!eventFile.delete()) {
-            KeenLogging.log(String.format("CRITICAL ERROR: Could not remove event at %s",
-                    eventFile.getAbsolutePath()));
-        } else {
-            KeenLogging.log(String.format("Successfully deleted file: %s", eventFile.getAbsolutePath()));
-        }
-    }
-
-    /////////////////////////////////////////////
-
-    private Map<String, Object> readMapFromJsonFile(File jsonFile) {
-        try {
-            return jsonHandler.readJson(new FileReader(jsonFile));
-        } catch (IOException e) {
-            KeenLogging.log(String.format(
-                    "There was an error when attempting to deserialize the contents of %s into JSON.",
-                    jsonFile.getAbsolutePath()));
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private File getKeenCacheDirectory() {
-        File file = new File(root, "keen");
-        if (!file.exists()) {
-            boolean dirMade = file.mkdir();
-            if (!dirMade) {
-                throw new RuntimeException("Could not make keen cache directory at: " + file.getAbsolutePath());
-            }
-        }
-        return file;
-    }
-
-    private File[] getKeenCacheSubDirectories() {
-        return getKeenCacheDirectory().listFiles(new FileFilter() { // Can return null if there are no events
-            public boolean accept(File file) {
-                return file.isDirectory();
-            }
-        });
-    }
-
-    private File[] getFilesInDir(File dir) {
-        return dir.listFiles(new FileFilter() {
-            public boolean accept(File file) {
-                return file.isFile();
-            }
-        });
-    }
-
-    private File getEventDirectoryForEventCollection(String eventCollection) {
-        File file = new File(getKeenCacheDirectory(), eventCollection);
-        if (!file.exists()) {
-            KeenLogging.log("Cache directory for event collection '" + eventCollection + "' doesn't exist. " +
-                    "Creating it.");
-            if (!file.mkdirs()) {
-                KeenLogging.log("Can't create dir: " + file.getAbsolutePath());
-            }
-        }
-        return file;
-    }
-
-    private File[] getFilesForEventCollection(String eventCollection) {
-        return getFilesInDir(getEventDirectoryForEventCollection(eventCollection));
-    }
-
-    private File getFileForEvent(String eventCollection, Calendar timestamp) {
-        File dir = getEventDirectoryForEventCollection(eventCollection);
-        int counter = 0;
-        File eventFile = getNextFileForEvent(dir, timestamp, counter);
-        while (eventFile.exists()) {
-            eventFile = getNextFileForEvent(dir, timestamp, counter);
-            counter++;
-        }
-        return eventFile;
-    }
-
-    private File getNextFileForEvent(File dir, Calendar timestamp, int counter) {
-        long timestampInMillis = timestamp.getTimeInMillis();
-        String name = Long.toString(timestampInMillis);
-        return new File(dir, name + "." + counter);
-    }
-
-    private void createDirIfItDoesNotExist(File dir) {
-        if (!dir.exists()) {
-            assert dir.mkdir();
-        }
-    }
-
-    private int getMaxEventsPerCollection() {
-        if (isRunningTests) {
-            return 5;
-        }
-        return MAX_EVENTS_PER_COLLECTION;
-    }
-
-    private int getNumberEventsToForget() {
-        if (isRunningTests) {
-            return 2;
-        }
-        return NUMBER_EVENTS_TO_FORGET;
     }
 
 }

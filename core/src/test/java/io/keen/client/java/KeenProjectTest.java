@@ -6,7 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * RamEventStoreTest
+ * Tests the KeenProject class.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

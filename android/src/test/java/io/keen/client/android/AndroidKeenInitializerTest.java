@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * AndroidKeenInitializerTest
+ * DOCUMENT
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

@@ -6,6 +6,7 @@ package io.keen.client.java.exceptions;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
+// TODO: Should this be a RuntimeException or not?
 public class KeenInitializationException extends KeenException {
     private static final long serialVersionUID = 891176564876927569L;
 

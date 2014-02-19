@@ -14,6 +14,9 @@ import java.util.Map;
  * JSON utilities. This code was taken from:
  *
  * https://gist.github.com/codebutler/2339666
+ *
+ * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @since 2.0.0
  */
 class JsonHelper {
 

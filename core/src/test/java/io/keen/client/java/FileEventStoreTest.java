@@ -3,7 +3,7 @@ package io.keen.client.java;
 import org.junit.Test;
 
 /**
- * FileEventStoreTest
+ * Tests the FileEventSTore class.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

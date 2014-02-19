@@ -12,13 +12,18 @@ import java.util.Map;
 import io.keen.client.java.KeenJsonHandler;
 
 /**
+ * DOCUMENT
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @since 2.0.0
  */
 class AndroidJsonHandler implements KeenJsonHandler {
 
-    private static final int COPY_BUFFER_SIZE = 4 * 1024;
+    ///// KeenJsonHandler METHODS /////
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, Object> readJson(Reader reader) throws IOException {
         String json = readerToString(reader);
@@ -30,12 +35,29 @@ class AndroidJsonHandler implements KeenJsonHandler {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void writeJson(Writer writer, Map<String, ? extends Object> value) throws IOException {
         JSONObject jsonObject = new JSONObject(value);
         writer.write(jsonObject.toString());
     }
 
+    ///// PRIVATE CONSTANTS /////
+
+    /** The size of the buffer to use when copying a reader to a string. */
+    private static final int COPY_BUFFER_SIZE = 4 * 1024;
+
+    ///// PRIVATE METHODS /////
+
+    /**
+     * DOCUMENT
+     *
+     * @param reader
+     * @return
+     * @throws IOException
+     */
     private static String readerToString(Reader reader) throws IOException {
         StringWriter writer = new StringWriter();
         char[] buffer = new char[COPY_BUFFER_SIZE];

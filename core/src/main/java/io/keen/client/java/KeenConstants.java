@@ -14,20 +14,11 @@ class KeenConstants {
     // Keen API constants
 
     static final String NAME_PARAM = "name";
-    static final String CREATED_PARAM = "created";
     static final String SUCCESS_PARAM = "success";
     static final String ERROR_PARAM = "error";
-    static final String ERROR_CODE_PARAM = "error_code";
     static final String DESCRIPTION_PARAM = "description";
-    static final String MESSAGE_PARAM = "message";
     static final String INVALID_COLLECTION_NAME_ERROR = "InvalidCollectionNameError";
     static final String INVALID_PROPERTY_NAME_ERROR = "InvalidPropertyNameError";
     static final String INVALID_PROPERTY_VALUE_ERROR = "InvalidPropertyValueError";
 
-    // Keen constants related to how much data we'll cache on the device before aging it out
-
-    // how many events can be stored for a single collection before aging them out
-    static final int MAX_EVENTS_PER_COLLECTION = 10000;
-    // how many events to drop when aging out
-    static final int NUMBER_EVENTS_TO_FORGET = 100;
 }

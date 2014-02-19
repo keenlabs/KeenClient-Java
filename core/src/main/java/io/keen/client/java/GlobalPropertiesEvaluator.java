@@ -10,5 +10,13 @@ import java.util.Map;
  * @since 1.0.0
  */
 public interface GlobalPropertiesEvaluator {
+
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @return
+     */
     Map<String, Object> getGlobalProperties(String eventCollection);
+
 }

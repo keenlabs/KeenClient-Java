@@ -2,13 +2,13 @@ package io.keen.client.java;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -36,21 +36,32 @@ import io.keen.client.java.exceptions.ServerException;
  * @author dkador
  * @since 1.0.0
  */
-public class KeenClient {
+public abstract class KeenClient {
+
+    ///// PROTECTED ABSTRACT METHODS /////
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    protected abstract KeenJsonHandler instantiateJsonHandler();
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    protected abstract KeenEventStore instantiateEventStore();
+
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
+    protected abstract Executor instantiatePublishExecutor();
 
     ///// PUBLIC STATIC METHODS /////
-
-    // TODO: Move this out of the public methods section.
-    /**
-     * Use this to attempt to initialize the client from environment variables.
-     */
-    static void initialize(KeenJsonHandler jsonHandler, KeenEventStore eventStore,
-                           Executor publishExecutor) {
-        if (ClientSingleton.INSTANCE.client != null) {
-            throw new IllegalStateException("The Keen library is already initialized!");
-        }
-        ClientSingleton.INSTANCE.client = new KeenClient(jsonHandler, eventStore, publishExecutor);
-    }
 
     /**
      * Call this to retrieve the singleton instance of KeenClient.
@@ -61,44 +72,43 @@ public class KeenClient {
      */
     public static KeenClient client() {
         if (ClientSingleton.INSTANCE.client == null) {
-            throw new IllegalStateException("Please call KeenInitializer.initialize() before requesting the shared client.");
+            throw new IllegalStateException("Please call KeenClient.initialize() before requesting the shared client.");
         }
         return ClientSingleton.INSTANCE.client;
-    }
-
-    public static void setDebugMode(boolean isDebugMode) {
-        KeenClient.client().isDebugMode = isDebugMode;
     }
 
     ///// PUBLIC METHODS //////
 
     /**
-     * Call this any time you want to add an event that will be sent to the Keen IO server.
+     * DOCUMENT
      *
-     * @param eventCollection The name of the event collection you want to put this event into.
-     * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see docs).
-     *                        Nested Maps and lists are acceptable (and encouraged!).
+     * @param eventCollection
+     * @param event
      */
     public void addEvent(String eventCollection, Map<String, Object> event) {
         addEvent(eventCollection, event, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     */
     public void addEvent(String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties) {
         addEvent(null, eventCollection, event, keenProperties, null);
     }
 
     /**
-     * Call this any time you want to add an event that will be sent to the Keen IO server AND
-     * you want to override Keen-defaulted properties (like timestamp).
+     * DOCUMENT
      *
-     * @param eventCollection The name of the event collection you want to put this event into.
-     * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see docs).
-     *                        Nested Maps and lists are acceptable (and encouraged!).
-     * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -> Calendar.getInstance()
-     * @param callback        An instance of KeenCallback. Will invoke onSuccess when adding the event succeeds.
-     *                        Will invoke onError when adding the event fails.
+     * @param project
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     * @param callback
      */
     public void addEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties, KeenCallback callback) {
@@ -128,15 +138,37 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     */
     public void addEventAsync(String eventCollection, Map<String, Object> event) {
         addEventAsync(eventCollection, event, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     */
     public void addEventAsync(String eventCollection, Map<String, Object> event,
                               final Map<String, Object> keenProperties) {
         addEventAsync(null, eventCollection, event, keenProperties, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     * @param callback
+     */
     public void addEventAsync(final KeenProject project, final String eventCollection,
                               final Map<String, Object> event,
                               final Map<String, Object> keenProperties,
@@ -167,15 +199,37 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     */
     public void queueEvent(String eventCollection, Map<String, Object> event) {
         queueEvent(eventCollection, event, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     */
     public void queueEvent(String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties) {
         queueEvent(null, eventCollection, event, keenProperties, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     * @param callback
+     */
     public void queueEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties, final KeenCallback callback) {
 
@@ -190,33 +244,42 @@ public class KeenClient {
         }
         KeenProject useProject = (project == null? defaultProject : project);
 
-        OutputStreamWriter writer = null;
         try {
             // Build the event
             Map<String, Object> newEvent =
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Write the event out to the event store.
-            OutputStream out = eventStore.getCacheOutputStream(eventCollection);
-            writer = new OutputStreamWriter(out, ENCODING);
-            jsonHandler.writeJson(writer, newEvent);
+            eventStore.store(eventCollection, newEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
-        } finally {
-            KeenUtils.closeQuietly(writer);
         }
     }
 
-
+    /**
+     * DOCUMENT
+     *
+     */
     public void sendQueuedEvents() {
         sendQueuedEvents(null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     */
     public void sendQueuedEvents(KeenProject project) {
         sendQueuedEvents(project, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param callback
+     */
     public void sendQueuedEvents(KeenProject project, KeenCallback callback) {
 
         if (!isActive) {
@@ -231,12 +294,12 @@ public class KeenClient {
         KeenProject useProject = (project == null? defaultProject : project);
 
         try {
-            KeenEventStore.CacheEntries entries = eventStore.retrieveCached();
-            Map<String, List<Map<String, Object>>> events = entries.events;
+            Map<String, List<Object>> eventHandles = eventStore.getHandles();
+            Map<String, List<Map<String, Object>>> events = buildEventMap(eventHandles);
             String response = publishAll(useProject, events);
             if (response != null) {
                 try {
-                    handleAddEventsResponse(entries.handles, response);
+                    handleAddEventsResponse(eventHandles, response);
                 } catch (Exception e) {
                     // Errors handling the response are non-fatal; just log them.
                     KeenLogging.log("Error handling response to batch publish: " + e.getMessage());
@@ -248,14 +311,28 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     */
     public void sendQueuedEventsAsync() {
         sendQueuedEventsAsync(null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     */
     public void sendQueuedEventsAsync(final KeenProject project) {
         sendQueuedEventsAsync(project, null);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param callback
+     */
     public void sendQueuedEventsAsync(final KeenProject project, final KeenCallback callback) {
 
         if (!isActive) {
@@ -284,49 +361,47 @@ public class KeenClient {
     }
 
     /**
-     * Getter for the default project that this {@link KeenClient} will use if no project is
-     * specified.
+     * Gets the default project that this {@link KeenClient} will use if no project is specified.
      *
-     * @return the default project.
+     * @return The default project.
      */
     public KeenProject getDefaultProject() {
         return defaultProject;
     }
 
     /**
-     * Setter for the default project that this {@link KeenClient} should use if no project is
-     * specified.
+     * Sets the default project that this {@link KeenClient} should use if no project is specified.
      *
-     * @param defaultProject the new default project.
+     * @param defaultProject The new default project.
      */
     public void setDefaultProject(KeenProject defaultProject) {
         this.defaultProject = defaultProject;
     }
 
     /**
-     * Getter for the base API URL associated with this instance of the {@link KeenClient}.
+     * Gets the base API URL associated with this instance of the {@link KeenClient}.
      *
-     * @return the base API URL
+     * @return The base API URL
      */
     public String getBaseUrl() {
         return baseUrl;
     }
 
     /**
-     * Setter for the base API URL associated with this instance of the {@link KeenClient}.
+     * Sets the base API URL associated with this instance of the {@link KeenClient}.
      * <p/>
      * Use this if you want to disable SSL.
      *
-     * @param baseUrl the new base URL (i.e. 'http://api.keen.io')
+     * @param baseUrl The new base URL (i.e. 'http://api.keen.io')
      */
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     /**
-     * Getter for the {@link GlobalPropertiesEvaluator} associated with this instance of the {@link KeenClient}.
+     * Gets the {@link GlobalPropertiesEvaluator} associated with this instance of the {@link KeenClient}.
      *
-     * @return the {@link GlobalPropertiesEvaluator}
+     * @return The {@link GlobalPropertiesEvaluator}
      */
     public GlobalPropertiesEvaluator getGlobalPropertiesEvaluator() {
         return globalPropertiesEvaluator;
@@ -371,7 +446,9 @@ public class KeenClient {
     }
 
     /**
-     * Getter for the Keen Global Properties map. See docs for {@link #setGlobalProperties(java.util.Map)}.
+     * Gets the Keen Global Properties map. See docs for {@link #setGlobalProperties(java.util.Map)}.
+     *
+     * @return The Global Properties map.
      */
     public Map<String, Object> getGlobalProperties() {
         return globalProperties;
@@ -410,8 +487,60 @@ public class KeenClient {
         this.globalProperties = globalProperties;
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param isDebugMode
+     */
+    public void setDebugMode(boolean isDebugMode) {
+        this.isDebugMode = isDebugMode;
+    }
+
+    ///// PROTECTED CONSTRUCTORS /////
+
+    /**
+     * Constructs the singleton instance of the Keen client. This constructor is private to prevent
+     * additional instances from being created.
+     */
+    protected KeenClient() {
+        // TODO: Validate that JSON handler exists?
+        // Note: the order of instantiation is important. The JSON handler must be instantied first
+        // because the event store may depend upon it.
+        this.jsonHandler = instantiateJsonHandler();
+        this.eventStore = instantiateEventStore();
+        this.publishExecutor = instantiatePublishExecutor();
+        this.baseUrl = KeenConstants.SERVER_ADDRESS;
+        this.globalPropertiesEvaluator = null;
+        this.globalProperties = null;
+    }
+
     ///// PROTECTED METHODS /////
 
+    /**
+     * DOCUMENT
+     *
+     * @param client
+     */
+    protected static void initialize(KeenClient client) {
+        if (client == null) {
+            throw new IllegalArgumentException("Client must not be null");
+        }
+        if (ClientSingleton.INSTANCE.client != null) {
+            // Do nothing.
+            return;
+        }
+        ClientSingleton.INSTANCE.client = client;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param eventCollection
+     * @param event
+     * @param keenProperties
+     * @return
+     */
     protected Map<String, Object> validateAndBuildEvent(KeenProject project,
             String eventCollection, Map<String, Object> event, Map<String, Object> keenProperties) {
 
@@ -457,12 +586,20 @@ public class KeenClient {
         return newEvent;
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @return
+     */
     protected KeenJsonHandler getJsonHandler() {
         return jsonHandler;
     }
 
     ///// PRIVATE TYPES /////
 
+    /**
+     * DOCUMENT
+     */
     private enum ClientSingleton {
         INSTANCE;
         KeenClient client;
@@ -486,25 +623,13 @@ public class KeenClient {
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
 
-    ///// PRIVATE CONSTRUCTORS /////
-
-    /**
-     * Constructs the singleton instance of the Keen client. This constructor is private to prevent
-     * additional instances from being created.
-     */
-    private KeenClient(KeenJsonHandler jsonHandler, KeenEventStore eventStore,
-                       Executor publishExecutor) {
-        // TODO: Validate that JSON handler exists?
-        this.jsonHandler = jsonHandler;
-        this.eventStore = eventStore;
-        this.publishExecutor = publishExecutor;
-        this.baseUrl = KeenConstants.SERVER_ADDRESS;
-        this.globalPropertiesEvaluator = null;
-        this.globalProperties = null;
-    }
-
     ///// PRIVATE METHODS /////
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     */
     private void validateEventCollection(String eventCollection) {
         if (eventCollection == null || eventCollection.length() == 0) {
             throw new InvalidEventCollectionException("You must specify a non-null, " +
@@ -519,10 +644,21 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param event
+     */
     private void validateEvent(Map<String, Object> event) {
         validateEvent(event, 0);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param event
+     * @param depth
+     */
     @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
     private void validateEvent(Map<String, Object> event, int depth) {
         if (depth == 0) {
@@ -560,6 +696,45 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param eventHandles
+     * @return
+     * @throws IOException
+     */
+    private Map<String, List<Map<String, Object>>> buildEventMap(
+            Map<String, List<Object>> eventHandles) throws IOException {
+        Map<String, List<Map<String, Object>>> result =
+                new HashMap<String, List<Map<String, Object>>>();
+        for (Map.Entry<String, List<Object>> entry : eventHandles.entrySet()) {
+            String eventCollection = entry.getKey();
+            List<Object> handles = entry.getValue();
+
+            // Skip event collections that don't contain any events.
+            if (handles == null || handles.size() == 0) {
+                continue;
+            }
+
+            // Build the event list by retrieving events from the store.
+            List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
+            for (Object handle : handles) {
+                events.add(eventStore.get(handle));
+            }
+            result.put(eventCollection, events);
+        }
+        return result;
+    }
+
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param eventCollection
+     * @param event
+     * @return
+     * @throws IOException
+     */
     private String publish(KeenProject project, String eventCollection,
                            Map<String, Object> event) throws IOException {
         // just using basic JDK HTTP library
@@ -569,6 +744,14 @@ public class KeenClient {
         return publishObject(project, url, event);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param events
+     * @return
+     * @throws IOException
+     */
     private String publishAll(KeenProject project,
                               Map<String, List<Map<String, Object>>> events) throws IOException {
         // just using basic JDK HTTP library
@@ -578,6 +761,15 @@ public class KeenClient {
         return publishObject(project, url, events);
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param project
+     * @param url
+     * @param requestData
+     * @return
+     * @throws IOException
+     */
     private synchronized String publishObject(KeenProject project, URL url,
                                               Map<String, ?> requestData) throws IOException {
         if (requestData == null || requestData.size() == 0) {
@@ -638,6 +830,7 @@ public class KeenClient {
     }
 
     /**
+     * DOCUMENT
      *
      * @param handles
      * @param response
@@ -694,7 +887,7 @@ public class KeenClient {
                     // Try to remove the object from the cache. Catch and log exceptions to prevent
                     // a single failure from derailing the rest of the cleanup.
                     try {
-                        eventStore.removeFromCache(handle);
+                        eventStore.remove(handle);
                     } catch (IOException e) {
                         KeenLogging.log("Failed to remove object '" + handle + "' from cache");
                     }
@@ -704,6 +897,11 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param callback
+     */
     private void handleSuccess(KeenCallback callback) {
         if (callback != null) {
             try {
@@ -714,6 +912,12 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param callback
+     * @param e
+     */
     private void handleFailure(KeenCallback callback, Exception e) {
         if (isDebugMode) {
             if (e instanceof RuntimeException) {
@@ -733,6 +937,11 @@ public class KeenClient {
         }
     }
 
+    /**
+     * DOCUMENT
+     *
+     * @param callback
+     */
     // TODO: Cap how many times this failure is reported, and after that just fail silently.
     private void handleLibraryInactive(KeenCallback callback) {
         handleFailure(callback, new IllegalStateException("The Keen library failed to initialize " +

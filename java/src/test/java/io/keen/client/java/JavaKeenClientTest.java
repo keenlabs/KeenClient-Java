@@ -4,12 +4,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * JavaKeenInitializerTest
+ * Tests the JavaKeenClient class.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class JavaKeenInitializerTest {
+public class JavaKeenClientTest {
 
     @BeforeClass
     public static void classSetUp() {

@@ -3,7 +3,7 @@ package io.keen.client.android;
 import org.junit.Test;
 
 /**
- * AndroidJsonHandlerTest
+ * DOCUMENT
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

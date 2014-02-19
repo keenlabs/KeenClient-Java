@@ -6,27 +6,46 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * DOCUMENT
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @since 2.0.0
  */
 public interface KeenEventStore {
 
-    OutputStream getCacheOutputStream(String eventCollection) throws IOException;
+    /**
+     * DOCUMENT
+     *
+     * @param eventCollection
+     * @param event
+     * @return
+     * @throws IOException
+     */
+    Object store(String eventCollection, Map<String, Object> event) throws IOException;
 
-    CacheEntries retrieveCached() throws IOException;
+    /**
+     * DOCUMENT
+     *
+     * @param handle
+     * @return
+     * @throws IOException
+     */
+    Map<String, Object> get(Object handle) throws IOException;
 
-    void removeFromCache(Object handle) throws IOException;
+    /**
+     * DOCUMENT
+     *
+     * @param handle
+     * @throws IOException
+     */
+    void remove(Object handle) throws IOException;
 
-    public static class CacheEntries {
-
-        public final Map<String, List<Object>> handles;
-        public final Map<String, List<Map<String, Object>>> events;
-
-        public CacheEntries(Map<String, List<Object>> handles,
-                            Map<String, List<Map<String, Object>>> events) {
-            this.handles = handles;
-            this.events = events;
-        }
-    }
+    /**
+     * DOCUMENT
+     *
+     * @return
+     * @throws IOException
+     */
+    Map<String, List<Object>> getHandles() throws IOException;
 
 }

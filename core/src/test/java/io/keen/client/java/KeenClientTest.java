@@ -5,6 +5,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +15,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import io.keen.client.java.exceptions.KeenException;
-import io.keen.client.java.exceptions.KeenInitializationException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 
 import static org.junit.Assert.assertEquals;
@@ -29,26 +30,42 @@ import static org.junit.Assert.fail;
  */
 public class KeenClientTest {
 
+    private static class TestKeenClient extends KeenClient {
+        @Override
+        protected KeenJsonHandler instantiateJsonHandler() {
+            return new KeenJsonHandler() {
+                @Override
+                public Map<String, Object> readJson(Reader reader) throws IOException {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void writeJson(Writer writer, Map<String, ?> value) throws IOException {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        @Override
+        protected KeenEventStore instantiateEventStore() {
+            return new RamEventStore();
+        }
+
+        @Override
+        protected Executor instantiatePublishExecutor() {
+            return Executors.newSingleThreadExecutor();
+        }
+    }
+
     private static final KeenProject TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
             "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
 
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        new KeenInitializer() {
-            @Override
-            protected Executor buildDefaultPublishExecutor() throws KeenInitializationException {
-                return Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
-            }
-            @Override
-            protected KeenEventStore buildDefaultEventStore() throws KeenInitializationException {
-                return new RamEventStore();
-            }
-            @Override
-            protected KeenJsonHandler buildDefaultJsonHandler() throws KeenInitializationException {
-                return null;
-            }
-        }.initialize();
+        KeenClient client = new TestKeenClient();
+        client.setDebugMode(true);
+        KeenClient.initialize(client);
     }
 
     @Before
@@ -176,7 +193,6 @@ public class KeenClientTest {
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
         // TODO: Don't special-case using debug mode here.
-        KeenClient.setDebugMode(true);
         KeenClient client = KeenClient.client();
         client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, null));
         Map<String, Object> event = new HashMap<String, Object>();
@@ -187,8 +203,6 @@ public class KeenClientTest {
         } catch (NoWriteKeyException e) {
             assertEquals("You can't send events to Keen IO if you haven't set a write key.",
                     e.getLocalizedMessage());
-        } finally {
-            KeenClient.setDebugMode(false);
         }
     }
 
