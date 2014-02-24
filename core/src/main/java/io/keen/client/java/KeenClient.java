@@ -280,7 +280,7 @@ public abstract class KeenClient {
      * @param project
      * @param callback
      */
-    public void sendQueuedEvents(KeenProject project, KeenCallback callback) {
+    public synchronized void sendQueuedEvents(KeenProject project, KeenCallback callback) {
 
         if (!isActive) {
             handleLibraryInactive(callback);
