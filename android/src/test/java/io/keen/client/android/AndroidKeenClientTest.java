@@ -12,12 +12,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * DOCUMENT
+ * Tests the AndroidKeenClient implementation.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class AndroidKeenInitializerTest {
+public class AndroidKeenClientTest {
 
     @BeforeClass
     public static void classSetUp() {

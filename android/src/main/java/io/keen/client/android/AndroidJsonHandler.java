@@ -12,7 +12,8 @@ import java.util.Map;
 import io.keen.client.java.KeenJsonHandler;
 
 /**
- * DOCUMENT
+ * Implementation of the {@link io.keen.client.java.KeenJsonHandler} interface using the built-in
+ * Android JSON library ({@link org.json.JSONObject}).
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
@@ -26,6 +27,10 @@ class AndroidJsonHandler implements KeenJsonHandler {
      */
     @Override
     public Map<String, Object> readJson(Reader reader) throws IOException {
+        if (reader == null) {
+            throw new IllegalArgumentException("Reader must not be null");
+        }
+
         String json = readerToString(reader);
         try {
             JSONObject jsonObject = new JSONObject(json);
@@ -40,6 +45,10 @@ class AndroidJsonHandler implements KeenJsonHandler {
      */
     @Override
     public void writeJson(Writer writer, Map<String, ? extends Object> value) throws IOException {
+        if (writer == null) {
+            throw new IllegalArgumentException("Reader must not be null");
+        }
+
         JSONObject jsonObject = new JSONObject(value);
         writer.write(jsonObject.toString());
     }
@@ -52,24 +61,29 @@ class AndroidJsonHandler implements KeenJsonHandler {
     ///// PRIVATE METHODS /////
 
     /**
-     * DOCUMENT
+     * Converts a Reader to a String by copying the Reader's contents into a StringWriter via a
+     * buffer.
      *
-     * @param reader
-     * @return
-     * @throws IOException
+     * @param reader The Reader from which to extract a String.
+     * @return The String contained in the Reader.
+     * @throws IOException If there is an error reading from the input Reader.
      */
     private static String readerToString(Reader reader) throws IOException {
         StringWriter writer = new StringWriter();
-        char[] buffer = new char[COPY_BUFFER_SIZE];
-        while (true) {
-            int bytesRead = reader.read(buffer);
-            if (bytesRead == -1) {
-                break;
-            } else {
-                writer.write(buffer, 0, bytesRead);
+        try {
+            char[] buffer = new char[COPY_BUFFER_SIZE];
+            while (true) {
+                int bytesRead = reader.read(buffer);
+                if (bytesRead == -1) {
+                    break;
+                } else {
+                    writer.write(buffer, 0, bytesRead);
+                }
             }
+            return writer.toString();
+        } finally {
+            reader.close();
         }
-        return writer.toString();
     }
 
 }

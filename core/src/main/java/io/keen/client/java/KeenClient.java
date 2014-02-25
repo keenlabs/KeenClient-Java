@@ -41,38 +41,39 @@ public abstract class KeenClient {
     ///// PROTECTED ABSTRACT METHODS /////
 
     /**
-     * DOCUMENT
+     * Creates a {@link io.keen.client.java.KeenJsonHandler} which will be used for the life of the
+     * client to handle reading and writing JSON.
      *
-     * @return
+     * @return A new {@link io.keen.client.java.KeenJsonHandler}.
      */
     protected abstract KeenJsonHandler instantiateJsonHandler();
 
     /**
-     * DOCUMENT
+     * Creates a {@link io.keen.client.java.KeenEventStore} which will be used for the life of the
+     * client to handle storing events in between batch posts.
      *
-     * @return
+     * @return A new {@link io.keen.client.java.KeenEventStore}.
      */
     protected abstract KeenEventStore instantiateEventStore();
 
     /**
-     * DOCUMENT
+     * Creates an {@link java.util.concurrent.Executor} which will be used for the life of the
+     * client to process asynchronous requests.
      *
-     * @return
+     * @return A new {@link java.util.concurrent.Executor}.
      */
     protected abstract Executor instantiatePublishExecutor();
 
     ///// PUBLIC STATIC METHODS /////
 
     /**
-     * Call this to retrieve the singleton instance of KeenClient.
-     * <p/>
-     * If you only have to use a single Keen project, just use this.
+     * Call this to retrieve the {@code KeenClient} singleton instance.
      *
-     * @return A managed instance of KeenClient, or null if KeenClient.initialize() hasn't been called previously.
+     * @return The singleton instance of the client.
      */
     public static KeenClient client() {
         if (ClientSingleton.INSTANCE.client == null) {
-            throw new IllegalStateException("Please call KeenClient.initialize() before requesting the shared client.");
+            throw new IllegalStateException("Please call KeenClient.initialize() before requesting the client.");
         }
         return ClientSingleton.INSTANCE.client;
     }
@@ -80,21 +81,18 @@ public abstract class KeenClient {
     ///// PUBLIC METHODS //////
 
     /**
-     * DOCUMENT
+     * Adds an event to the default project with default Keen properties and no callbacks.
      *
-     * @param eventCollection
-     * @param event
+     * @see #addEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void addEvent(String eventCollection, Map<String, Object> event) {
         addEvent(eventCollection, event, null);
     }
 
     /**
-     * DOCUMENT
+     * Adds an event to the default project with no callbacks.
      *
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
+     * @see #addEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void addEvent(String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties) {
@@ -102,13 +100,18 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Synchronously adds an event to the specified collection. This method will immediately
+     * publish the event to the Keen server in the current thread.
      *
-     * @param project
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
-     * @param callback
+     * @param project The project in which to publish the event. If a default project has been set
+     *                on the client, this parameter may be null, in which case the default project
+     *                will be used.
+     * @param eventCollection The name of the collection in which to publish the event.
+     * @param event A Map that consists of key/value pairs. Keen naming conventions apply (see
+     *              docs). Nested Maps and lists are acceptable (and encouraged!).
+     * @param keenProperties A Map that consists of key/value pairs to override default properties.
+     *                       ex: "timestamp" -> Calendar.getInstance()
+     * @param callback An optional callback to receive notification of success or failure.
      */
     public void addEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties, KeenCallback callback) {
@@ -139,21 +142,18 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Adds an event to the default project with default Keen properties and no callbacks.
      *
-     * @param eventCollection
-     * @param event
+     * @see #addEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void addEventAsync(String eventCollection, Map<String, Object> event) {
         addEventAsync(eventCollection, event, null);
     }
 
     /**
-     * DOCUMENT
+     * Adds an event to the default project with no callbacks.
      *
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
+     * @see #addEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void addEventAsync(String eventCollection, Map<String, Object> event,
                               final Map<String, Object> keenProperties) {
@@ -161,13 +161,18 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Asynchronously adds an event to the specified collection. This method will request that
+     * the Keen client's {@link java.util.concurrent.Executor} executes the publish operation.
      *
-     * @param project
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
-     * @param callback
+     * @param project The project in which to publish the event. If a default project has been set
+     *                on the client this parameter may be null, in which case the default project
+     *                will be used.
+     * @param eventCollection The name of the collection in which to publish the event.
+     * @param event A Map that consists of key/value pairs. Keen naming conventions apply (see
+     *              docs). Nested Maps and lists are acceptable (and encouraged!).
+     * @param keenProperties A Map that consists of key/value pairs to override default properties.
+     *                       ex: "timestamp" -> Calendar.getInstance()
+     * @param callback An optional callback to receive notification of success or failure.
      */
     public void addEventAsync(final KeenProject project, final String eventCollection,
                               final Map<String, Object> event,
@@ -200,21 +205,18 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Queues an event in the default project with default Keen properties and no callbacks.
      *
-     * @param eventCollection
-     * @param event
+     * @see #queueEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void queueEvent(String eventCollection, Map<String, Object> event) {
         queueEvent(eventCollection, event, null);
     }
 
     /**
-     * DOCUMENT
+     * Queues an event in the default project with no callbacks.
      *
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
+     * @see #queueEvent(KeenProject, String, java.util.Map, java.util.Map, KeenCallback)
      */
     public void queueEvent(String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties) {
@@ -222,13 +224,19 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Synchronously queues an event for publishing. The event will be cached in the client's
+     * {@link io.keen.client.java.KeenEventStore} until the next call to either
+     * {@link #sendQueuedEvents()} or {@link #sendQueuedEventsAsync()}.
      *
-     * @param project
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
-     * @param callback
+     * @param project The project in which to publish the event. If a default project has been set
+     *                on the client this parameter may be null, in which case the default project
+     *                will be used.
+     * @param eventCollection The name of the collection in which to publish the event.
+     * @param event A Map that consists of key/value pairs. Keen naming conventions apply (see
+     *              docs). Nested Maps and lists are acceptable (and encouraged!).
+     * @param keenProperties A Map that consists of key/value pairs to override default properties.
+     *                       ex: "timestamp" -> Calendar.getInstance()
+     * @param callback An optional callback to receive notification of success or failure.
      */
     public void queueEvent(KeenProject project, String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties, final KeenCallback callback) {
@@ -258,27 +266,31 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Sends all queued events for the default project with no callbacks.
      *
+     * @see #sendQueuedEvents(KeenProject, KeenCallback)
      */
     public void sendQueuedEvents() {
         sendQueuedEvents(null);
     }
 
     /**
-     * DOCUMENT
+     * Sends all queued events for the specified project with no callbacks.
      *
-     * @param project
+     * @see #sendQueuedEvents(KeenProject, KeenCallback)
      */
     public void sendQueuedEvents(KeenProject project) {
         sendQueuedEvents(project, null);
     }
 
     /**
-     * DOCUMENT
+     * Synchronously sends all queued events for the given project. This method will immediately
+     * publish the events to the Keen server in the current thread.
      *
-     * @param project
-     * @param callback
+     * @param project The project for which to send queued events. If a default project has been set
+     *                on the client this parameter may be null, in which case the default project
+     *                will be used.
+     * @param callback An optional callback to receive notification of success or failure.
      */
     public synchronized void sendQueuedEvents(KeenProject project, KeenCallback callback) {
 
@@ -312,26 +324,31 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Sends all queued events for the default project with no callbacks.
+     *
+     * @see #sendQueuedEventsAsync(KeenProject, KeenCallback)
      */
     public void sendQueuedEventsAsync() {
         sendQueuedEventsAsync(null);
     }
 
     /**
-     * DOCUMENT
+     * Sends all queued events for the specified project with no callbacks.
      *
-     * @param project
+     * @see #sendQueuedEventsAsync(KeenProject, KeenCallback)
      */
     public void sendQueuedEventsAsync(final KeenProject project) {
         sendQueuedEventsAsync(project, null);
     }
 
     /**
-     * DOCUMENT
+     * Asynchronously sends all queued events for the given project. This method will request that
+     * the Keen client's {@link java.util.concurrent.Executor} executes the publish operation.
      *
-     * @param project
-     * @param callback
+     * @param project The project for which to send queued events. If a default project has been set
+     *                on the client this parameter may be null, in which case the default project
+     *                will be used.
+     * @param callback An optional callback to receive notification of success or failure.
      */
     public void sendQueuedEventsAsync(final KeenProject project, final KeenCallback callback) {
 
@@ -488,7 +505,9 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Sets whether or not the Keen client should run in debug mode. When debug mode is enabled,
+     * all exceptions will be thrown immediately; otherwise they will be logged and reported to
+     * any callbacks, but never thrown.
      *
      * @param isDebugMode
      */
@@ -517,9 +536,14 @@ public abstract class KeenClient {
     ///// PROTECTED METHODS /////
 
     /**
-     * DOCUMENT
+     * Initializes the Keen client. This method is intended to be called by implementations of
+     * the {@link io.keen.client.java.KeenClient} abstract class, which create an instance that
+     * will become the singleton.
      *
-     * @param client
+     * Only the first call to this method has any effect. All subsequent calls are ignored.
+     *
+     * @param client The {@link io.keen.client.java.KeenClient} implementation to use as the
+     *               singleton client for the library.
      */
     protected static void initialize(KeenClient client) {
         if (client == null) {
@@ -533,13 +557,14 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Validates an event and inserts global properties, producing a new event object which is
+     * ready to be published to the Keen service.
      *
-     * @param project
-     * @param eventCollection
-     * @param event
-     * @param keenProperties
-     * @return
+     * @param project The project in which the event will be published.
+     * @param eventCollection The name of the collection in which the event will be published.
+     * @param event A Map that consists of key/value pairs.
+     * @param keenProperties A Map that consists of key/value pairs to override default properties.
+     * @return A new event Map containing Keen properties and global properties.
      */
     protected Map<String, Object> validateAndBuildEvent(KeenProject project,
             String eventCollection, Map<String, Object> event, Map<String, Object> keenProperties) {
@@ -587,9 +612,11 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Gets the {@link io.keen.client.java.KeenJsonHandler} for this client. This method is
+     * available to subclasses and other library components in case they need to perform JSON
+     * operations, such as to serialize events to files on disk.
      *
-     * @return
+     * @return The client's {@link io.keen.client.java.KeenJsonHandler}.
      */
     protected KeenJsonHandler getJsonHandler() {
         return jsonHandler;
@@ -598,7 +625,7 @@ public abstract class KeenClient {
     ///// PRIVATE TYPES /////
 
     /**
-     * DOCUMENT
+     * The {@link io.keen.client.java.KeenClient} class's singleton enum.
      */
     private enum ClientSingleton {
         INSTANCE;
@@ -626,9 +653,12 @@ public abstract class KeenClient {
     ///// PRIVATE METHODS /////
 
     /**
-     * DOCUMENT
+     * Validates the name of an event collection.
      *
-     * @param eventCollection
+     * @param eventCollection An event collection name to be validated.
+     *
+     * @throws io.keen.client.java.exceptions.InvalidEventCollectionException
+     *     If the event collection name is invalid. See Keen documentation for details.
      */
     private void validateEventCollection(String eventCollection) {
         if (eventCollection == null || eventCollection.length() == 0) {
@@ -645,19 +675,18 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
-     *
-     * @param event
+     * @see #validateEvent(java.util.Map, int)
      */
     private void validateEvent(Map<String, Object> event) {
         validateEvent(event, 0);
     }
 
     /**
-     * DOCUMENT
+     * Validates an event.
      *
-     * @param event
-     * @param depth
+     * @param event The event to validate.
+     * @param depth The number of layers of the map structure that have already been traversed; this
+     *              should be 0 for the initial call and will increment on each recursive call.
      */
     @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
     private void validateEvent(Map<String, Object> event, int depth) {
@@ -693,15 +722,18 @@ public abstract class KeenClient {
             } else if (value instanceof Map) {
                 validateEvent((Map<String, Object>) value, depth + 1);
             }
+            // TODO: Validate Iterable objects?
         }
     }
 
     /**
-     * DOCUMENT
+     * Builds a map from collection name to a list of event maps, given a map from collection name
+     * to a list of event handles. This method just uses the event store to retrieve each event by
+     * its handle.
      *
-     * @param eventHandles
-     * @return
-     * @throws IOException
+     * @param eventHandles A map from collection name to a list of event handles in the event store.
+     * @return A map from collection name to a list of event maps.
+     * @throws IOException If there is an error retrieving events from the store.
      */
     private Map<String, List<Map<String, Object>>> buildEventMap(
             Map<String, List<Object>> eventHandles) throws IOException {
@@ -727,13 +759,13 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Publishes a single event to the Keen service.
      *
-     * @param project
-     * @param eventCollection
-     * @param event
-     * @return
-     * @throws IOException
+     * @param project The project in which to publish the event.
+     * @param eventCollection The name of the collection in which to publish the event.
+     * @param event The event to publish.
+     * @return The response from the server.
+     * @throws IOException If there was an error communicating with the server.
      */
     private String publish(KeenProject project, String eventCollection,
                            Map<String, Object> event) throws IOException {
@@ -745,12 +777,12 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Publishes a batch of events to the Keen service.
      *
-     * @param project
-     * @param events
-     * @return
-     * @throws IOException
+     * @param project The project in which to publish the event.
+     * @param events A map from collection name to a list of event maps.
+     * @return The response from the server.
+     * @throws IOException If there was an error communicating with the server.
      */
     private String publishAll(KeenProject project,
                               Map<String, List<Map<String, Object>>> events) throws IOException {
@@ -762,13 +794,17 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Posts a request to the server in the specified project, using the given URL and request data.
+     * The request data will be serialized into JSON using the client's
+     * {@link io.keen.client.java.KeenJsonHandler}.
      *
-     * @param project
-     * @param url
-     * @param requestData
-     * @return
-     * @throws IOException
+     * @param project The project in which the event(s) will be published; this is used to
+     *                determine the write key to use for authentication.
+     * @param url The URL to which the POST should be sent.
+     * @param requestData The request data, which will be serialized into JSON and sent in the
+     *                    request body.
+     * @return The response from the server.
+     * @throws IOException If there was an error communicating with the server.
      */
     private synchronized String publishObject(KeenProject project, URL url,
                                               Map<String, ?> requestData) throws IOException {
@@ -830,11 +866,16 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Handles a response from the Keen service to a batch post events operation. In particular,
+     * this method will iterate through the responses and remove any successfully processed events
+     * (or events which failed for known fatal reasons) from the event store so they won't be sent
+     * in subsequent posts.
      *
-     * @param handles
-     * @param response
-     * @throws IOException
+     * @param handles A map from collection names to lists of handles in the event store. This is
+     *                referenced against the response from the server to determine which events to
+     *                remove from the store.
+     * @param response The response from the server.
+     * @throws IOException If there is an error removing events from the store.
      */
     @SuppressWarnings("unchecked")
     private void handleAddEventsResponse(Map<String, List<Object>> handles, String response) throws IOException {
@@ -898,9 +939,10 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Reports success to a callback. If the callback is null, this is a no-op. Any exceptions
+     * thrown by the callback are silently ignored.
      *
-     * @param callback
+     * @param callback A callback; may be null.
      */
     private void handleSuccess(KeenCallback callback) {
         if (callback != null) {
@@ -913,10 +955,13 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Handles a failure in the Keen library. If the client is running in debug mode, this will
+     * immediately throw a runtime exception. Otherwise, this will log an error message and, if the
+     * callback is non-null, call the {@link KeenCallback#onFailure(Exception)} method. Any
+     * exceptions thrown by the callback are silently ignored.
      *
-     * @param callback
-     * @param e
+     * @param callback A callback; may be null.
+     * @param e The exception which caused the failure.
      */
     private void handleFailure(KeenCallback callback, Exception e) {
         if (isDebugMode) {
@@ -938,9 +983,9 @@ public abstract class KeenClient {
     }
 
     /**
-     * DOCUMENT
+     * Reports failure when the library is inactive due to failed initialization.
      *
-     * @param callback
+     * @param callback A callback; may be null.
      */
     // TODO: Cap how many times this failure is reported, and after that just fail silently.
     private void handleLibraryInactive(KeenCallback callback) {

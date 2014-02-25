@@ -12,10 +12,13 @@ import java.util.Map;
 public interface GlobalPropertiesEvaluator {
 
     /**
-     * DOCUMENT
+     * Gets a {@link java.util.Map} containing the global properties which should be applied to
+     * a new event in the specified collection. This method will be called each time a new event is
+     * created.
      *
-     * @param eventCollection
-     * @return
+     * @param eventCollection The name of the collection for which an event is being generated.
+     * @return A {@link java.util.Map} containing the global properties which should be applied to
+     * the event being generated.
      */
     Map<String, Object> getGlobalProperties(String eventCollection);
 

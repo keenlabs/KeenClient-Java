@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DOCUMENT
+ * Implementation of {@link KeenEventStore} which simply keeps a copy of each event in memory until
+ * it is explicitly removed.
  *
  * NOTE: This implementation synchronizes all operations in order to ensure thread safety, but as
  * a result it may perform poorly under high load. For applications that require high throughput,
@@ -44,6 +45,7 @@ public class RamEventStore implements KeenEventStore {
             collectionEvents = new ArrayList<Long>();
             collectionIds.put(eventCollection, collectionEvents);
         }
+        // TODO: Cap maximum number of events, and evict as necessary.
         collectionEvents.add(id);
         return id;
     }
@@ -103,9 +105,13 @@ public class RamEventStore implements KeenEventStore {
     ///// PRIVATE METHODS /////
 
     /**
-     * DOCUMENT
+     * Gets the next ID to use as a handle for a stored event. This implementation just checks for
+     * the next unused ID based on an incrementing counter.
      *
-     * @return
+     * NOTE: For long-running processes it's possible that the nextId field will overflow. Hence it
+     * is necessary to handle collisions gracefully by skipping them.
+     *
+     * @return The next ID that should be used to store an event.
      */
     private long getNextId() {
         // It should be all but impossible for the event cache to grow bigger than Long.MAX_VALUE,

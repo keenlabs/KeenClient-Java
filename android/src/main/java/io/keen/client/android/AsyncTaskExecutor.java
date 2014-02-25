@@ -5,7 +5,10 @@ import android.os.AsyncTask;
 import java.util.concurrent.Executor;
 
 /**
- * DOCUMENT
+ * Implementation of the {@link java.util.concurrent.Executor} interface which uses an
+ * {@link android.os.AsyncTask} to run the requested operation in a background thread. This is
+ * intended to be used for publishing events asynchronously by
+ * {@link io.keen.client.android.AndroidKeenClient}.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DOCUMENT
+ * Implementation of the {@link io.keen.client.java.KeenEventStore} interface using the file system
+ * to cache events in between queueing and batch posting.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
@@ -141,10 +142,11 @@ public class FileEventStore implements KeenEventStore {
     ///// PRIVATE METHODS /////
 
     /**
-     * DOCUMENT
+     * Reads a file containing an event in JSON format and returns a {@link Map} representing that
+     * object.
      *
-     * @param jsonFile
-     * @return
+     * @param jsonFile A file containing a JSON-formatted event.
+     * @return A {@link java.util.Map} representing the event.
      */
     private Map<String, Object> readMapFromJsonFile(File jsonFile) {
         try {
@@ -159,9 +161,11 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets the root directory of the Keen cache, based on the root directory passed to the
+     * constructor of this file store. If necessary, this method will attempt to create the
+     * directory.
      *
-     * @return
+     * @return The root directory of the cache.
      */
     private File getKeenCacheDirectory() throws IOException {
         File file = new File(root, "keen");
@@ -175,9 +179,10 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets an array containing all of the sub-directories (i.e. event collections) in the Keen
+     * cache directory.
      *
-     * @return
+     * @return An array of sub-directories.
      */
     private File[] getKeenCacheSubDirectories() throws IOException {
         return getKeenCacheDirectory().listFiles(new FileFilter() { // Can return null if there are no events
@@ -188,10 +193,10 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets an array containing all of the files in the given directory.
      *
-     * @param dir
-     * @return
+     * @param dir A directory.
+     * @return An array containing all of the files in the given directory.
      */
     private File[] getFilesInDir(File dir) {
         return dir.listFiles(new FileFilter() {
@@ -202,10 +207,10 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets the directory for events in the given collection.
      *
-     * @param eventCollection
-     * @return
+     * @param eventCollection The name of the event collection.
+     * @return The directory containing events in the collection.
      */
     private File getEventDirectoryForEventCollection(String eventCollection) throws IOException {
         File file = new File(getKeenCacheDirectory(), eventCollection);
@@ -220,21 +225,23 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets an array of all of the files for the given event collection.
      *
-     * @param eventCollection
-     * @return
+     * @param eventCollection The name of the event collection.
+     * @return An array containing all of the files currently in the collection.
      */
     private File[] getFilesForEventCollection(String eventCollection) throws IOException {
         return getFilesInDir(getEventDirectoryForEventCollection(eventCollection));
     }
 
     /**
-     * DOCUMENT
+     * Gets the file to use for a new event in the given collection with the given timestamp. If
+     * there are multiple events with identical timestamps, this method will use a counter to
+     * create a unique file name for each.
      *
-     * @param eventCollection
-     * @param timestamp
-     * @return
+     * @param eventCollection The name of the event collection.
+     * @param timestamp The timestamp of the event.
+     * @return The file to use for the new event.
      */
     private File getFileForEvent(String eventCollection, Calendar timestamp) throws IOException {
         File dir = getEventDirectoryForEventCollection(eventCollection);
@@ -248,12 +255,13 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets the file to use for a new event in the given collection with the given timestamp,
+     * using the provided counter.
      *
-     * @param dir
-     * @param timestamp
-     * @param counter
-     * @return
+     * @param dir The directory in which the file should be created.
+     * @param timestamp The timestamp to use as the base file name.
+     * @param counter The counter to append to the file name.
+     * @return The file to use.
      */
     private File getNextFileForEvent(File dir, Calendar timestamp, int counter) {
         long timestampInMillis = timestamp.getTimeInMillis();
@@ -262,20 +270,21 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Creates the given directory, if it doesn't exist already. Otherwise does nothing.
      *
-     * @param dir
+     * @param dir The directory to create.
      */
     private void createDirIfItDoesNotExist(File dir) {
         if (!dir.exists()) {
-            assert dir.mkdir();
+            boolean result = dir.mkdir();
+            assert result;
         }
     }
 
     /**
-     * DOCUMENT
+     * Gets the maximum number of events per collection.
      *
-     * @return
+     * @return The maximum number of events per collection.
      */
     private int getMaxEventsPerCollection() {
         if (isRunningTests) {
@@ -285,9 +294,9 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Gets the number of events to discard if the maximum number of events is exceeded.
      *
-     * @return
+     * @return The number of events to discard.
      */
     private int getNumberEventsToForget() {
         if (isRunningTests) {
@@ -297,10 +306,13 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * DOCUMENT
+     * Prepares the file cache for the given event collection for another event to be added. This
+     * method checks to make sure that the maximum number of events per collection hasn't been
+     * exceeded, and if it has, this method discards events to make room.
      *
-     * @param eventCollection
-     * @throws IOException
+     * @param eventCollection The name of the event collection.
+     * @throws IOException If there is an error creating the directory or validating/discarding
+     * events.
      */
     private void prepareCache(String eventCollection) throws IOException {
         File dir = getEventDirectoryForEventCollection(eventCollection);
