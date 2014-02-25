@@ -522,12 +522,6 @@ public abstract class KeenClient {
      * additional instances from being created.
      */
     protected KeenClient() {
-        // TODO: Validate that JSON handler exists?
-        // Note: the order of instantiation is important. The JSON handler must be instantied first
-        // because the event store may depend upon it.
-        this.jsonHandler = instantiateJsonHandler();
-        this.eventStore = instantiateEventStore();
-        this.publishExecutor = instantiatePublishExecutor();
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
@@ -549,11 +543,20 @@ public abstract class KeenClient {
         if (client == null) {
             throw new IllegalArgumentException("Client must not be null");
         }
+
         if (ClientSingleton.INSTANCE.client != null) {
             // Do nothing.
             return;
         }
+
         ClientSingleton.INSTANCE.client = client;
+
+        // TODO: Validate that JSON handler exists?
+        // Note: the order of instantiation is important. The JSON handler must be instantiated
+        // first because the event store may depend upon it.
+        client.jsonHandler = client.instantiateJsonHandler();
+        client.eventStore = client.instantiateEventStore();
+        client.publishExecutor = client.instantiatePublishExecutor();
     }
 
     /**
@@ -642,9 +645,9 @@ public abstract class KeenClient {
     // TODO: Set this flag to false if the library is not operational for any reason.
     private boolean isActive = true;
     private boolean isDebugMode;
-    private final Executor publishExecutor;
-    private final KeenEventStore eventStore;
-    private final KeenJsonHandler jsonHandler;
+    private Executor publishExecutor;
+    private KeenEventStore eventStore;
+    private KeenJsonHandler jsonHandler;
     private KeenProject defaultProject;
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
