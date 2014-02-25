@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -58,8 +60,14 @@ public class FileEventStore implements KeenEventStore {
         File cacheFile = getFileForEvent(eventCollection, timestamp);
 
         // Write the event to the cache file.
-        OutputStream out = new FileOutputStream(cacheFile);
-        jsonHandler.writeJson(new OutputStreamWriter(out, ENCODING), event);
+        Writer writer = null;
+        try {
+            OutputStream out = new FileOutputStream(cacheFile);
+            writer = new OutputStreamWriter(out, ENCODING);
+            jsonHandler.writeJson(writer, event);
+        } finally {
+            KeenUtils.closeQuietly(writer);
+        }
 
         // Return the file as the handle to use for retrieving/removing the event.
         return cacheFile;
@@ -149,14 +157,18 @@ public class FileEventStore implements KeenEventStore {
      * @return A {@link java.util.Map} representing the event.
      */
     private Map<String, Object> readMapFromJsonFile(File jsonFile) {
+        Reader reader = null;
         try {
-            return jsonHandler.readJson(new FileReader(jsonFile));
+            reader = new FileReader(jsonFile);
+            return jsonHandler.readJson(reader);
         } catch (IOException e) {
             KeenLogging.log(String.format(
                     "There was an error when attempting to deserialize the contents of %s into JSON.",
                     jsonFile.getAbsolutePath()));
             e.printStackTrace();
             return null;
+        } finally {
+            KeenUtils.closeQuietly(reader);
         }
     }
 
