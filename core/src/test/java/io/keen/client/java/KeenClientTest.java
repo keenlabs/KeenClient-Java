@@ -100,7 +100,6 @@ public class KeenClientTest {
                                      "An event collection name cannot be longer than 256 characters.");
     }
 
-    // TODO: Test for self-referential event, event with list.
     @Test
     public void nullEvent() throws Exception {
         runValidateAndBuildEventTest(null, "foo", "null event",
@@ -212,7 +211,6 @@ public class KeenClientTest {
 
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
-        // TODO: Don't special-case using debug mode here.
         KeenClient client = KeenClient.client();
         client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, null));
         Map<String, Object> event = new HashMap<String, Object>();

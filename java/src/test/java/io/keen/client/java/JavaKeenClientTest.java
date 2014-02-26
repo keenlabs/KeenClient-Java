@@ -48,11 +48,6 @@ public class JavaKeenClientTest {
         client = null;
     }
 
-    @AfterClass
-    public static void classCleanUp() {
-
-    }
-
     @Test
     public void testAddEvent() throws Exception {
         // does a full round-trip to the real API.

@@ -1,5 +1,6 @@
 package io.keen.client.java;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -10,7 +11,15 @@ import java.util.Map;
 
 import io.keen.client.java.exceptions.ScopedKeyException;
 
-public class ScopedKeysTests {
+import static org.junit.Assert.*;
+
+public class ScopedKeysTest {
+
+    @BeforeClass
+    public static void classSetUp() {
+        KeenLogging.enableLogging();
+        JavaKeenClient.initialize();
+    }
 
     @Test
     public void testEncryptionAndDecryption() throws ScopedKeyException {
@@ -25,8 +34,6 @@ public class ScopedKeysTests {
         options.put("filters", filters);
 
         // do the encryption
-        /*
-         * TODO: Re-implement this with a mock JSON handler, or move it to the java package.
         String scopedKey = ScopedKeys.encrypt(apiKey, options);
         assertTrue(scopedKey.length() > 0);
         System.out.println(scopedKey);
@@ -35,7 +42,6 @@ public class ScopedKeysTests {
         Map<String, Object> decryptedOptions = ScopedKeys.decrypt(apiKey, scopedKey);
 
         assertEquals(options, decryptedOptions);
-        */
     }
 
     private Map<String, Object> getFilter(String propertyName, String operator, Object propertyValue) {

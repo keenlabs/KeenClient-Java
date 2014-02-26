@@ -58,7 +58,7 @@ class KeenUtils {
         char[] hexChars = new char[bytes.length * 2];
 
         for(int i = 0; i < bytes.length; i++) {
-            byte b = bytes[i];
+            int b = bytes[i] & 0xFF;
             hexChars[i * 2] = hexArray[b >>> 4];
             hexChars[(i * 2) + 1] = hexArray[b & 0x0F];
         }
