@@ -818,7 +818,7 @@ public abstract class KeenClient {
             return null;
         }
 
-        // set up the POST
+        // Set up the POST.
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
@@ -826,7 +826,7 @@ public abstract class KeenClient {
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Authorization", project.getWriteKey());
 
-        // write JSON to the output stream
+        // Write JSON to the output stream.
         OutputStreamWriter writer = null;
         try {
             writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
@@ -837,31 +837,41 @@ public abstract class KeenClient {
 
         // Check whether the response succeeded.
         int responseCode = connection.getResponseCode();
-        String response = null;
-        if (responseCode / 100 == 2) {
-            InputStream responseStream = connection.getInputStream();
-            try {
-                response = KeenUtils.convertStreamToString(responseStream);
-                KeenLogging.log("Response: " + response);
-            } finally {
-                KeenUtils.closeQuietly(responseStream);
-                connection.disconnect();
-            }
-        } else {
-            KeenLogging.log(String.format("Response code was NOT 200. It was: %d", responseCode));
+        InputStream in = connection.getInputStream();
+        InputStream error = connection.getErrorStream();
+        try {
+            return processConnectionResponse(responseCode, in, error);
+        } finally {
+            KeenUtils.closeQuietly(in);
+            KeenUtils.closeQuietly(error);
+            connection.disconnect();
+        }
+    }
 
-            // Initialize the response to a default string, in case the error message can't be read.
-            response = "Server error: " + responseCode;
+    /**
+     * Processes a response to an HTTP post request.
+     *
+     * @param code The response code.
+     * @param responseStream An input stream containing the response, or null if no normal
+     *                       response was received.
+     * @param errorStream An input stream containing the error response, or null if no error
+     *                    response was received.
+     * @return The response, as a String.
+     * @throws IOException If there is an error reading from an input stream.
+     * @throws ServerException If the response code indicates an error.
+     */
+    protected String processConnectionResponse(int code, InputStream responseStream, InputStream errorStream)
+            throws IOException {
+        String response;
+        if (code / 100 == 2) {
+            response = KeenUtils.convertStreamToString(responseStream);
+            KeenLogging.log("Response: " + response);
+        } else {
+            KeenLogging.log(String.format("Response code was NOT success (200/201). It was: %d", code));
 
             // Try to read the error message.
-            InputStream errorStream = connection.getErrorStream();
-            try {
-                response = KeenUtils.convertStreamToString(errorStream);
-                KeenLogging.log(String.format("Error response body was: %s", response));
-            } finally {
-                KeenUtils.closeQuietly(errorStream);
-                connection.disconnect();
-            }
+            response = KeenUtils.convertStreamToString(errorStream);
+            KeenLogging.log(String.format("Error response body was: %s", response));
 
             // Throw an exception to indicate the request failed.
             throw new ServerException(response);

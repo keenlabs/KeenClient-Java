@@ -4,7 +4,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -15,12 +17,15 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
+import io.keen.client.java.exceptions.ServerException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -84,51 +89,6 @@ public class KeenClientTest {
     public void setup() {
         KeenClient.client().setDefaultProject(TEST_PROJECT);
     }
-
-    /*
-    TODO: Re-implement constructor tests.
-    @Test
-    public void testKeenClientConstructor() {
-        runKeenClientConstructorTest(null, null, null, true, "null project id", "Invalid project id specified: null");
-        runKeenClientConstructorTest("", null, null, true, "empty project id", "Invalid project id specified: ");
-        runKeenClientConstructorTest("abc", "def", "ghi", false, "everything is good", null);
-    }
-
-    private void runKeenClientConstructorTest(String projectId, String writeKey, String readKey, boolean shouldFail,
-                                              String msg, String expectedMessage) {
-        try {
-            KeenClient client = new KeenClient(projectId, writeKey, readKey);
-            if (shouldFail) {
-                fail(msg);
-            } else {
-                doClientAssertions(projectId, writeKey, readKey, client);
-            }
-        } catch (IllegalArgumentException e) {
-            assertEquals(expectedMessage, e.getLocalizedMessage());
-        }
-    }
-
-    @Test
-    public void testSharedClient() {
-        // can't get client without first initializing it
-        try {
-            KeenClient.client();
-            fail("can't get client without first initializing it");
-        } catch (IllegalStateException e) {
-        }
-
-        // make sure bad values error correctly
-        try {
-            KeenClient.createStaticInstance(null, null, null);
-            fail("can't use bad values");
-        } catch (IllegalArgumentException e) {
-        }
-
-        KeenClient.createStaticInstance("abc", "def", "ghi");
-        KeenClient client = KeenClient.client();
-        doClientAssertions("abc", "def", "ghi", client);
-    }
-    */
 
     @Test
     public void testInvalidEventCollection() throws KeenException {
@@ -266,60 +226,39 @@ public class KeenClientTest {
         }
     }
 
-    /*
-     TODO: Fix or get rid of these tests.
     @Test
-    public void testRequestHandling() throws Exception {
-        InputStream stream = new ByteArrayInputStream("blah".getBytes("UTF-8"));
-
-        // if there's no callback, this shouldn't do anything (except log), regardless of status code
-        KeenHttpRequestRunnable.handleResult(stream, 201, null);
-        KeenHttpRequestRunnable.handleResult(stream, 200, null);
-        KeenHttpRequestRunnable.handleResult(stream, 500, null);
-
-        // if there's a callback, this SHOULD do something
-        runRequestHandlerTest("blah", 201, null);
-        runRequestHandlerTest("blah", 200, "blah");
-        runRequestHandlerTest("blah", 400, "blah");
-        runRequestHandlerTest("blah", 500, "blah");
+    public void testResponseProcessing() throws Exception {
+        runResponseProcessingTest("blah", null, 200, null);
+        runResponseProcessingTest("blah", null, 201, null);
+        runResponseProcessingTest(null, "blah", 400, "blah");
+        runResponseProcessingTest(null, "blah", 500, "blah");
     }
 
-    private void runRequestHandlerTest(String response, int statusCode, String expectedError) throws Exception {
-        InputStream stream = new ByteArrayInputStream(response.getBytes("UTF-8"));
-        final CountDownLatch successLatch = new CountDownLatch(1);
-        final CountDownLatch errorLatch = new CountDownLatch(1);
-        MyCallback callback = new MyCallback(successLatch, errorLatch);
-        KeenHttpRequestRunnable.handleResult(stream, statusCode, callback);
-        if (expectedError == null) {
-            successLatch.await(10, TimeUnit.MILLISECONDS);
-            assertEquals(1, errorLatch.getCount());
-        } else {
-            errorLatch.await(10, TimeUnit.MILLISECONDS);
-            assertEquals(0, errorLatch.getCount());
-            assertEquals(expectedError, callback.errorResponse);
-        }
-    }
-    */
-
-    class MyCallback implements KeenCallback {
-        final CountDownLatch successLatch;
-        final CountDownLatch errorLatch;
-        Exception e;
-
-        MyCallback(CountDownLatch successLatch, CountDownLatch errorLatch) {
-            this.successLatch = successLatch;
-            this.errorLatch = errorLatch;
+    private void runResponseProcessingTest(String response, String error, int statusCode,
+                                           String expectedError) throws Exception {
+        InputStream responseStream = null;
+        if (response != null) {
+            responseStream = new ByteArrayInputStream(response.getBytes("UTF-8"));
         }
 
-        @Override
-        public void onSuccess() {
-            successLatch.countDown();
+        InputStream errorStream = null;
+        if (error != null) {
+            errorStream = new ByteArrayInputStream(error.getBytes("UTF-8"));
         }
 
-        @Override
-        public void onFailure(Exception e) {
-            this.e = e;
-            errorLatch.countDown();
+        try {
+            KeenClient.client().processConnectionResponse(statusCode, responseStream, errorStream);
+            if (expectedError != null) {
+                fail("Expected error '" + expectedError + "' but succeeded");
+            }
+        } catch (Exception e) {
+            if (expectedError == null) {
+                fail("Expected success but got error '" + e.getMessage() + "' of type '" +
+                    e.getClass() + "'");
+            } else {
+                assertTrue(e instanceof ServerException);
+                assertEquals(expectedError, e.getMessage());
+            }
         }
     }
 
@@ -446,19 +385,6 @@ public class KeenClientTest {
         } catch (KeenException e) {
             assertEquals(expectedMessage, e.getLocalizedMessage());
         }
-    }
-
-    private void doClientAssertions(String expectedProjectId, String expectedWriteKey,
-                                    String expectedReadKey, KeenClient client) {
-        KeenProject project = client.getDefaultProject();
-        assertEquals(expectedProjectId, project.getProjectId());
-        assertEquals(expectedWriteKey, project.getWriteKey());
-        assertEquals(expectedReadKey, project.getReadKey());
-    }
-
-    private KeenProject getTestProject() {
-        return new KeenProject("508339b0897a2c4282000000", "80ce00d60d6443118017340c42d1cfaf",
-                "80ce00d60d6443118017340c42d1cfaf");
     }
 
 }
