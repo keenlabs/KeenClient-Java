@@ -684,6 +684,9 @@ public abstract class KeenClient {
             if (event.containsKey("keen")) {
                 throw new InvalidEventException("An event cannot contain a root-level property named 'keen'.");
             }
+        } else if (depth > KeenConstants.MAX_EVENT_DEPTH) {
+            throw new InvalidEventException("An event's depth (i.e. layers of nesting) cannot exceed " +
+                    KeenConstants.MAX_EVENT_DEPTH);
         }
 
         for (Map.Entry<String, Object> entry : event.entrySet()) {
@@ -699,17 +702,32 @@ public abstract class KeenClient {
             if (key.length() > 256) {
                 throw new InvalidEventException("An event cannot contain a property name longer than 256 characters.");
             }
-            Object value = entry.getValue();
-            if (value instanceof String) {
-                String strValue = (String) value;
-                if (strValue.length() >= 10000) {
-                    throw new InvalidEventException("An event cannot contain a string property value longer than 10," +
-                            "000 characters.");
-                }
-            } else if (value instanceof Map) {
-                validateEvent((Map<String, Object>) value, depth + 1);
+
+            validateEventValue(entry.getValue(), depth);
+        }
+    }
+
+    /**
+     * Validates a value within an event structure. This method will handle validating each element
+     * in a list, as well as recursively validating nested maps.
+     *
+     * @param value The value to validate.
+     * @param depth The current depth of validation.
+     */
+    @SuppressWarnings("unchecked") // cast to generic Map will always be okay in this case
+    private void validateEventValue(Object value, int depth) {
+        if (value instanceof String) {
+            String strValue = (String) value;
+            if (strValue.length() >= 10000) {
+                throw new InvalidEventException("An event cannot contain a string property value longer than 10," +
+                        "000 characters.");
             }
-            // TODO: Validate Iterable objects?
+        } else if (value instanceof Map) {
+            validateEvent((Map<String, Object>) value, depth + 1);
+        } else if (value instanceof Iterable) {
+            for (Object listElement : (Iterable) value) {
+                validateEventValue(listElement, depth);
+            }
         }
     }
 

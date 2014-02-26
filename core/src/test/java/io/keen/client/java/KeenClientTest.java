@@ -7,8 +7,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -140,45 +142,84 @@ public class KeenClientTest {
 
     // TODO: Test for self-referential event, event with list.
     @Test
-    public void testValidateAndBuildEvent() throws KeenException, IOException {
+    public void nullEvent() throws Exception {
         runValidateAndBuildEventTest(null, "foo", "null event",
                                      "You must specify a non-null, non-empty event.");
+    }
 
+    @Test
+    public void emptyEvent() throws Exception {
         runValidateAndBuildEventTest(new HashMap<String, Object>(), "foo", "empty event",
                                      "You must specify a non-null, non-empty event.");
+    }
 
+    @Test
+    public void eventWithKeenRootProperty() throws Exception {
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("keen", "reserved");
         runValidateAndBuildEventTest(event, "foo", "keen reserved",
-                                     "An event cannot contain a root-level property named 'keen'.");
+                "An event cannot contain a root-level property named 'keen'.");
+    }
 
-        event.remove("keen");
+    @Test
+    public void eventWithDotInPropertyName() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
         event.put("ab.cd", "whatever");
         runValidateAndBuildEventTest(event, "foo", ". in property name",
                                      "An event cannot contain a property with the period (.) character in it.");
+    }
 
-        event.remove("ab.cd");
+    @Test
+    public void eventWithInitialDollarPropertyName() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
         event.put("$a", "whatever");
         runValidateAndBuildEventTest(event, "foo", "$ at start of property name",
                                      "An event cannot contain a property that starts with the dollar sign ($) " +
                                              "character in it.");
+    }
 
-        event.remove("$a");
+    @Test
+    public void eventWithTooLongPropertyName() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
         String tooLong = TestUtils.getString(257);
         event.put(tooLong, "whatever");
         runValidateAndBuildEventTest(event, "foo", "too long property name",
                                      "An event cannot contain a property name longer than 256 characters.");
+    }
 
-        event.remove(tooLong);
-        tooLong = TestUtils.getString(10000);
+    @Test
+    public void eventWithTooLongStringValue() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
+        String tooLong = TestUtils.getString(10000);
         event.put("long", tooLong);
         runValidateAndBuildEventTest(event, "foo", "too long property value",
-                                     "An event cannot contain a string property value longer than 10,000 characters.");
+                "An event cannot contain a string property value longer than 10,000 characters.");
+    }
 
-        // now do a basic add
-        event.remove("long");
-        event.put("valid key", "valid value");
+    @Test
+    public void eventWithSelfReferencingProperty() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("recursion", event);
+        runValidateAndBuildEventTest(event, "foo", "self referencing",
+                "An event's depth (i.e. layers of nesting) cannot exceed " + KeenConstants.MAX_EVENT_DEPTH);
+    }
+
+    @Test
+    public void eventWithInvalidPropertyInList() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
+        List<String> invalidList = new ArrayList<String>();
+        String tooLong = TestUtils.getString(10000);
+        invalidList.add(tooLong);
+        event.put("invalid_list", invalidList);
+        runValidateAndBuildEventTest(event, "foo", "invalid value in list",
+                "An event cannot contain a string property value longer than 10,000 characters.");
+    }
+
+    @Test
+    public void validEvent() throws Exception {
         KeenClient client = KeenClient.client();
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("valid key", "valid value");
         Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
         assertNotNull(builtEvent);
         assertEquals("valid value", builtEvent.get("valid key"));
@@ -187,14 +228,22 @@ public class KeenClientTest {
         Map<String, Object> keenNamespace = (Map<String, Object>) builtEvent.get("keen");
         assertNotNull(keenNamespace);
         assertNotNull(keenNamespace.get("timestamp"));
+    }
 
-        // an event with a Calendar should work
+    @Test
+    public void validEventWithTimestamp() throws Exception {
+        KeenClient client = KeenClient.client();
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("valid key", "valid value");
         Calendar now = Calendar.getInstance();
         event.put("datetime", now);
         client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
+    }
 
-        // an event with a nested property called "keen" should work
-        event = TestUtils.getSimpleEvent();
+    @Test
+    public void validEventWithNestedKeenProperty() throws Exception {
+        KeenClient client = KeenClient.client();
+        Map<String, Object> event = TestUtils.getSimpleEvent();
         Map<String, Object> nested = new HashMap<String, Object>();
         nested.put("keen", "value");
         event.put("nested", nested);
