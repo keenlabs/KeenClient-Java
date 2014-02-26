@@ -32,8 +32,26 @@ public class KeenClientTest {
 
     private static class TestKeenClient extends KeenClient {
         @Override
-        protected KeenJsonHandler instantiateJsonHandler() {
-            return new KeenJsonHandler() {
+        public KeenJsonHandler getJsonHandler() {
+            return jsonHandler;
+        }
+
+        @Override
+        public KeenEventStore getEventStore() {
+            return eventStore;
+        }
+
+        @Override
+        public Executor getPublishExecutor() {
+            return publishExecutor;
+        }
+
+        private final KeenJsonHandler jsonHandler;
+        private final KeenEventStore eventStore;
+        private final Executor publishExecutor;
+
+        TestKeenClient() {
+            jsonHandler = new KeenJsonHandler() {
                 @Override
                 public Map<String, Object> readJson(Reader reader) throws IOException {
                     throw new UnsupportedOperationException();
@@ -44,16 +62,8 @@ public class KeenClientTest {
                     throw new UnsupportedOperationException();
                 }
             };
-        }
-
-        @Override
-        protected KeenEventStore instantiateEventStore() {
-            return new RamEventStore();
-        }
-
-        @Override
-        protected Executor instantiatePublishExecutor() {
-            return Executors.newSingleThreadExecutor();
+            eventStore = new RamEventStore();
+            publishExecutor = Executors.newSingleThreadExecutor();
         }
     }
 
@@ -128,6 +138,7 @@ public class KeenClientTest {
                                      "An event collection name cannot be longer than 256 characters.");
     }
 
+    // TODO: Test for self-referential event, event with list.
     @Test
     public void testValidateAndBuildEvent() throws KeenException, IOException {
         runValidateAndBuildEventTest(null, "foo", "null event",
@@ -205,92 +216,6 @@ public class KeenClientTest {
                     e.getLocalizedMessage());
         }
     }
-
-    /*
-     * TODO: Re-implement these tests with a mock JSON handler, or move them to the java
-     * package.
-    @Test
-    public void testAddEvent() throws KeenException, IOException, InterruptedException {
-        // does a full round-trip to the real API.
-        KeenClient client = getClient();
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
-        final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent("foo", event, null, new AddEventCallback() {
-            @Override
-            public void onSuccess() {
-                latch.countDown();
-            }
-
-            @Override
-            public void onError(String responseBody) {
-            }
-        });
-        // make sure the event was sent to Keen IO
-        latch.await(2, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void testAddEventNonSSL() throws KeenException, IOException, InterruptedException {
-        // does a full round-trip to the real API.
-        KeenClient client = getClient();
-        client.setBaseUrl("http://api.keen.io");
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
-        final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent("foo", event, null, new AddEventCallback() {
-            @Override
-            public void onSuccess() {
-                latch.countDown();
-            }
-
-            @Override
-            public void onError(String responseBody) {
-            }
-        });
-        // make sure the event was sent to Keen IO
-        latch.await(2, TimeUnit.SECONDS);
-    }
-    */
-
-    /*
-     TODO: Fix or get rid of this test.
-    @Test
-    public void testShutdown() throws KeenException, InterruptedException {
-        getClient();
-
-        assertFalse("Executor service should not be shutdown at the beginning of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
-
-        KeenClient.shutdown(2000);
-
-        assertTrue("Executor service should be shutdown at the end of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
-        assertTrue("Executor service should be terminated at the end of the test", KeenClient.EXECUTOR_SERVICE.isTerminated());
-    }
-    */
-
-    /**
-     * It is important to have two shutdown tests so we test that the KeenClient recovers after a shutdown.
-     * @throws KeenException
-     * @throws InterruptedException
-     */
-    /*
-     TODO: Fix or get rid of this test.
-    @Test
-    public void testShutdownNoWait() throws KeenException, InterruptedException {
-        getClient();
-
-        assertFalse("Executor service should not be shutdown at the beginning of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
-
-        KeenClient.shutdown(0);
-
-        assertTrue("Executor service should be shutdown at the end of the test", KeenClient.EXECUTOR_SERVICE.isShutdown());
-        // Don't test termination here as it is a race condition whether the EXECUTOR_SERVICE will be terminated or not.
-    }
-    */
 
     /*
      TODO: Fix or get rid of these tests.

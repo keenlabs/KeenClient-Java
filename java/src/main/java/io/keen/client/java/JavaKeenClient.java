@@ -1,14 +1,14 @@
 package io.keen.client.java;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Implementation of a {@link io.keen.client.java.KeenClient} in a standard Java environment.
  *
  * This client uses the Jackson library for reading and writing JSON. As a result, Jackson must be
- * available in order for this library to work properly. To use a different library, override
- * {@link #instantiateJsonHandler()}.
+ * available in order for this library to work properly.
  *
  * To cache events in between batch uploads, this client uses a RAM-based event store.
  *
@@ -38,24 +38,53 @@ public class JavaKeenClient extends KeenClient {
      * {@inheritDoc}
      */
     @Override
-    protected Executor instantiatePublishExecutor() {
-        return Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+    public KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected KeenEventStore instantiateEventStore() {
-        return new RamEventStore();
+    public KeenEventStore getEventStore() {
+        return eventStore;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected KeenJsonHandler instantiateJsonHandler() {
-        return new JacksonJsonHandler();
+    public ExecutorService getPublishExecutor() {
+        return publishExecutor;
+    }
+
+    ///// PUBLIC METHODS /////
+
+    /**
+     * If the publish {@link java.util.concurrent.ExecutorService} is shutdown, this method
+     * starts a new one. Otherwise it does nothing.
+     */
+    public void restartPublishExecutorService() {
+        if (publishExecutor.isShutdown()) {
+            publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+        }
+    }
+
+    ///// PRIVATE FIELDS /////
+
+    private KeenJsonHandler jsonHandler;
+    private KeenEventStore eventStore;
+    private ExecutorService publishExecutor;
+
+    ///// PRIVATE CONSTRUCTORS /////
+
+    /**
+     * Constructs a Java client.
+     */
+    private JavaKeenClient() {
+        jsonHandler = new JacksonJsonHandler();
+        eventStore = new RamEventStore();
+        publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
     }
 
 }

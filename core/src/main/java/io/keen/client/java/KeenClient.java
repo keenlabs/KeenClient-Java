@@ -38,31 +38,31 @@ import io.keen.client.java.exceptions.ServerException;
  */
 public abstract class KeenClient {
 
-    ///// PROTECTED ABSTRACT METHODS /////
+    ///// PUBLIC ABSTRACT METHODS /////
 
     /**
-     * Creates a {@link io.keen.client.java.KeenJsonHandler} which will be used for the life of the
-     * client to handle reading and writing JSON.
+     * Gets the {@link io.keen.client.java.KeenJsonHandler} which should be used to handle reading
+     * and writing JSON.
      *
-     * @return A new {@link io.keen.client.java.KeenJsonHandler}.
+     * @return A {@link io.keen.client.java.KeenJsonHandler}.
      */
-    protected abstract KeenJsonHandler instantiateJsonHandler();
+    public abstract KeenJsonHandler getJsonHandler();
 
     /**
-     * Creates a {@link io.keen.client.java.KeenEventStore} which will be used for the life of the
-     * client to handle storing events in between batch posts.
+     * Gets the {@link io.keen.client.java.KeenEventStore} which should be used to handle storing
+     * events in between batch posts.
      *
-     * @return A new {@link io.keen.client.java.KeenEventStore}.
+     * @return A {@link io.keen.client.java.KeenEventStore}.
      */
-    protected abstract KeenEventStore instantiateEventStore();
+    public abstract KeenEventStore getEventStore();
 
     /**
-     * Creates an {@link java.util.concurrent.Executor} which will be used for the life of the
-     * client to process asynchronous requests.
+     * Gets the {@link java.util.concurrent.Executor} which should be used to process asynchronous
+     * requests.
      *
-     * @return A new {@link java.util.concurrent.Executor}.
+     * @return An {@link java.util.concurrent.Executor}.
      */
-    protected abstract Executor instantiatePublishExecutor();
+    public abstract Executor getPublishExecutor();
 
     ///// PUBLIC STATIC METHODS /////
 
@@ -193,7 +193,7 @@ public abstract class KeenClient {
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
         try {
-            publishExecutor.execute(new Runnable() {
+            getPublishExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     addEvent(useProject, eventCollection, event, keenProperties, callback);
@@ -258,7 +258,7 @@ public abstract class KeenClient {
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Write the event out to the event store.
-            eventStore.store(eventCollection, newEvent);
+            getEventStore().store(eventCollection, newEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
@@ -306,7 +306,7 @@ public abstract class KeenClient {
         KeenProject useProject = (project == null? defaultProject : project);
 
         try {
-            Map<String, List<Object>> eventHandles = eventStore.getHandles();
+            Map<String, List<Object>> eventHandles = getEventStore().getHandles();
             Map<String, List<Map<String, Object>>> events = buildEventMap(eventHandles);
             String response = publishAll(useProject, events);
             if (response != null) {
@@ -366,7 +366,7 @@ public abstract class KeenClient {
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
         try {
-            publishExecutor.execute(new Runnable() {
+            getPublishExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     sendQueuedEvents(useProject, callback);
@@ -409,10 +409,15 @@ public abstract class KeenClient {
      * <p/>
      * Use this if you want to disable SSL.
      *
-     * @param baseUrl The new base URL (i.e. 'http://api.keen.io')
+     * @param baseUrl The new base URL (i.e. 'http://api.keen.io'), or null to reset the base URL to
+     *                the default ('https://api.keen.io').
      */
     public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
+        if (baseUrl == null) {
+            this.baseUrl = KeenConstants.SERVER_ADDRESS;
+        } else {
+            this.baseUrl = baseUrl;
+        }
     }
 
     /**
@@ -550,13 +555,6 @@ public abstract class KeenClient {
         }
 
         ClientSingleton.INSTANCE.client = client;
-
-        // TODO: Validate that JSON handler exists?
-        // Note: the order of instantiation is important. The JSON handler must be instantiated
-        // first because the event store may depend upon it.
-        client.jsonHandler = client.instantiateJsonHandler();
-        client.eventStore = client.instantiateEventStore();
-        client.publishExecutor = client.instantiatePublishExecutor();
     }
 
     /**
@@ -614,17 +612,6 @@ public abstract class KeenClient {
         return newEvent;
     }
 
-    /**
-     * Gets the {@link io.keen.client.java.KeenJsonHandler} for this client. This method is
-     * available to subclasses and other library components in case they need to perform JSON
-     * operations, such as to serialize events to files on disk.
-     *
-     * @return The client's {@link io.keen.client.java.KeenJsonHandler}.
-     */
-    protected KeenJsonHandler getJsonHandler() {
-        return jsonHandler;
-    }
-
     ///// PRIVATE TYPES /////
 
     /**
@@ -645,9 +632,6 @@ public abstract class KeenClient {
     // TODO: Set this flag to false if the library is not operational for any reason.
     private boolean isActive = true;
     private boolean isDebugMode;
-    private Executor publishExecutor;
-    private KeenEventStore eventStore;
-    private KeenJsonHandler jsonHandler;
     private KeenProject defaultProject;
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
@@ -754,7 +738,7 @@ public abstract class KeenClient {
             // Build the event list by retrieving events from the store.
             List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
             for (Object handle : handles) {
-                events.add(eventStore.get(handle));
+                events.add(getEventStore().get(handle));
             }
             result.put(eventCollection, events);
         }
@@ -828,7 +812,7 @@ public abstract class KeenClient {
         OutputStreamWriter writer = null;
         try {
             writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
-            jsonHandler.writeJson(writer, requestData);
+            getJsonHandler().writeJson(writer, requestData);
         } finally {
             KeenUtils.closeQuietly(writer);
         }
@@ -885,7 +869,7 @@ public abstract class KeenClient {
         // Parse the response into a map.
         StringReader reader = new StringReader(response);
         Map<String, Object> responseMap;
-        responseMap = jsonHandler.readJson(reader);
+        responseMap = getJsonHandler().readJson(reader);
 
         // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
         // It's not obvious what the best way is to try and recover from them, but just hoping it
@@ -931,7 +915,7 @@ public abstract class KeenClient {
                     // Try to remove the object from the cache. Catch and log exceptions to prevent
                     // a single failure from derailing the rest of the cleanup.
                     try {
-                        eventStore.remove(handle);
+                        getEventStore().remove(handle);
                     } catch (IOException e) {
                         KeenLogging.log("Failed to remove object '" + handle + "' from cache");
                     }

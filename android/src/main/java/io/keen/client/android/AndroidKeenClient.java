@@ -16,9 +16,7 @@ import io.keen.client.java.exceptions.KeenInitializationException;
  * Implementation of a {@link io.keen.client.java.KeenClient} on the Android platform.
  *
  * This client uses the built-in Android JSON libraries for reading/writing JSON in order to
- * minimize library size. However, if your application already includes a JSON library such as
- * Jackson or GSON, you can use that implementation in place of the Android library implementation
- * by overriding {@link #instantiateJsonHandler()}.
+ * minimize library size.
  *
  * To cache events in between batch uploads, this client uses a file-based event store with its
  * root in the application's cache directory.
@@ -50,34 +48,33 @@ public class AndroidKeenClient extends KeenClient {
      * {@inheritDoc}
      */
     @Override
-    protected Executor instantiatePublishExecutor() {
-        return new AsyncTaskExecutor();
+    public Executor getPublishExecutor() {
+        return publishExecutor;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected KeenEventStore instantiateEventStore() throws KeenInitializationException {
-        try {
-            return new FileEventStore(getDeviceCacheDirectory(), getJsonHandler());
-        } catch (IOException e) {
-            throw new KeenInitializationException("Error building file event store");
-        }
+    public KeenEventStore getEventStore() throws KeenInitializationException {
+        return eventStore;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected KeenJsonHandler instantiateJsonHandler() {
-        return new AndroidJsonHandler();
+    public KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
     }
 
     ///// PRIVATE FIELDS /////
 
     /** The application context in which this client will run. */
     private final Context context;
+    private final KeenJsonHandler jsonHandler;
+    private final KeenEventStore eventStore;
+    private final Executor publishExecutor;
 
     ///// PRIVATE CONSTRUCTORS /////
 
@@ -89,6 +86,13 @@ public class AndroidKeenClient extends KeenClient {
      */
     private AndroidKeenClient(Context context) {
         this.context = context.getApplicationContext();
+        this.jsonHandler = new AndroidJsonHandler();
+        try {
+            this.eventStore = new FileEventStore(getDeviceCacheDirectory(), getJsonHandler());
+        } catch (IOException e) {
+            throw new KeenInitializationException("Error building file event store");
+        }
+        this.publishExecutor = new AsyncTaskExecutor();
     }
 
     ///// PRIVATE METHODS /////
