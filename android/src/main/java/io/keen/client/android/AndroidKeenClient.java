@@ -14,13 +14,13 @@ import io.keen.client.java.exceptions.KeenInitializationException;
 
 /**
  * Implementation of a {@link io.keen.client.java.KeenClient} on the Android platform.
- *
+ * <p/>
  * This client uses the built-in Android JSON libraries for reading/writing JSON in order to
  * minimize library size.
- *
+ * <p/>
  * To cache events in between batch uploads, this client uses a file-based event store with its
  * root in the application's cache directory.
- *
+ * <p/>
  * This client uses {@link android.os.AsyncTask} to run asynchronous requests.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
@@ -70,7 +70,9 @@ public class AndroidKeenClient extends KeenClient {
 
     ///// PRIVATE FIELDS /////
 
-    /** The application context in which this client will run. */
+    /**
+     * The application context in which this client will run.
+     */
     private final Context context;
     private final KeenJsonHandler jsonHandler;
     private final KeenEventStore eventStore;
@@ -85,6 +87,10 @@ public class AndroidKeenClient extends KeenClient {
      *                client will run.
      */
     private AndroidKeenClient(Context context) {
+        if (context == null) {
+            throw new IllegalArgumentException("Context must not be null");
+        }
+
         this.context = context.getApplicationContext();
         this.jsonHandler = new AndroidJsonHandler();
         try {

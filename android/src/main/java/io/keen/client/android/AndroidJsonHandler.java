@@ -55,7 +55,9 @@ class AndroidJsonHandler implements KeenJsonHandler {
 
     ///// PRIVATE CONSTANTS /////
 
-    /** The size of the buffer to use when copying a reader to a string. */
+    /**
+     * The size of the buffer to use when copying a reader to a string.
+     */
     private static final int COPY_BUFFER_SIZE = 4 * 1024;
 
     ///// PRIVATE METHODS /////

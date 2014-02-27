@@ -2,11 +2,14 @@ package io.keen.client.android;
 
 import android.content.Context;
 
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,33 +22,39 @@ import static org.mockito.Mockito.when;
  */
 public class AndroidKeenClientTest {
 
+    private static final File TEST_STORE_ROOT = new File("test_store_root");
+
     @BeforeClass
-    public static void classSetUp() {
+    public static void classSetUp() throws IOException {
         KeenLogging.enableLogging();
+        FileUtils.forceMkdir(TEST_STORE_ROOT);
     }
 
     @Before
-    public void testSetUp() {
-        TestUtils.deleteRecursively(getKeenClientCacheDir());
+    public void testSetUp() throws IOException {
+        FileUtils.cleanDirectory(TEST_STORE_ROOT);
+    }
+
+    @AfterClass
+    public static void deleteStoreRoot() throws IOException {
+        FileUtils.deleteDirectory(TEST_STORE_ROOT);
     }
 
     @Test
-    public void dummyTest() {
-        // TODO: Remove this once other tests have been added.
+    public void validContext() {
+        AndroidKeenClient.initialize(getMockedContext());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullContext() {
+        AndroidKeenClient.initialize(null);
     }
 
     private Context getMockedContext() {
         Context mockContext = mock(Context.class);
-        when(mockContext.getCacheDir()).thenReturn(getCacheDir());
+        when(mockContext.getApplicationContext()).thenReturn(mockContext);
+        when(mockContext.getCacheDir()).thenReturn(TEST_STORE_ROOT);
         return mockContext;
-    }
-
-    private static File getCacheDir() {
-        return new File("/tmp");
-    }
-
-    private static File getKeenClientCacheDir() {
-        return new File(getCacheDir(), "keen");
     }
 
 }

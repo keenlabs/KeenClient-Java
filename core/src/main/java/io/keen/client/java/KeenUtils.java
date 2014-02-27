@@ -14,8 +14,8 @@ import java.util.Scanner;
  */
 class KeenUtils {
 
-    private final static char[] hexArray = {'0','1','2','3','4','5','6','7',
-            '8','9','A','B','C','D','E','F'};
+    private final static char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7',
+            '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     static void closeQuietly(Closeable c) {
         if (c != null) {
@@ -46,9 +46,9 @@ class KeenUtils {
         }
 
         byte[] data = new byte[len / 2];
-        for(int i = 0; i < len; i += 2){
+        for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) +
-                                   Character.digit(s.charAt(i + 1), 16));
+                    Character.digit(s.charAt(i + 1), 16));
         }
 
         return data;
@@ -57,7 +57,7 @@ class KeenUtils {
     static String byteArrayToHexString(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
 
-        for(int i = 0; i < bytes.length; i++) {
+        for (int i = 0; i < bytes.length; i++) {
             int b = bytes[i] & 0xFF;
             hexChars[i * 2] = hexArray[b >>> 4];
             hexChars[(i * 2) + 1] = hexArray[b & 0x0F];

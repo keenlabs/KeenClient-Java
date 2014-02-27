@@ -57,7 +57,7 @@ public class KeenProjectTest {
     }
 
     private void doProjectAssertions(String expectedProjectId, String expectedWriteKey,
-                                    String expectedReadKey, KeenProject project) {
+                                     String expectedReadKey, KeenProject project) {
         assertEquals(expectedProjectId, project.getProjectId());
         assertEquals(expectedWriteKey, project.getWriteKey());
         assertEquals(expectedReadKey, project.getReadKey());

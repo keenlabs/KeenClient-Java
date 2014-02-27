@@ -13,10 +13,11 @@ subprojects {
     apply plugin: 'java'
 
     repositories {
-       mavenCentral()
+        mavenCentral()
     }
 
     dependencies {
+        testCompile 'commons-io:commons-io:2.4'
         testCompile 'junit:junit:4.11'
     }
 

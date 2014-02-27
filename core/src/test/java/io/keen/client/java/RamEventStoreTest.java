@@ -1,18 +1,16 @@
 package io.keen.client.java;
 
-import org.junit.Test;
-
 /**
  * Tests the RamEventStore class.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class RamEventStoreTest {
+public class RamEventStoreTest extends EventStoreTestBase {
 
-    @Test
-    public void dummyTest() {
-        // TODO: Remove this once other tests have been added.
+    @Override
+    protected KeenEventStore buildStore() {
+        return new RamEventStore();
     }
 
 }

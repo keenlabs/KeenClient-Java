@@ -14,10 +14,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
@@ -93,23 +91,23 @@ public class KeenClientTest {
     @Test
     public void testInvalidEventCollection() throws KeenException {
         runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), "$asd", "collection can't start with $",
-                                     "An event collection name cannot start with the dollar sign ($) character.");
+                "An event collection name cannot start with the dollar sign ($) character.");
 
         String tooLong = TestUtils.getString(257);
         runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), tooLong, "collection can't be longer than 256 chars",
-                                     "An event collection name cannot be longer than 256 characters.");
+                "An event collection name cannot be longer than 256 characters.");
     }
 
     @Test
     public void nullEvent() throws Exception {
         runValidateAndBuildEventTest(null, "foo", "null event",
-                                     "You must specify a non-null, non-empty event.");
+                "You must specify a non-null, non-empty event.");
     }
 
     @Test
     public void emptyEvent() throws Exception {
         runValidateAndBuildEventTest(new HashMap<String, Object>(), "foo", "empty event",
-                                     "You must specify a non-null, non-empty event.");
+                "You must specify a non-null, non-empty event.");
     }
 
     @Test
@@ -125,7 +123,7 @@ public class KeenClientTest {
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("ab.cd", "whatever");
         runValidateAndBuildEventTest(event, "foo", ". in property name",
-                                     "An event cannot contain a property with the period (.) character in it.");
+                "An event cannot contain a property with the period (.) character in it.");
     }
 
     @Test
@@ -133,8 +131,8 @@ public class KeenClientTest {
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("$a", "whatever");
         runValidateAndBuildEventTest(event, "foo", "$ at start of property name",
-                                     "An event cannot contain a property that starts with the dollar sign ($) " +
-                                             "character in it.");
+                "An event cannot contain a property that starts with the dollar sign ($) " +
+                        "character in it.");
     }
 
     @Test
@@ -143,7 +141,7 @@ public class KeenClientTest {
         String tooLong = TestUtils.getString(257);
         event.put(tooLong, "whatever");
         runValidateAndBuildEventTest(event, "foo", "too long property name",
-                                     "An event cannot contain a property name longer than 256 characters.");
+                "An event cannot contain a property name longer than 256 characters.");
     }
 
     @Test
@@ -252,7 +250,7 @@ public class KeenClientTest {
         } catch (Exception e) {
             if (expectedError == null) {
                 fail("Expected success but got error '" + e.getMessage() + "' of type '" +
-                    e.getClass() + "'");
+                        e.getClass() + "'");
             } else {
                 assertTrue(e instanceof ServerException);
                 assertEquals(expectedError, e.getMessage());

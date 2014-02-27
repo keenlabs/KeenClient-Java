@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * JSON utilities. This code was taken from:
- *
+ * <p/>
  * https://gist.github.com/codebutler/2339666
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
@@ -30,7 +30,7 @@ class JsonHelper {
             return json;
         } else if (object instanceof Iterable) {
             JSONArray json = new JSONArray();
-            for (Object value : ((Iterable)object)) {
+            for (Object value : ((Iterable) object)) {
                 json.put(value);
             }
             return json;

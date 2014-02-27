@@ -1,17 +1,16 @@
 package io.keen.client.java;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Implementation of a {@link io.keen.client.java.KeenClient} in a standard Java environment.
- *
+ * <p/>
  * This client uses the Jackson library for reading and writing JSON. As a result, Jackson must be
  * available in order for this library to work properly.
- *
+ * <p/>
  * To cache events in between batch uploads, this client uses a RAM-based event store.
- *
+ * <p/>
  * This client uses a fixed thread pool (constructed with
  * {@link java.util.concurrent.Executors#newFixedThreadPool(int)}) to run asynchronous requests.
  *

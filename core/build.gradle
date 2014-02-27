@@ -1,2 +1,6 @@
 // Build instructions for core library.
 archivesBaseName = "keen-client-java-core"
+
+dependencies {
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
+}

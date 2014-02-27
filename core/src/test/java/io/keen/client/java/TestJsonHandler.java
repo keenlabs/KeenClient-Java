@@ -11,12 +11,13 @@ import java.io.Writer;
 import java.util.Map;
 
 /**
- * Implementation of the Keen JSON handler interface using the Jackson JSON library.
+ * Implementation of the Keen JSON handler interface that can be used for testing the rest of the
+ * core API. For simplicity, this implementation just uses the Jackson JSON library.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-class JacksonJsonHandler implements KeenJsonHandler {
+class TestJsonHandler implements KeenJsonHandler {
 
     ///// KeenJsonHandler METHODS /////
 
@@ -41,7 +42,7 @@ class JacksonJsonHandler implements KeenJsonHandler {
     /**
      * Constructs a new Jackson JSON handler.
      */
-    JacksonJsonHandler() {
+    TestJsonHandler() {
         mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }

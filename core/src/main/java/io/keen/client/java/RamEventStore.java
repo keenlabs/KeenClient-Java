@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Implementation of {@link KeenEventStore} which simply keeps a copy of each event in memory until
  * it is explicitly removed.
- *
+ * <p/>
  * NOTE: This implementation synchronizes all operations in order to ensure thread safety, but as
  * a result it may perform poorly under high load. For applications that require high throughput,
  * a custom {@link io.keen.client.java.KeenEventStore} implementation is recommended.
@@ -107,7 +107,7 @@ public class RamEventStore implements KeenEventStore {
     /**
      * Gets the next ID to use as a handle for a stored event. This implementation just checks for
      * the next unused ID based on an incrementing counter.
-     *
+     * <p/>
      * NOTE: For long-running processes it's possible that the nextId field will overflow. Hence it
      * is necessary to handle collisions gracefully by skipping them.
      *
@@ -143,7 +143,7 @@ public class RamEventStore implements KeenEventStore {
             return (Long) handle;
         } else {
             throw new IllegalArgumentException("Expected handle to be a Long, but was: " +
-                handle.getClass().getCanonicalName());
+                    handle.getClass().getCanonicalName());
         }
     }
 

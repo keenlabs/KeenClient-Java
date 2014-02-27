@@ -1,7 +1,6 @@
 package io.keen.client.java;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ public interface KeenEventStore {
      * Stores the given event.
      *
      * @param eventCollection The name of the collection in which the event should be stored.
-     * @param event The event to store.
+     * @param event           The event to store.
      * @return A handle which can be used to retrieve or remove the event.
      * @throws IOException If there is an error storing the event.
      */
@@ -49,7 +48,8 @@ public interface KeenEventStore {
      * events to send in a batch to the Keen server, as well as to remove all successfully posted
      * events after processing the response.
      *
-     * @return
+     * @return A map from collection names to lists of handles currently stored under each
+     * collection.
      * @throws IOException If there is an error retrieving the handles.
      */
     Map<String, List<Object>> getHandles() throws IOException;

@@ -2,7 +2,7 @@ package io.keen.client.java;
 
 /**
  * KeenConfig
- *
+ * <p/>
  * Contains configuration variables for the Keen IO Java SDK.
  *
  * @author dkador

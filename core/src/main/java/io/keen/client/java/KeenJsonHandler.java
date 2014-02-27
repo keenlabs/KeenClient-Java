@@ -9,7 +9,7 @@ import java.util.Map;
  * Interface for abstracting the tasks of converting an input {@link java.io.Reader} into an
  * in-memory object (in the form of a {@code Map&lt;String, Object&gt;}), and for writing that
  * object back out to a {@link java.io.Writer}.
- *
+ * <p/>
  * This interface allows the Keen library to be configured to use different JSON implementations
  * in different environments, depending upon requirements for speed versus size (or other
  * considerations).
@@ -36,7 +36,7 @@ public interface KeenJsonHandler {
      * {@link java.io.Writer}.
      *
      * @param writer The {@link java.io.Writer} to which the JSON data should be written.
-     * @param value The object to write.
+     * @param value  The object to write.
      * @throws IOException If there is an error writing to the output.
      */
     void writeJson(Writer writer, Map<String, ?> value) throws IOException;
