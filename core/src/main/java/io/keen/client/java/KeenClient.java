@@ -449,7 +449,6 @@ public abstract class KeenClient {
      * <pre>
      *     {@code KeenClient client = KeenClient.client();
      *     GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
-     *         @Override
      *         public Map<String, Object> getGlobalProperties(String eventCollection) {
      *             Map<String, Object> map = new HashMap<String, Object>();
      *             map.put("some dynamic property name", "some dynamic property value");

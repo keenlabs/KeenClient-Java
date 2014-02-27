@@ -36,11 +36,6 @@ def androidJar = new File(sdkDir, '/platforms/android-19/android.jar')
 
 dependencies {
     compile files(androidJar)
-    testCompile 'org.mockito:mockito-all:1.9.5'
-}
-
-test {
-    include '**/*Test.class'
 }
 
 jar {

@@ -44,7 +44,7 @@ class AndroidJsonHandler implements KeenJsonHandler {
      * {@inheritDoc}
      */
     @Override
-    public void writeJson(Writer writer, Map<String, ? extends Object> value) throws IOException {
+    public void writeJson(Writer writer, Map<String, ?> value) throws IOException {
         if (writer == null) {
             throw new IllegalArgumentException("Reader must not be null");
         }

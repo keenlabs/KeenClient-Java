@@ -1,5 +1,9 @@
 package io.keen.client.java;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -9,15 +13,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import io.keen.client.java.exceptions.KeenException;
+import io.keen.client.java.exceptions.KeenInitializationException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 
@@ -25,6 +33,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -35,57 +47,38 @@ import static org.junit.Assert.fail;
  */
 public class KeenClientTest {
 
-    private static class TestKeenClient extends KeenClient {
-        @Override
-        public KeenJsonHandler getJsonHandler() {
-            return jsonHandler;
-        }
+    private static KeenProject TEST_PROJECT;
 
-        @Override
-        public KeenEventStore getEventStore() {
-            return eventStore;
-        }
+    /**
+     * JSON object mapper that the test infrastructure can use without worrying about any
+     * interference with the Keen library's JSON handler.
+     */
+    private static ObjectMapper JSON_MAPPER;
 
-        @Override
-        public Executor getPublishExecutor() {
-            return publishExecutor;
-        }
-
-        private final KeenJsonHandler jsonHandler;
-        private final KeenEventStore eventStore;
-        private final Executor publishExecutor;
-
-        TestKeenClient() {
-            jsonHandler = new KeenJsonHandler() {
-                @Override
-                public Map<String, Object> readJson(Reader reader) throws IOException {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public void writeJson(Writer writer, Map<String, ?> value) throws IOException {
-                    throw new UnsupportedOperationException();
-                }
-            };
-            eventStore = new RamEventStore();
-            publishExecutor = Executors.newSingleThreadExecutor();
-        }
-    }
-
-    private static final KeenProject TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
-            "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
+    private KeenClient client;
 
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
         KeenClient client = new TestKeenClient();
-        client.setDebugMode(true);
         KeenClient.initialize(client);
+        TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
+                "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
+        JSON_MAPPER = new ObjectMapper();
+        JSON_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     @Before
     public void setup() {
-        KeenClient.client().setDefaultProject(TEST_PROJECT);
+        client = KeenClient.client();
+        client.setBaseUrl(null);
+        client.setDebugMode(true);
+        client.setDefaultProject(TEST_PROJECT);
+    }
+
+    @After
+    public void cleanUp() {
+        client = null;
     }
 
     @Test
@@ -220,6 +213,33 @@ public class KeenClientTest {
             assertEquals("You can't send events to Keen IO if you haven't set a write key.",
                     e.getLocalizedMessage());
         }
+    }
+
+    @Test
+    public void testAddEvent() throws Exception {
+        // does a full round-trip to the real API.
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("test key", "test value");
+        // setup a latch for our callback so we can verify the server got the request
+        final CountDownLatch latch = new CountDownLatch(1);
+        // send the event
+        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
+        // make sure the event was sent to Keen IO
+        latch.await(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testAddEventNonSSL() throws Exception {
+        // does a full round-trip to the real API.
+        client.setBaseUrl("http://api.keen.io");
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("test key", "test value");
+        // setup a latch for our callback so we can verify the server got the request
+        final CountDownLatch latch = new CountDownLatch(1);
+        // send the event
+        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
+        // make sure the event was sent to Keen IO
+        latch.await(2, TimeUnit.SECONDS);
     }
 
     @Test
@@ -380,6 +400,69 @@ public class KeenClientTest {
             fail(msg);
         } catch (KeenException e) {
             assertEquals(expectedMessage, e.getLocalizedMessage());
+        }
+    }
+
+    private KeenClient getMockedClient(Object data, int statusCode) throws IOException, KeenInitializationException {
+        if (data == null) {
+            data = buildResponseJson(true, null, null);
+        }
+
+        // set up the partial mock
+        KeenClient client = KeenClient.client();
+        client = spy(client);
+
+        byte[] bytes = JSON_MAPPER.writeValueAsBytes(data);
+        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+        HttpURLConnection connMock = mock(HttpURLConnection.class);
+        when(connMock.getResponseCode()).thenReturn(statusCode);
+        if (statusCode == 200) {
+            when(connMock.getInputStream()).thenReturn(stream);
+        } else {
+            when(connMock.getErrorStream()).thenReturn(stream);
+        }
+
+        doReturn(connMock).when(client).sendQueuedEvents();
+
+        return client;
+    }
+
+    private Map<String, Object> buildResponseJson(boolean success, String errorCode, String description) {
+        Map<String, Object> result = buildResult(success, errorCode, description);
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        list.add(result);
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("foo", list);
+        return response;
+    }
+
+    private Map<String, Object> buildResult(boolean success, String errorCode, String description) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("success", success);
+        if (!success) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("name", errorCode);
+            error.put("description", description);
+            result.put("error", error);
+        }
+        return result;
+    }
+
+    private static class LatchKeenCallback implements KeenCallback {
+
+        private final CountDownLatch latch;
+
+        LatchKeenCallback(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public void onSuccess() {
+            latch.countDown();
+        }
+
+        @Override
+        public void onFailure(Exception e) {
         }
     }
 

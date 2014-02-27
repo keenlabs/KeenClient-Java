@@ -5,9 +5,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -31,8 +28,7 @@ public class JavaKeenClientTest {
         KeenLogging.enableLogging();
         JavaKeenClient.initialize();
         TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
-                "80ce00d60d6443118017340c42d1cfaf",
-                "80ce00d60d6443118017340c42d1cfaf");
+                "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
     }
 
     @Before
@@ -40,38 +36,12 @@ public class JavaKeenClientTest {
         client = KeenClient.client();
         client.setBaseUrl(null);
         client.setDebugMode(true);
+        client.setDefaultProject(TEST_PROJECT);
     }
 
     @After
     public void cleanUp() {
         client = null;
-    }
-
-    @Test
-    public void testAddEvent() throws Exception {
-        // does a full round-trip to the real API.
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
-        final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
-        // make sure the event was sent to Keen IO
-        latch.await(2, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void testAddEventNonSSL() throws Exception {
-        // does a full round-trip to the real API.
-        client.setBaseUrl("http://api.keen.io");
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
-        final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
-        // make sure the event was sent to Keen IO
-        latch.await(2, TimeUnit.SECONDS);
     }
 
     @Test
@@ -100,24 +70,6 @@ public class JavaKeenClientTest {
 
         assertTrue("Executor service should be shutdown at the end of the test", service.isShutdown());
         // Don't test termination here as it is a race condition whether the EXECUTOR_SERVICE will be terminated or not.
-    }
-
-    private static class LatchKeenCallback implements KeenCallback {
-
-        private final CountDownLatch latch;
-
-        LatchKeenCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess() {
-            latch.countDown();
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-        }
     }
 
 }
