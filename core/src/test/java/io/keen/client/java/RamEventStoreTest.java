@@ -1,5 +1,14 @@
 package io.keen.client.java;
 
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+
 /**
  * Tests the RamEventStore class.
  *
@@ -11,6 +20,41 @@ public class RamEventStoreTest extends EventStoreTestBase {
     @Override
     protected KeenEventStore buildStore() {
         return new RamEventStore();
+    }
+
+    @Test
+    public void maxEventsPerCollection() throws Exception {
+        // Set the maximum number of events per collection to 3.
+        RamEventStore ramStore = (RamEventStore) store;
+        ramStore.setMaxEventsPerCollection(3);
+
+        // Add 5 events.
+        store.store("collection1", TEST_EVENT_1);
+        store.store("collection1", TEST_EVENT_2);
+        store.store("collection1", TEST_EVENT_3);
+        store.store("collection1", TEST_EVENT_4);
+        store.store("collection1", TEST_EVENT_5);
+
+        // Get the handle map.
+        Map<String, List<Object>> handleMap = store.getHandles();
+        assertNotNull(handleMap);
+        assertEquals(1, handleMap.size());
+
+        // Get the lists of handles.
+        List<Object> handles = handleMap.get("collection1");
+        assertNotNull(handles);
+        assertEquals(3, handles.size());
+
+        // Get the events.
+        List<String> retrievedEvents = new ArrayList<String>();
+        for (Object handle : handles) {
+            String retrievedEvent = store.get(handle);
+            assertNotNull(retrievedEvent);
+            retrievedEvents.add(retrievedEvent);
+        }
+
+        // Validate the events.
+        assertThat(retrievedEvents, containsInAnyOrder(TEST_EVENT_3, TEST_EVENT_4, TEST_EVENT_5));
     }
 
 }

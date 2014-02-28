@@ -134,8 +134,7 @@ public abstract class KeenClient {
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Publish the event.
-            String response = publish(project, eventCollection, newEvent);
-            // TODO: Validate the response?
+            publish(project, eventCollection, newEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
@@ -910,7 +909,6 @@ public abstract class KeenClient {
         Map<String, Object> responseMap;
         responseMap = getJsonHandler().readJson(reader);
 
-        // TODO: Wrap the various unsafe casts used below in try/catch(ClassCastException) blocks?
         // It's not obvious what the best way is to try and recover from them, but just hoping it
         // doesn't happen is probably the wrong answer.
 

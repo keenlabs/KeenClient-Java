@@ -38,14 +38,22 @@ public class RamEventStore implements KeenEventStore {
     @Override
     public synchronized Object store(String eventCollection, String event) throws IOException {
         long id = getNextId();
-        events.put(id, event);
 
+        // Get the list of events for the specified collection. If no list exists yet, create one.
         List<Long> collectionEvents = collectionIds.get(eventCollection);
         if (collectionEvents == null) {
             collectionEvents = new ArrayList<Long>();
             collectionIds.put(eventCollection, collectionEvents);
         }
-        // TODO: Cap maximum number of events, and evict as necessary.
+
+        // Remove the oldest events until there is room for at least one more event.
+        while (collectionEvents.size() >= maxEventsPerCollection) {
+            long idToRemove = collectionEvents.remove(0);
+            events.remove(idToRemove);
+        }
+
+        // Add the event to the event store, add its ID to the collection's list, and return the ID.
+        events.put(id, event);
         collectionEvents.add(id);
         return id;
     }
@@ -80,6 +88,9 @@ public class RamEventStore implements KeenEventStore {
             String eventCollection = entry.getKey();
             List<Long> ids = entry.getValue();
             List<Object> handles = new ArrayList<Object>();
+
+            // Iterate over the list of handles, removing any "dead" events and adding the rest to
+            // the result map.
             Iterator<Long> iterator = ids.iterator();
             while (iterator.hasNext()) {
                 Long id = iterator.next();
@@ -96,11 +107,23 @@ public class RamEventStore implements KeenEventStore {
         return result;
     }
 
+    ///// PUBLIC METHODS /////
+
+    /**
+     * Sets the number of events that can be stored for a single collection before aging them out.
+     *
+     * @param maxEventsPerCollection The maximum number of events per collection.
+     */
+    public void setMaxEventsPerCollection(int maxEventsPerCollection) {
+        this.maxEventsPerCollection = maxEventsPerCollection;
+    }
+
     ///// PRIVATE FIELDS /////
 
     private long nextId = 0;
     private Map<String, List<Long>> collectionIds;
     private Map<Long, String> events;
+    private int maxEventsPerCollection = 10000;
 
     ///// PRIVATE METHODS /////
 

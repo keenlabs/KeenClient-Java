@@ -23,6 +23,9 @@ public abstract class EventStoreTestBase {
 
     protected static final String TEST_EVENT_1 = "{\"param1\":\"value1\"}";
     protected static final String TEST_EVENT_2 = "{\"param2\":\"value2\"}";
+    protected static final String TEST_EVENT_3 = "{\"param3\":\"value3\"}";
+    protected static final String TEST_EVENT_4 = "{\"param4\":\"value4\"}";
+    protected static final String TEST_EVENT_5 = "{\"param5\":\"value5\"}";
 
     protected abstract KeenEventStore buildStore() throws IOException;
 
