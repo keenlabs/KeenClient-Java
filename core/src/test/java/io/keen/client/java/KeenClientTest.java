@@ -243,42 +243,6 @@ public class KeenClientTest {
     }
 
     @Test
-    public void testResponseProcessing() throws Exception {
-        runResponseProcessingTest("blah", null, 200, null);
-        runResponseProcessingTest("blah", null, 201, null);
-        runResponseProcessingTest(null, "blah", 400, "blah");
-        runResponseProcessingTest(null, "blah", 500, "blah");
-    }
-
-    private void runResponseProcessingTest(String response, String error, int statusCode,
-                                           String expectedError) throws Exception {
-        InputStream responseStream = null;
-        if (response != null) {
-            responseStream = new ByteArrayInputStream(response.getBytes("UTF-8"));
-        }
-
-        InputStream errorStream = null;
-        if (error != null) {
-            errorStream = new ByteArrayInputStream(error.getBytes("UTF-8"));
-        }
-
-        try {
-            KeenClient.client().processConnectionResponse(statusCode, responseStream, errorStream);
-            if (expectedError != null) {
-                fail("Expected error '" + expectedError + "' but succeeded");
-            }
-        } catch (Exception e) {
-            if (expectedError == null) {
-                fail("Expected success but got error '" + e.getMessage() + "' of type '" +
-                        e.getClass() + "'");
-            } else {
-                assertTrue(e instanceof ServerException);
-                assertEquals(expectedError, e.getMessage());
-            }
-        }
-    }
-
-    @Test
     public void testGlobalPropertiesMap() throws Exception {
         // a null map should be okay
         runGlobalPropertiesMapTest(null, 1);

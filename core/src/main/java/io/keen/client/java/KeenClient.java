@@ -1,10 +1,9 @@
 package io.keen.client.java;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
@@ -532,6 +531,7 @@ public abstract class KeenClient {
      * additional instances from being created.
      */
     protected KeenClient() {
+        this.httpClient = new HttpClient();
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
@@ -630,7 +630,6 @@ public abstract class KeenClient {
     ///// PRIVATE CONSTANTS /////
 
     private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-    private static final String ENCODING = "UTF-8";
 
     ///// PRIVATE FIELDS /////
 
@@ -641,6 +640,7 @@ public abstract class KeenClient {
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
+    private final HttpClient httpClient;
 
     ///// PRIVATE METHODS /////
 
@@ -822,72 +822,31 @@ public abstract class KeenClient {
      * @throws IOException If there was an error communicating with the server.
      */
     private synchronized String publishObject(KeenProject project, URL url,
-                                              Map<String, ?> requestData) throws IOException {
+                                              final Map<String, ?> requestData) throws IOException {
         if (requestData == null || requestData.size() == 0) {
             KeenLogging.log("No API calls were made because there were no events to upload");
             return null;
         }
 
-        // Set up the POST.
+        // Build an output source which simply writes the serialized JSON to the output.
+        HttpClient.OutputSource source = new HttpClient.OutputSource() {
+            @Override
+            public void write(Writer out) throws IOException {
+                getJsonHandler().writeJson(out, requestData);
+            }
+        };
+
+        // Send the request.
+        String writeKey = project.getWriteKey();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Authorization", project.getWriteKey());
+        HttpClient.ServerResponse response = httpClient.sendRequest(connection, writeKey, source);
 
-        // Write JSON to the output stream.
-        OutputStreamWriter writer = null;
-        try {
-            writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
-            getJsonHandler().writeJson(writer, requestData);
-        } finally {
-            KeenUtils.closeQuietly(writer);
-        }
-
-        // Check whether the response succeeded.
-        int responseCode = connection.getResponseCode();
-        InputStream in = connection.getInputStream();
-        InputStream error = connection.getErrorStream();
-        try {
-            return processConnectionResponse(responseCode, in, error);
-        } finally {
-            KeenUtils.closeQuietly(in);
-            KeenUtils.closeQuietly(error);
-            connection.disconnect();
-        }
-    }
-
-    /**
-     * Processes a response to an HTTP post request.
-     *
-     * @param code           The response code.
-     * @param responseStream An input stream containing the response, or null if no normal
-     *                       response was received.
-     * @param errorStream    An input stream containing the error response, or null if no error
-     *                       response was received.
-     * @return The response, as a String.
-     * @throws IOException     If there is an error reading from an input stream.
-     * @throws ServerException If the response code indicates an error.
-     */
-    protected String processConnectionResponse(int code, InputStream responseStream, InputStream errorStream)
-            throws IOException {
-        String response;
-        if (code / 100 == 2) {
-            response = KeenUtils.convertStreamToString(responseStream);
-            KeenLogging.log("Response: " + response);
+        // If the request succeeded, return the response body. Otherwise throw an exception.
+        if (response.isSuccess()) {
+            return response.body;
         } else {
-            KeenLogging.log(String.format("Response code was NOT success (200/201). It was: %d", code));
-
-            // Try to read the error message.
-            response = KeenUtils.convertStreamToString(errorStream);
-            KeenLogging.log(String.format("Error response body was: %s", response));
-
-            // Throw an exception to indicate the request failed.
-            throw new ServerException(response);
+            throw new ServerException(response.body);
         }
-
-        return response;
     }
 
     /**
