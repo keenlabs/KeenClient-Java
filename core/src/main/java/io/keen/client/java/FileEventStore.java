@@ -2,9 +2,12 @@ package io.keen.client.java;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -32,17 +35,15 @@ public class FileEventStore implements KeenEventStore {
     /**
      * Constructs a new File-based event store.
      *
-     * @param root        The root directory in which to store queued event files.
-     * @param jsonHandler The JSON handler to use to write events to files, and to read them back.
+     * @param root The root directory in which to store queued event files.
      * @throws IOException If the provided {@code root} isn't an existing directory.
      */
-    public FileEventStore(File root, KeenJsonHandler jsonHandler) throws IOException {
+    public FileEventStore(File root) throws IOException {
         if (!root.exists() || !root.isDirectory()) {
             throw new IOException("Event store root '" + root + "' must exist and be a directory");
         }
 
         this.root = root;
-        this.jsonHandler = jsonHandler;
     }
 
     ///// PUBLIC METHODS /////
@@ -51,7 +52,7 @@ public class FileEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public Object store(String eventCollection, Map<String, Object> event) throws IOException {
+    public Object store(String eventCollection, String event) throws IOException {
         // Prepare the collection cache directory.
         prepareCache(eventCollection);
 
@@ -64,7 +65,7 @@ public class FileEventStore implements KeenEventStore {
         try {
             OutputStream out = new FileOutputStream(cacheFile);
             writer = new OutputStreamWriter(out, ENCODING);
-            jsonHandler.writeJson(writer, event);
+            writer.write(event);
         } finally {
             KeenUtils.closeQuietly(writer);
         }
@@ -77,13 +78,17 @@ public class FileEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Object> get(Object handle) throws IOException {
+    public String get(Object handle) throws IOException {
         if (!(handle instanceof File)) {
             throw new IllegalArgumentException("Expected File, but was " + handle.getClass());
         }
 
         File eventFile = (File) handle;
-        return readMapFromJsonFile(eventFile);
+        if (eventFile.exists() && eventFile.isFile()) {
+            return KeenUtils.convertFileToString(eventFile);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -96,11 +101,17 @@ public class FileEventStore implements KeenEventStore {
         }
 
         File eventFile = (File) handle;
-        if (!eventFile.delete()) {
-            KeenLogging.log(String.format("CRITICAL ERROR: Could not remove event at %s",
-                    eventFile.getAbsolutePath()));
+        if (eventFile.exists() && eventFile.isFile()) {
+            if (eventFile.delete()) {
+                KeenLogging.log(String.format("Successfully deleted file: %s",
+                        eventFile.getAbsolutePath()));
+            } else {
+                KeenLogging.log(String.format("CRITICAL ERROR: Could not remove event at %s",
+                        eventFile.getAbsolutePath()));
+            }
         } else {
-            KeenLogging.log(String.format("Successfully deleted file: %s", eventFile.getAbsolutePath()));
+            KeenLogging.log(String.format("WARNING: no event found at %s",
+                    eventFile.getAbsolutePath()));
         }
     }
 
@@ -150,32 +161,8 @@ public class FileEventStore implements KeenEventStore {
     ///// PRIVATE FIELDS /////
 
     private final File root;
-    private final KeenJsonHandler jsonHandler;
 
     ///// PRIVATE METHODS /////
-
-    /**
-     * Reads a file containing an event in JSON format and returns a {@link Map} representing that
-     * object.
-     *
-     * @param jsonFile A file containing a JSON-formatted event.
-     * @return A {@link java.util.Map} representing the event.
-     */
-    private Map<String, Object> readMapFromJsonFile(File jsonFile) {
-        Reader reader = null;
-        try {
-            reader = new FileReader(jsonFile);
-            return jsonHandler.readJson(reader);
-        } catch (IOException e) {
-            KeenLogging.log(String.format(
-                    "There was an error when attempting to deserialize the contents of %s into JSON.",
-                    jsonFile.getAbsolutePath()));
-            e.printStackTrace();
-            return null;
-        } finally {
-            KeenUtils.closeQuietly(reader);
-        }
-    }
 
     /**
      * Gets the root directory of the Keen cache, based on the root directory passed to the

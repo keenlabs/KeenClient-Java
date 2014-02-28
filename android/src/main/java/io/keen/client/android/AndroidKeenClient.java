@@ -94,7 +94,7 @@ public class AndroidKeenClient extends KeenClient {
         this.context = context.getApplicationContext();
         this.jsonHandler = new AndroidJsonHandler();
         try {
-            this.eventStore = new FileEventStore(getDeviceCacheDirectory(), getJsonHandler());
+            this.eventStore = new FileEventStore(getDeviceCacheDirectory());
         } catch (IOException e) {
             throw new KeenInitializationException("Error building file event store");
         }

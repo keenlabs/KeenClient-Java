@@ -17,26 +17,27 @@ public interface KeenEventStore {
      * Stores the given event.
      *
      * @param eventCollection The name of the collection in which the event should be stored.
-     * @param event           The event to store.
+     * @param event           The serialized JSON for the event to store.
      * @return A handle which can be used to retrieve or remove the event.
      * @throws IOException If there is an error storing the event.
      */
-    Object store(String eventCollection, Map<String, Object> event) throws IOException;
+    Object store(String eventCollection, String event) throws IOException;
 
     /**
      * Gets the event corresponding to the given handle.
      *
-     * @param handle A handle returned from a previous call to {@link #store(String, java.util.Map)}
+     * @param handle A handle returned from a previous call to {@link #store(String, String)}
      *               or {@link #getHandles()}.
-     * @return The event, represented as a {@link java.util.Map}.
+     * @return The serialized JSON for the event, or null if the handle is no longer present in
+     * the store.
      * @throws IOException If there is an error retrieving the event.
      */
-    Map<String, Object> get(Object handle) throws IOException;
+    String get(Object handle) throws IOException;
 
     /**
      * Removes the specified event from the store.
      *
-     * @param handle A handle returned from a previous call to {@link #store(String, java.util.Map)}
+     * @param handle A handle returned from a previous call to {@link #store(String, String)}
      *               or {@link #getHandles()}.
      * @throws IOException If there is an error removing the event.
      */

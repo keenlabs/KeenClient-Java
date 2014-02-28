@@ -44,33 +44,30 @@ public class FileEventStoreTest extends EventStoreTestBase {
 
     @Override
     protected KeenEventStore buildStore() throws IOException {
-        return new FileEventStore(TEST_STORE_ROOT, new TestJsonHandler());
+        return new FileEventStore(TEST_STORE_ROOT);
     }
 
     @Test
     public void existingEventFilesFound() throws Exception {
-        writeEventFile("keen/collection1/13412341234.0", "{\"foo\":\"bar\"}");
-        writeEventFile("keen/collection1/13412341235.0", "{\"hello\":\"world\"}");
+        writeEventFile("keen/collection1/1393564454103.0", TEST_EVENT_1);
+        writeEventFile("keen/collection1/1393564454104.0", TEST_EVENT_2);
         Map<String, List<Object>> handleMap = store.getHandles();
         assertNotNull(handleMap);
         assertEquals(1, handleMap.size());
         List<Object> handles = handleMap.get("collection1");
         assertNotNull(handles);
         assertEquals(2, handles.size());
-        List<Map<String, Object>> events = new ArrayList<Map<String, Object>>();
+        List<String> events = new ArrayList<String>();
         for (Object handle : handles) {
             events.add(store.get(handle));
         }
-        Map<String, Object> expected = new HashMap<String, Object>();
-        expected.put("foo", "bar");
-        assertTrue(events.contains(expected));
-        expected.clear();
-        expected.put("hello", "world");
-        assertTrue(events.contains(expected));
+        assertTrue(events.contains(TEST_EVENT_1));
+        assertTrue(events.contains(TEST_EVENT_2));
     }
 
     private void writeEventFile(String path, String data) throws IOException {
         File eventFile = new File(TEST_STORE_ROOT, path);
         FileUtils.write(eventFile, data, "UTF-8");
     }
+
 }

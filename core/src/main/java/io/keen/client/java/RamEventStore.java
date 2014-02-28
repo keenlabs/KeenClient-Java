@@ -27,7 +27,7 @@ public class RamEventStore implements KeenEventStore {
      */
     public RamEventStore() {
         collectionIds = new HashMap<String, List<Long>>();
-        events = new HashMap<Long, Map<String, Object>>();
+        events = new HashMap<Long, String>();
     }
 
     ///// KeenEventStore METHODS /////
@@ -36,7 +36,7 @@ public class RamEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Object store(String eventCollection, Map<String, Object> event) throws IOException {
+    public synchronized Object store(String eventCollection, String event) throws IOException {
         long id = getNextId();
         events.put(id, event);
 
@@ -54,7 +54,7 @@ public class RamEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Map<String, Object> get(Object handle) throws IOException {
+    public synchronized String get(Object handle) throws IOException {
         Long id = handleToId(handle);
         return events.get(id);
     }
@@ -100,7 +100,7 @@ public class RamEventStore implements KeenEventStore {
 
     private long nextId = 0;
     private Map<String, List<Long>> collectionIds;
-    private Map<Long, Map<String, Object>> events;
+    private Map<Long, String> events;
 
     ///// PRIVATE METHODS /////
 

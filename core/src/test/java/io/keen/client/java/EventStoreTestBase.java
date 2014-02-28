@@ -21,6 +21,9 @@ import static org.junit.Assert.assertNull;
  */
 public abstract class EventStoreTestBase {
 
+    protected static final String TEST_EVENT_1 = "{\"param1\":\"value1\"}";
+    protected static final String TEST_EVENT_2 = "{\"param2\":\"value2\"}";
+
     protected abstract KeenEventStore buildStore() throws IOException;
 
     protected KeenEventStore store;
@@ -37,51 +40,31 @@ public abstract class EventStoreTestBase {
 
     @Test
     public void storeAndGetEvent() throws Exception {
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("foo", "bar");
-        Object handle = store.store("collection1", event);
-        Map<String, Object> retrieved = store.get(handle);
-        assertEquals(event, retrieved);
+        Object handle = store.store("collection1", TEST_EVENT_1);
+        String retrieved = store.get(handle);
+        assertEquals(TEST_EVENT_1, retrieved);
     }
 
     @Test
     public void removeEvent() throws Exception {
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("foo", "bar");
-        Object handle = store.store("collection1", event);
+        Object handle = store.store("collection1", TEST_EVENT_1);
         store.remove(handle);
-        Map<String, Object> retrieved = store.get(handle);
+        String retrieved = store.get(handle);
         assertNull(retrieved);
     }
 
     @Test
-    public void reuseEventMap() throws Exception {
-        // Add an event, mutate it, and add it again.
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("foo", "bar");
-        Object handle1 = store.store("collection1", event);
-        event.clear();
-        event.put("hello", "world");
-        Object handle2 = store.store("collection1", event);
-
-        // Retrieve both events and ensure they have the expected (different) data.
-        Map<String, Object> expected = new HashMap<String, Object>();
-        expected.put("foo", "bar");
-        assertEquals(expected, store.get(handle1));
-        expected.clear();
-        expected.put("hello", "world");
-        assertEquals(expected, store.get(handle2));
+    public void removeHandleTwice() throws Exception {
+        Object handle = store.store("collection1", TEST_EVENT_1);
+        store.remove(handle);
+        store.remove(handle);
     }
 
     @Test
     public void getHandles() throws Exception {
         // Add a couple events to the store.
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("foo", "bar");
-        store.store("collection1", event);
-        event.clear();
-        event.put("hello", "world");
-        store.store("collection2", event);
+        store.store("collection1", TEST_EVENT_1);
+        store.store("collection2", TEST_EVENT_2);
 
         // Get the handle map.
         Map<String, List<Object>> handleMap = store.getHandles();
@@ -97,12 +80,8 @@ public abstract class EventStoreTestBase {
         assertEquals(1, handles2.size());
 
         // Validate the actual events.
-        Map<String, Object> expected = new HashMap<String, Object>();
-        expected.put("foo", "bar");
-        assertEquals(expected, store.get(handles1.get(0)));
-        expected.clear();
-        expected.put("hello", "world");
-        assertEquals(expected, store.get(handles2.get(0)));
+        assertEquals(TEST_EVENT_1, store.get(handles1.get(0)));
+        assertEquals(TEST_EVENT_2, store.get(handles2.get(0)));
     }
 
 }

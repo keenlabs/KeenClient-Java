@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
@@ -257,8 +258,14 @@ public abstract class KeenClient {
             Map<String, Object> newEvent =
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
-            // Write the event out to the event store.
-            getEventStore().store(eventCollection, newEvent);
+            // Serialize the event into JSON.
+            StringWriter writer = new StringWriter();
+            getJsonHandler().writeJson(writer, newEvent);
+            String jsonEvent = writer.toString();
+            KeenUtils.closeQuietly(writer);
+
+            // Save the JSON event out to the event store.
+            getEventStore().store(eventCollection, jsonEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
@@ -513,7 +520,7 @@ public abstract class KeenClient {
      * all exceptions will be thrown immediately; otherwise they will be logged and reported to
      * any callbacks, but never thrown.
      *
-     * @param isDebugMode
+     * @param isDebugMode {@code true} to enable debug mode, or {@code false} to disable it.
      */
     public void setDebugMode(boolean isDebugMode) {
         this.isDebugMode = isDebugMode;
@@ -753,7 +760,14 @@ public abstract class KeenClient {
             // Build the event list by retrieving events from the store.
             List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
             for (Object handle : handles) {
-                events.add(getEventStore().get(handle));
+                // Get the event from the store.
+                String jsonEvent = getEventStore().get(handle);
+
+                // De-serialize the event from its JSON.
+                StringReader reader = new StringReader(jsonEvent);
+                Map<String, Object> event = getJsonHandler().readJson(reader);
+                KeenUtils.closeQuietly(reader);
+                events.add(event);
             }
             result.put(eventCollection, events);
         }

@@ -27,6 +27,13 @@ class KeenUtils {
         }
     }
 
+    static String convertFileToString(java.io.File file) throws IOException {
+        Scanner s = new Scanner(file, "UTF-8").useDelimiter("\\A");
+        String result =  s.hasNext() ? s.next() : "";
+        s.close();
+        return result;
+    }
+
     static String convertStreamToString(java.io.InputStream is) {
         Scanner s = new Scanner(is).useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
