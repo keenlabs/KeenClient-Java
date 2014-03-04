@@ -49,9 +49,9 @@ public class FileEventStoreTest extends EventStoreTestBase {
 
     @Test
     public void existingEventFilesFound() throws Exception {
-        writeEventFile("keen/collection1/1393564454103.0", TEST_EVENT_1);
-        writeEventFile("keen/collection1/1393564454104.0", TEST_EVENT_2);
-        Map<String, List<Object>> handleMap = store.getHandles();
+        writeEventFile("keen/project1/collection1/1393564454103.0", TEST_EVENT_1);
+        writeEventFile("keen/project1/collection1/1393564454104.0", TEST_EVENT_2);
+        Map<String, List<Object>> handleMap = store.getHandles("project1");
         assertNotNull(handleMap);
         assertEquals(1, handleMap.size());
         List<Object> handles = handleMap.get("collection1");

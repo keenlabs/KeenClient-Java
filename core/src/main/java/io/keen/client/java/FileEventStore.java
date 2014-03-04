@@ -2,15 +2,10 @@ package io.keen.client.java;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,13 +47,14 @@ public class FileEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public Object store(String eventCollection, String event) throws IOException {
+    public Object store(String projectId, String eventCollection,
+                        String event) throws IOException {
         // Prepare the collection cache directory.
-        prepareCache(eventCollection);
+        File collectionCacheDir = prepareCollectionDir(projectId, eventCollection);
 
         // Create the cache file.
         Calendar timestamp = Calendar.getInstance();
-        File cacheFile = getFileForEvent(eventCollection, timestamp);
+        File cacheFile = getFileForEvent(collectionCacheDir, timestamp);
 
         // Write the event to the cache file.
         Writer writer = null;
@@ -119,26 +115,13 @@ public class FileEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, List<Object>> getHandles() throws IOException {
-        File[] directories = getKeenCacheSubDirectories();
-
-        Map<String, List<Object>> handleMap = new HashMap<String, List<Object>>();
-        if (directories != null) {
-            // iterate through the directories
-            for (File directory : directories) {
-                String collectionName = directory.getName();
-                File[] files = getFilesInDir(directory);
-                if (files != null) {
-                    List<Object> handleList = new ArrayList<Object>();
-                    handleList.addAll(Arrays.asList(files));
-                    handleMap.put(collectionName, handleList);
-                } else {
-                    KeenLogging.log("Directory was null while getting event handles: " + collectionName);
-                }
-            }
+    public Map<String, List<Object>> getHandles(String projectId) throws IOException {
+        File projectDir = getProjectDir(projectId, false);
+        if (projectDir.exists() && projectDir.isDirectory()) {
+            return getHandlesFromProjectDirectory(projectDir);
+        } else {
+            return new HashMap<String, List<Object>>();
         }
-
-        return handleMap;
     }
 
     ///// PRIVATE CONSTANTS /////
@@ -165,6 +148,36 @@ public class FileEventStore implements KeenEventStore {
     ///// PRIVATE METHODS /////
 
     /**
+     * Gets the handle map for all collections in the specified project cache directory.
+     *
+     * @param projectDir The cache directory for the project.
+     * @return The handle map. See {@link #getHandles(String)} for details.
+     * @throws IOException If there is an error reading the event files.
+     */
+    private Map<String, List<Object>> getHandlesFromProjectDirectory(File projectDir) throws
+            IOException {
+        File[] collectionDirs = getSubDirectories(projectDir);
+
+        Map<String, List<Object>> handleMap = new HashMap<String, List<Object>>();
+        if (collectionDirs != null) {
+            // iterate through the directories
+            for (File directory : collectionDirs) {
+                String collectionName = directory.getName();
+                File[] files = getFilesInDir(directory);
+                if (files != null) {
+                    List<Object> handleList = new ArrayList<Object>();
+                    handleList.addAll(Arrays.asList(files));
+                    handleMap.put(collectionName, handleList);
+                } else {
+                    KeenLogging.log("Directory was null while getting event handles: " + collectionName);
+                }
+            }
+        }
+
+        return handleMap;
+    }
+
+    /**
      * Gets the root directory of the Keen cache, based on the root directory passed to the
      * constructor of this file store. If necessary, this method will attempt to create the
      * directory.
@@ -183,13 +196,14 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * Gets an array containing all of the sub-directories (i.e. event collections) in the Keen
-     * cache directory.
+     * Gets an array containing all of the sub-directories in the given parent directory.
      *
+     * @param parent The directory from which to get sub-directories.
      * @return An array of sub-directories.
+     * @throws IOException If there is an error listing the files in the directory.
      */
-    private File[] getKeenCacheSubDirectories() throws IOException {
-        return getKeenCacheDirectory().listFiles(new FileFilter() { // Can return null if there are no events
+    private File[] getSubDirectories(File parent) throws IOException {
+        return parent.listFiles(new FileFilter() { // Can return null if there are no events
             public boolean accept(File file) {
                 return file.isDirectory();
             }
@@ -211,21 +225,45 @@ public class FileEventStore implements KeenEventStore {
     }
 
     /**
-     * Gets the directory for events in the given collection.
+     * Gets the cache directory for the given project. Optionally creates the directory if it
+     * doesn't exist.
      *
-     * @param eventCollection The name of the event collection.
-     * @return The directory containing events in the collection.
+     * @param projectId The project ID.
+     * @return The cache directory for the project.
+     * @throws IOException
      */
-    private File getEventDirectoryForEventCollection(String eventCollection) throws IOException {
-        File file = new File(getKeenCacheDirectory(), eventCollection);
-        if (!file.exists()) {
-            KeenLogging.log("Cache directory for event collection '" + eventCollection + "' doesn't exist. " +
+    private File getProjectDir(String projectId, boolean create) throws IOException {
+        File projectDir = new File(getKeenCacheDirectory(), projectId);
+        if (create && !projectDir.exists()) {
+            KeenLogging.log("Cache directory for project '" + projectId + "' doesn't exist. " +
                     "Creating it.");
-            if (!file.mkdirs()) {
-                KeenLogging.log("Can't create dir: " + file.getAbsolutePath());
+            if (!projectDir.mkdirs()) {
+                throw new IOException("Could not create project cache directory '" +
+                        projectDir.getAbsolutePath() + "'");
             }
         }
-        return file;
+        return projectDir;
+    }
+
+    /**
+     * Gets the directory for events in the given collection. Creates the directory (and any
+     * necessary parents) if it does not exist already.
+     *
+     * @param projectId       The project ID.
+     * @param eventCollection The name of the event collection.
+     * @return The directory for events in the collection.
+     */
+    private File getCollectionDir(String projectId, String eventCollection) throws IOException {
+        File collectionDir = new File(getProjectDir(projectId, true), eventCollection);
+        if (!collectionDir.exists()) {
+            KeenLogging.log("Cache directory for event collection '" + eventCollection +
+                    "' doesn't exist. Creating it.");
+            if (!collectionDir.mkdirs()) {
+                throw new IOException("Could not create collection cache directory '" +
+                        collectionDir.getAbsolutePath() + "'");
+            }
+        }
+        return collectionDir;
     }
 
     /**
@@ -233,16 +271,15 @@ public class FileEventStore implements KeenEventStore {
      * there are multiple events with identical timestamps, this method will use a counter to
      * create a unique file name for each.
      *
-     * @param eventCollection The name of the event collection.
-     * @param timestamp       The timestamp of the event.
+     * @param collectionDir The cache directory for the event collection.
+     * @param timestamp     The timestamp of the event.
      * @return The file to use for the new event.
      */
-    private File getFileForEvent(String eventCollection, Calendar timestamp) throws IOException {
-        File dir = getEventDirectoryForEventCollection(eventCollection);
+    private File getFileForEvent(File collectionDir, Calendar timestamp) throws IOException {
         int counter = 0;
-        File eventFile = getNextFileForEvent(dir, timestamp, counter);
+        File eventFile = getNextFileForEvent(collectionDir, timestamp, counter);
         while (eventFile.exists()) {
-            eventFile = getNextFileForEvent(dir, timestamp, counter);
+            eventFile = getNextFileForEvent(collectionDir, timestamp, counter);
             counter++;
         }
         return eventFile;
@@ -261,18 +298,6 @@ public class FileEventStore implements KeenEventStore {
         long timestampInMillis = timestamp.getTimeInMillis();
         String name = Long.toString(timestampInMillis);
         return new File(dir, name + "." + counter);
-    }
-
-    /**
-     * Creates the given directory, if it doesn't exist already. Otherwise does nothing.
-     *
-     * @param dir The directory to create.
-     */
-    private void createDirIfItDoesNotExist(File dir) {
-        if (!dir.exists()) {
-            boolean result = dir.mkdir();
-            assert result;
-        }
     }
 
     /**
@@ -298,25 +323,25 @@ public class FileEventStore implements KeenEventStore {
      * method checks to make sure that the maximum number of events per collection hasn't been
      * exceeded, and if it has, this method discards events to make room.
      *
+     * @param projectId       The project ID.
      * @param eventCollection The name of the event collection.
+     * @return The prepared cache directory for the given project/collection.
      * @throws IOException If there is an error creating the directory or validating/discarding
      *                     events.
      */
-    private void prepareCache(String eventCollection) throws IOException {
-        File dir = getEventDirectoryForEventCollection(eventCollection);
+    private File prepareCollectionDir(String projectId, String eventCollection) throws IOException {
+        File collectionDir = getCollectionDir(projectId, eventCollection);
 
-        // make sure it exists
-        createDirIfItDoesNotExist(dir);
-
-        // now make sure we haven't hit the max number of events in this collection already
-        File[] files = getFilesInDir(dir);
-        if (files.length >= getMaxEventsPerCollection()) {
+        // Make sure the max number of events has not been exceeded in this collection. If it has,
+        // delete events to make room.
+        File[] eventFiles = getFilesInDir(collectionDir);
+        if (eventFiles.length >= getMaxEventsPerCollection()) {
             // need to age out old data so the cache doesn't grow too large
             KeenLogging.log(String.format("Too many events in cache for %s, aging out old data", eventCollection));
-            KeenLogging.log(String.format("Count: %d and Max: %d", files.length, getMaxEventsPerCollection()));
+            KeenLogging.log(String.format("Count: %d and Max: %d", eventFiles.length, getMaxEventsPerCollection()));
 
             // delete the eldest (i.e. first we have to sort the list by name)
-            List<File> fileList = Arrays.asList(files);
+            List<File> fileList = Arrays.asList(eventFiles);
             Collections.sort(fileList, new Comparator<File>() {
                 @Override
                 public int compare(File file, File file1) {
@@ -331,6 +356,8 @@ public class FileEventStore implements KeenEventStore {
                 }
             }
         }
+
+        return collectionDir;
     }
 
 }

@@ -36,14 +36,17 @@ public class RamEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Object store(String eventCollection, String event) throws IOException {
-        long id = getNextId();
+    public synchronized Object store(String projectId, String eventCollection,
+                                     String event) throws IOException {
 
-        // Get the list of events for the specified collection. If no list exists yet, create one.
-        List<Long> collectionEvents = collectionIds.get(eventCollection);
+        // Create a key from the project ID and event collection.
+        String key = String.format("%s$%s", projectId, eventCollection);
+
+        // Get the list of events for the specified key. If no list exists yet, create one.
+        List<Long> collectionEvents = collectionIds.get(key);
         if (collectionEvents == null) {
             collectionEvents = new ArrayList<Long>();
-            collectionIds.put(eventCollection, collectionEvents);
+            collectionIds.put(key, collectionEvents);
         }
 
         // Remove the oldest events until there is room for at least one more event.
@@ -53,6 +56,7 @@ public class RamEventStore implements KeenEventStore {
         }
 
         // Add the event to the event store, add its ID to the collection's list, and return the ID.
+        long id = getNextId();
         events.put(id, event);
         collectionEvents.add(id);
         return id;
@@ -82,15 +86,23 @@ public class RamEventStore implements KeenEventStore {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Map<String, List<Object>> getHandles() throws IOException {
+    public synchronized Map<String, List<Object>> getHandles(String projectId) throws IOException {
         Map<String, List<Object>> result = new HashMap<String, List<Object>>();
         for (Map.Entry<String, List<Long>> entry : collectionIds.entrySet()) {
-            String eventCollection = entry.getKey();
-            List<Long> ids = entry.getValue();
-            List<Object> handles = new ArrayList<Object>();
+            String key = entry.getKey();
+
+            // Skip collections for different projects.
+            if (!key.startsWith(projectId)) {
+                continue;
+            }
+
+            // Extract the collection name from the key.
+            String eventCollection = key.substring(projectId.length() + 1);
 
             // Iterate over the list of handles, removing any "dead" events and adding the rest to
             // the result map.
+            List<Long> ids = entry.getValue();
+            List<Object> handles = new ArrayList<Object>();
             Iterator<Long> iterator = ids.iterator();
             while (iterator.hasNext()) {
                 Long id = iterator.next();

@@ -265,7 +265,7 @@ public abstract class KeenClient {
             KeenUtils.closeQuietly(writer);
 
             // Save the JSON event out to the event store.
-            getEventStore().store(eventCollection, jsonEvent);
+            getEventStore().store(useProject.getProjectId(), eventCollection, jsonEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
@@ -313,7 +313,8 @@ public abstract class KeenClient {
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
-            Map<String, List<Object>> eventHandles = getEventStore().getHandles();
+            String projectId = useProject.getProjectId();
+            Map<String, List<Object>> eventHandles = getEventStore().getHandles(projectId);
             Map<String, List<Map<String, Object>>> events = buildEventMap(eventHandles);
             String response = publishAll(useProject, events);
             if (response != null) {

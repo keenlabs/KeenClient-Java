@@ -29,14 +29,14 @@ public class RamEventStoreTest extends EventStoreTestBase {
         ramStore.setMaxEventsPerCollection(3);
 
         // Add 5 events.
-        store.store("collection1", TEST_EVENT_1);
-        store.store("collection1", TEST_EVENT_2);
-        store.store("collection1", TEST_EVENT_3);
-        store.store("collection1", TEST_EVENT_4);
-        store.store("collection1", TEST_EVENT_5);
+        store.store("project1", "collection1", TEST_EVENT_1);
+        store.store("project1", "collection1", TEST_EVENT_2);
+        store.store("project1", "collection1", TEST_EVENT_3);
+        store.store("project1", "collection1", TEST_EVENT_4);
+        store.store("project1", "collection1", TEST_EVENT_5);
 
         // Get the handle map.
-        Map<String, List<Object>> handleMap = store.getHandles();
+        Map<String, List<Object>> handleMap = store.getHandles("project1");
         assertNotNull(handleMap);
         assertEquals(1, handleMap.size());
 

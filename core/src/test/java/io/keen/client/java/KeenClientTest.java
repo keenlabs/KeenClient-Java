@@ -50,6 +50,7 @@ public class KeenClientTest {
     private static List<Map<String, Object>> TEST_EVENTS;
 
     private static final String TEST_COLLECTION = "test_collection";
+    private static final String TEST_COLLECTION_2 = "test_collection_2";
 
     private static final String POST_EVENT_SUCCESS = "{\"created\": true}";
 
@@ -275,7 +276,7 @@ public class KeenClientTest {
 
         // Check that the expected number of events are in the store.
         RamEventStore store = (RamEventStore) client.getEventStore();
-        Map<String, List<Object>> handleMap = store.getHandles();
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(1, handleMap.size());
         assertEquals(3, handleMap.get(TEST_COLLECTION).size());
 
@@ -286,7 +287,7 @@ public class KeenClientTest {
         client.sendQueuedEvents();
 
         // Validate that the store is now empty.
-        handleMap = store.getHandles();
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(0, handleMap.size());
 
         // Try sending events again; this should be a no-op.
@@ -294,7 +295,7 @@ public class KeenClientTest {
         client.sendQueuedEvents();
 
         // Validate that the store is still empty.
-        handleMap = store.getHandles();
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(0, handleMap.size());
     }
 
@@ -307,7 +308,7 @@ public class KeenClientTest {
 
         // Check that the expected number of events are in the store.
         RamEventStore store = (RamEventStore) client.getEventStore();
-        Map<String, List<Object>> handleMap = store.getHandles();
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(1, handleMap.size());
         assertEquals(3, handleMap.get(TEST_COLLECTION).size());
 
@@ -323,7 +324,7 @@ public class KeenClientTest {
         client.sendQueuedEvents();
 
         // Validate that the store still contains the failed event, but not the other events.
-        handleMap = store.getHandles();
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(1, handleMap.size());
         List<Object> handles = handleMap.get(TEST_COLLECTION);
         assertEquals(1, handles.size());
@@ -350,10 +351,30 @@ public class KeenClientTest {
 
         // Validate that the store still contains all the events.
         RamEventStore store = (RamEventStore) client.getEventStore();
-        Map<String, List<Object>> handleMap = store.getHandles();
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
         assertEquals(1, handleMap.size());
         List<Object> handles = handleMap.get(TEST_COLLECTION);
         assertEquals(3, handles.size());
+    }
+
+    @Test
+    public void testSendQueuedEventsConcurrentProjects() throws Exception {
+        // Queue some events in each of two separate projects
+        KeenProject otherProject = new KeenProject("<other project>", "<write>", "<read>");
+        client.queueEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+        client.queueEvent(TEST_PROJECT, TEST_COLLECTION_2, TEST_EVENTS.get(1), null, null);
+        client.queueEvent(otherProject, TEST_COLLECTION, TEST_EVENTS.get(2), null, null);
+        client.queueEvent(otherProject, TEST_COLLECTION, TEST_EVENTS.get(3), null, null);
+
+        // Check that the expected number of events are in the store, in the expected collections
+        RamEventStore store = (RamEventStore) client.getEventStore();
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(2, handleMap.size());
+        assertEquals(1, handleMap.get(TEST_COLLECTION).size());
+        assertEquals(1, handleMap.get(TEST_COLLECTION_2).size());
+        handleMap = store.getHandles(otherProject.getProjectId());
+        assertEquals(1, handleMap.size());
+        assertEquals(2, handleMap.get(TEST_COLLECTION).size());
     }
 
     @Test

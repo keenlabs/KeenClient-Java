@@ -16,18 +16,20 @@ public interface KeenEventStore {
     /**
      * Stores the given event.
      *
+     * @param projectId       The ID of the project in which the event should be stored.
      * @param eventCollection The name of the collection in which the event should be stored.
      * @param event           The serialized JSON for the event to store.
      * @return A handle which can be used to retrieve or remove the event.
      * @throws IOException If there is an error storing the event.
      */
-    Object store(String eventCollection, String event) throws IOException;
+    Object store(String projectId, String eventCollection, String event) throws IOException;
 
     /**
      * Gets the event corresponding to the given handle.
      *
-     * @param handle A handle returned from a previous call to {@link #store(String, String)}
-     *               or {@link #getHandles()}.
+     * @param handle A handle returned from a previous call to {@link #store(String, String,
+     * String)}
+     *               or {@link #getHandles(String)}.
      * @return The serialized JSON for the event, or null if the handle is no longer present in
      * the store.
      * @throws IOException If there is an error retrieving the event.
@@ -37,8 +39,9 @@ public interface KeenEventStore {
     /**
      * Removes the specified event from the store.
      *
-     * @param handle A handle returned from a previous call to {@link #store(String, String)}
-     *               or {@link #getHandles()}.
+     * @param handle A handle returned from a previous call to {@link #store(String, String,
+     * String)}
+     *               or {@link #getHandles(String)}.
      * @throws IOException If there is an error removing the event.
      */
     void remove(Object handle) throws IOException;
@@ -49,10 +52,11 @@ public interface KeenEventStore {
      * events to send in a batch to the Keen server, as well as to remove all successfully posted
      * events after processing the response.
      *
+     * @param projectId The ID of the project for which to retrieve event handles.
      * @return A map from collection names to lists of handles currently stored under each
-     * collection.
+     * collection. If there are no events, an empty map will be returned.
      * @throws IOException If there is an error retrieving the handles.
      */
-    Map<String, List<Object>> getHandles() throws IOException;
+    Map<String, List<Object>> getHandles(String projectId) throws IOException;
 
 }
