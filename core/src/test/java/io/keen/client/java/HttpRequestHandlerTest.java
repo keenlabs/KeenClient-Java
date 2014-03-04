@@ -18,18 +18,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests the HttpClient implementation.
+ * Tests the HttpRequestHandler implementation.
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class HttpClientTest {
+public class HttpRequestHandlerTest {
 
-    private HttpClient client;
+    private HttpRequestHandler client;
 
     @Before
     public void setUp() {
-        client = new HttpClient();
+        client = new HttpRequestHandler();
     }
 
     @After
@@ -39,7 +39,7 @@ public class HttpClientTest {
 
     @Test
     public void success200() throws Exception {
-        HttpClient.ServerResponse response = runResponseTest(200, "request-body", "200 OK", null);
+        HttpRequestHandler.HttpResponse response = runResponseTest(200, "request-body", "200 OK", null);
         assertNotNull(response);
         assertTrue(response.isSuccess());
         assertEquals("200 OK", response.body);
@@ -47,7 +47,7 @@ public class HttpClientTest {
 
     @Test
     public void success201() throws Exception {
-        HttpClient.ServerResponse response =
+        HttpRequestHandler.HttpResponse response =
                 runResponseTest(201, "request-body", "201 Created", null);
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -56,7 +56,7 @@ public class HttpClientTest {
 
     @Test
     public void failure400() throws Exception {
-        HttpClient.ServerResponse response =
+        HttpRequestHandler.HttpResponse response =
                 runResponseTest(400, "request-body", null, "400 Bad Request");
         assertNotNull(response);
         assertFalse(response.isSuccess());
@@ -65,7 +65,7 @@ public class HttpClientTest {
 
     @Test
     public void failure500() throws Exception {
-        HttpClient.ServerResponse response =
+        HttpRequestHandler.HttpResponse response =
                 runResponseTest(500, "request-body", null, "500 Internal Server Error");
         assertNotNull(response);
         assertFalse(response.isSuccess());
@@ -74,14 +74,14 @@ public class HttpClientTest {
 
     private static final String TEST_AUTHORIZATION = "<DUMMY STRING>";
 
-    private HttpClient.ServerResponse runResponseTest(int statusCode, final String request,
+    private HttpRequestHandler.HttpResponse runResponseTest(int statusCode, final String request,
                                                       String response, String error) throws IOException {
         ByteArrayOutputStream requestOutputStream = new ByteArrayOutputStream();
         HttpURLConnection mockConnection =
                 buildMockConnection(requestOutputStream, statusCode, response, error);
 
         // Build an output source which simply writes the serialized JSON to the output.
-        HttpClient.OutputSource source = new HttpClient.OutputSource() {
+        HttpRequestHandler.OutputSource source = new HttpRequestHandler.OutputSource() {
             @Override
             public void write(Writer out) throws IOException {
                 out.write(request);
@@ -89,8 +89,8 @@ public class HttpClientTest {
         };
 
         // Send the request to the mock URL and get the result.
-        HttpClient.ServerResponse result =
-                client.sendRequest(mockConnection, TEST_AUTHORIZATION, source);
+        HttpRequestHandler.HttpResponse result =
+                client.sendPostRequest(mockConnection, TEST_AUTHORIZATION, source);
 
         // Confirm that the mocked connection received the expected request.
         assertEquals(request, requestOutputStream.toString("UTF-8"));

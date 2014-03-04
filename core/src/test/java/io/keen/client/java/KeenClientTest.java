@@ -3,7 +3,6 @@ package io.keen.client.java;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -436,12 +435,12 @@ public class KeenClientTest {
     }
 
     private void setMockResponse(int statusCode, String body) throws IOException {
-        HttpClient.ServerResponse response = new HttpClient.ServerResponse(statusCode, body);
-        HttpClient httpClient = mock(HttpClient.class);
-        when(httpClient.sendRequest(any(HttpURLConnection.class), anyString(),
-                any(HttpClient.OutputSource.class))).thenReturn(response);
+        HttpRequestHandler.HttpResponse response = new HttpRequestHandler.HttpResponse(statusCode, body);
+        HttpRequestHandler httpHandler = mock(HttpRequestHandler.class);
+        when(httpHandler.sendPostRequest(any(HttpURLConnection.class), anyString(),
+                any(HttpRequestHandler.OutputSource.class))).thenReturn(response);
 
-        KeenClient.client().setHttpClient(httpClient);
+        KeenClient.client().setHttpHandler(httpHandler);
     }
 
     private Map<String, Object> buildSuccessMap(Map<String, Integer> postedEvents) throws IOException {

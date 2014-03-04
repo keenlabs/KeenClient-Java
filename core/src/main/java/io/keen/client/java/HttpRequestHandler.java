@@ -13,12 +13,12 @@ import java.net.HttpURLConnection;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-class HttpClient {
+class HttpRequestHandler {
 
     /**
      * Encapsulates a response to a single HTTP request.
      */
-    public static final class ServerResponse {
+    public static final class HttpResponse {
         public final int statusCode;
         public final String body;
 
@@ -26,7 +26,7 @@ class HttpClient {
             return isSuccessCode(statusCode);
         }
 
-        public ServerResponse(int statusCode, String body) {
+        public HttpResponse(int statusCode, String body) {
             this.statusCode = statusCode;
             this.body = body;
         }
@@ -53,21 +53,21 @@ class HttpClient {
     }
 
     /**
-     * Sends an HTTP request.
+     * Sends an HTTP POST request.
      *
      * @param connection    An HTTP connection. This connection should be opened but otherwise
      *                      untouched; in particular, this method will handle setting up headers and
      *                      writing the request. This method will also handle disconnecting the
      *                      connection once the request is completed.
      * @param authorization The authorization token to use in the request header.
-     * @param source        An {@link HttpClient.OutputSource} which will be used
+     * @param source        An {@link HttpRequestHandler.OutputSource} which will be used
      *                      to write the request body to the connection's {@code OutputStream}.
-     * @return A {@link HttpClient.ServerResponse} object describing the
+     * @return A {@link io.keen.client.java.HttpRequestHandler.HttpResponse} object describing the
      * response from the server.
      * @throws IOException If there was an error during the connection.
      */
-    public ServerResponse sendRequest(HttpURLConnection connection, String authorization,
-                                      OutputSource source)
+    public HttpResponse sendPostRequest(HttpURLConnection connection, String authorization,
+                                        OutputSource source)
             throws IOException {
 
         // Set up the POST.
@@ -89,13 +89,31 @@ class HttpClient {
         }
     }
 
+    ///// PRIVATE CONSTANTS /////
+
+    private static final String ENCODING = "UTF-8";
+
+    ///// PRIVATE STATIC METHODS /////
+
     /**
-     * Builds a {@code ServerResponse} from an existing connection. This method should only be
+     * Checks whether an HTTP status code indicates success.
+     *
+     * @param statusCode The HTTP status code.
+     * @return {@code true} if the status code indicates success (2xx), otherwise {@code false}.
+     */
+    private static boolean isSuccessCode(int statusCode) {
+        return (statusCode / 100 == 2);
+    }
+
+    ///// PRIVATE METHODS /////
+
+    /**
+     * Builds a {@code HttpResponse} from an existing connection. This method should only be
      * called on a connection for which the entire request has been sent.
      *
      * @throws IOException If there is an error reading from an input stream.
      */
-    private ServerResponse getResponse(HttpURLConnection connection) throws IOException {
+    private HttpResponse getResponse(HttpURLConnection connection) throws IOException {
         // Try to get the input stream and if that fails, try to get the error stream.
         InputStream in;
         try {
@@ -114,24 +132,8 @@ class HttpClient {
             }
         }
 
-        // Build and return the server response object.
-        return new ServerResponse(connection.getResponseCode(), body);
-    }
-
-    ///// PRIVATE CONSTANTS /////
-
-    private static final String ENCODING = "UTF-8";
-
-    ///// PRIVATE STATIC METHODS /////
-
-    /**
-     * Checks whether an HTTP status code indicates success.
-     *
-     * @param statusCode The HTTP status code.
-     * @return {@code true} if the status code indicates success (2xx), otherwise {@code false}.
-     */
-    private static boolean isSuccessCode(int statusCode) {
-        return (statusCode / 100 == 2);
+        // Build and return the HTTP response object.
+        return new HttpResponse(connection.getResponseCode(), body);
     }
 
 }

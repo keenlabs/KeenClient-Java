@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import io.keen.client.java.HttpRequestHandler.HttpResponse;
+import io.keen.client.java.HttpRequestHandler.OutputSource;
 import io.keen.client.java.exceptions.InvalidEventCollectionException;
 import io.keen.client.java.exceptions.InvalidEventException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
@@ -531,7 +533,7 @@ public abstract class KeenClient {
      * additional instances from being created.
      */
     protected KeenClient() {
-        this.httpClient = new HttpClient();
+        this.httpHandler = new HttpRequestHandler();
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
@@ -619,8 +621,8 @@ public abstract class KeenClient {
 
     ///// TEST HOOKS /////
 
-    void setHttpClient(HttpClient httpClient) {
-        this.httpClient = httpClient;
+    void setHttpHandler(HttpRequestHandler httpHandler) {
+        this.httpHandler = httpHandler;
     }
 
     ///// PRIVATE TYPES /////
@@ -646,7 +648,7 @@ public abstract class KeenClient {
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
-    private HttpClient httpClient;
+    private HttpRequestHandler httpHandler;
 
     ///// PRIVATE METHODS /////
 
@@ -835,7 +837,7 @@ public abstract class KeenClient {
         }
 
         // Build an output source which simply writes the serialized JSON to the output.
-        HttpClient.OutputSource source = new HttpClient.OutputSource() {
+        OutputSource source = new OutputSource() {
             @Override
             public void write(Writer out) throws IOException {
                 getJsonHandler().writeJson(out, requestData);
@@ -845,7 +847,7 @@ public abstract class KeenClient {
         // Send the request.
         String writeKey = project.getWriteKey();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        HttpClient.ServerResponse response = httpClient.sendRequest(connection, writeKey, source);
+        HttpResponse response = httpHandler.sendPostRequest(connection, writeKey, source);
 
         // If the request succeeded, return the response body. Otherwise throw an exception.
         if (response.isSuccess()) {
