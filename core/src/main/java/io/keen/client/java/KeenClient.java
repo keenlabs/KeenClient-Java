@@ -617,6 +617,12 @@ public abstract class KeenClient {
         return newEvent;
     }
 
+    ///// TEST HOOKS /////
+
+    void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
+
     ///// PRIVATE TYPES /////
 
     /**
@@ -640,7 +646,7 @@ public abstract class KeenClient {
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
-    private final HttpClient httpClient;
+    private HttpClient httpClient;
 
     ///// PRIVATE METHODS /////
 

@@ -26,7 +26,7 @@ class HttpClient {
             return isSuccessCode(statusCode);
         }
 
-        private ServerResponse(int statusCode, String body) {
+        public ServerResponse(int statusCode, String body) {
             this.statusCode = statusCode;
             this.body = body;
         }

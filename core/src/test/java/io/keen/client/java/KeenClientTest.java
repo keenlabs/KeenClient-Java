@@ -3,16 +3,13 @@ package io.keen.client.java;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -20,22 +17,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.keen.client.java.exceptions.KeenException;
-import io.keen.client.java.exceptions.KeenInitializationException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 
@@ -48,6 +43,12 @@ import static org.mockito.Mockito.when;
 public class KeenClientTest {
 
     private static KeenProject TEST_PROJECT;
+
+    private static List<Map<String, Object>> TEST_EVENTS;
+
+    private static final String TEST_COLLECTION = "test_collection";
+
+    private static final String POST_EVENT_SUCCESS = "{\"created\": true}";
 
     /**
      * JSON object mapper that the test infrastructure can use without worrying about any
@@ -64,16 +65,26 @@ public class KeenClientTest {
         KeenClient.initialize(client);
         TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
                 "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
+        TEST_EVENTS = new ArrayList<Map<String, Object>>();
+        for (int i = 0; i < 10; i++) {
+            Map<String, Object> event = new HashMap<String, Object>();
+            event.put("test-key", "test-value-" + i);
+            TEST_EVENTS.add(event);
+        }
         JSON_MAPPER = new ObjectMapper();
         JSON_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         client = KeenClient.client();
         client.setBaseUrl(null);
         client.setDebugMode(true);
         client.setDefaultProject(TEST_PROJECT);
+
+        // Configure a mock HTTP client that will always return an error. This should be replaced
+        // by a functioning mock for tests that expect an HTTP request.
+        setMockResponse(500, "Unexpected HTTP request");
     }
 
     @After
@@ -217,29 +228,86 @@ public class KeenClientTest {
 
     @Test
     public void testAddEvent() throws Exception {
-        // does a full round-trip to the real API.
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
-        final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
-        // make sure the event was sent to Keen IO
-        latch.await(2, TimeUnit.SECONDS);
+        setMockResponse(201, POST_EVENT_SUCCESS);
+        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
     }
 
     @Test
     public void testAddEventNonSSL() throws Exception {
-        // does a full round-trip to the real API.
         client.setBaseUrl("http://api.keen.io");
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("test key", "test value");
-        // setup a latch for our callback so we can verify the server got the request
+        setMockResponse(201, POST_EVENT_SUCCESS);
+        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+    }
+
+    @Test(expected = ServerException.class)
+    public void testAddEventServerFailure() throws Exception {
+        setMockResponse(500, "Injected server error");
+        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+    }
+
+    @Test
+    public void testAddEventWithCallback() throws Exception {
+        setMockResponse(201, POST_EVENT_SUCCESS);
         final CountDownLatch latch = new CountDownLatch(1);
-        // send the event
-        client.addEvent(TEST_PROJECT, "foo", event, null, new LatchKeenCallback(latch));
-        // make sure the event was sent to Keen IO
+        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, new LatchKeenCallback(latch));
         latch.await(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testSendQueuedEvents() throws Exception {
+        // Queue some events.
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
+
+        // Check that the expected number of events are in the store.
+        RamEventStore store = (RamEventStore) client.getEventStore();
+        Map<String, List<Object>> handleMap = store.getHandles();
+        assertEquals(1, handleMap.size());
+        assertEquals(3, handleMap.get(TEST_COLLECTION).size());
+
+        // Mock the response from the server, then send the queued events.
+        Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
+        expectedResponse.put(TEST_COLLECTION, 3);
+        setMockResponse(200, getPostEventsResponse(buildSuccessMap(expectedResponse)));
+        client.sendQueuedEvents();
+
+        // Validate that the store is now empty.
+        handleMap = store.getHandles();
+        assertEquals(0, handleMap.size());
+    }
+
+    @Test
+    public void testSendQueuedEventsWithFailure() throws Exception {
+        // Queue some events.
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
+
+        // Check that the expected number of events are in the store.
+        RamEventStore store = (RamEventStore) client.getEventStore();
+        Map<String, List<Object>> handleMap = store.getHandles();
+        assertEquals(1, handleMap.size());
+        assertEquals(3, handleMap.get(TEST_COLLECTION).size());
+
+        // Mock a response containing an error.
+        Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
+        expectedResponse.put(TEST_COLLECTION, 3);
+        Map<String, Object> responseMap = buildSuccessMap(expectedResponse);
+        replaceSuccessWithFailure(responseMap, TEST_COLLECTION, 2, "TestInjectedError",
+                "This is an error injected by the unit test code");
+        setMockResponse(200, getPostEventsResponse(responseMap));
+
+        // Send the events.
+        client.sendQueuedEvents();
+
+        // Validate that the store still contains the failed event, but not the other events.
+        handleMap = store.getHandles();
+        assertEquals(1, handleMap.size());
+        List<Object> handles = handleMap.get(TEST_COLLECTION);
+        assertEquals(1, handles.size());
+        Object handle = handles.get(0);
+        assertThat(store.get(handle), containsString("test-value-2"));
     }
 
     @Test
@@ -367,49 +435,56 @@ public class KeenClientTest {
         }
     }
 
-    private KeenClient getMockedClient(Object data, int statusCode) throws IOException, KeenInitializationException {
-        if (data == null) {
-            data = buildResponseJson(true, null, null);
-        }
+    private void setMockResponse(int statusCode, String body) throws IOException {
+        HttpClient.ServerResponse response = new HttpClient.ServerResponse(statusCode, body);
+        HttpClient httpClient = mock(HttpClient.class);
+        when(httpClient.sendRequest(any(HttpURLConnection.class), anyString(),
+                any(HttpClient.OutputSource.class))).thenReturn(response);
 
-        // set up the partial mock
-        KeenClient client = KeenClient.client();
-        client = spy(client);
-
-        byte[] bytes = JSON_MAPPER.writeValueAsBytes(data);
-        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-        HttpURLConnection connMock = mock(HttpURLConnection.class);
-        when(connMock.getResponseCode()).thenReturn(statusCode);
-        if (statusCode == 200) {
-            when(connMock.getInputStream()).thenReturn(stream);
-        } else {
-            when(connMock.getErrorStream()).thenReturn(stream);
-        }
-
-        doReturn(connMock).when(client).sendQueuedEvents();
-
-        return client;
+        KeenClient.client().setHttpClient(httpClient);
     }
 
-    private Map<String, Object> buildResponseJson(boolean success, String errorCode, String description) {
-        Map<String, Object> result = buildResult(success, errorCode, description);
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        list.add(result);
+    private Map<String, Object> buildSuccessMap(Map<String, Integer> postedEvents) throws IOException {
+        // Build a map that will represent the response.
         Map<String, Object> response = new HashMap<String, Object>();
-        response.put("foo", list);
+
+        // Create a single map for a successfully posted event; this can be reused for each event.
+        final Map<String, Boolean> success = new HashMap<String, Boolean>();
+        success.put("success", true);
+
+        // Build the response map by creating a list of the appropriate number of successes for
+        // each event collection.
+        for (Map.Entry<String, Integer> entry : postedEvents.entrySet()) {
+            List<Map<String, Boolean>> list = new ArrayList<Map<String, Boolean>>();
+            for (int i = 0; i < entry.getValue(); i++) {
+                list.add(success);
+            }
+            response.put(entry.getKey(), list);
+        }
+
+        // Return the success map.
         return response;
     }
 
-    private Map<String, Object> buildResult(boolean success, String errorCode, String description) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("success", success);
-        if (!success) {
-            Map<String, Object> error = new HashMap<String, Object>();
-            error.put("name", errorCode);
-            error.put("description", description);
-            result.put("error", error);
-        }
-        return result;
+    @SuppressWarnings("unchecked")
+    private void replaceSuccessWithFailure(Map<String, Object> response, String collection,
+                                           int index, String errorName, String errorDescription) {
+
+        // Build the failure map.
+        Map<String, Object> failure = new HashMap<String, Object>();
+        failure.put("success", Boolean.FALSE);
+        Map<String, String> reason = new HashMap<String, String>();
+        reason.put("name", errorName);
+        reason.put("description", errorDescription);
+        failure.put("error", reason);
+
+        // Replace the element at the appropriate index with the failure.
+        List<Object> eventStatuses = (List<Object>) response.get(collection);
+        eventStatuses.set(index, failure);
+    }
+
+    private String getPostEventsResponse(Map<String, Object> postedEvents) throws IOException {
+        return JSON_MAPPER.writeValueAsString(postedEvents);
     }
 
     private static class LatchKeenCallback implements KeenCallback {
