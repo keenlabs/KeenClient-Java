@@ -135,7 +135,7 @@ public abstract class KeenClient {
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
 
             // Publish the event.
-            publish(project, eventCollection, newEvent);
+            publish(useProject, eventCollection, newEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);

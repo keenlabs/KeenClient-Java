@@ -118,6 +118,19 @@ public class RamEventStore implements KeenEventStore {
         this.maxEventsPerCollection = maxEventsPerCollection;
     }
 
+    ///// TEST HOOKS /////
+
+    /**
+     * Clears all events from the store, effectively resetting it to its initial state. This method
+     * is intended for use during unit testing, and should generally not be called by production
+     * code.
+     */
+    void clear() {
+        nextId = 0;
+        collectionIds = new HashMap<String, List<Long>>();
+        events = new HashMap<Long, String>();
+    }
+
     ///// PRIVATE FIELDS /////
 
     private long nextId = 0;

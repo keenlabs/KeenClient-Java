@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,12 +19,14 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.keen.client.java.HttpRequestHandler.HttpResponse;
 import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -31,6 +34,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 
 /**
@@ -62,8 +66,7 @@ public class KeenClientTest {
         KeenLogging.enableLogging();
         KeenClient client = new TestKeenClient();
         KeenClient.initialize(client);
-        TEST_PROJECT = new KeenProject("508339b0897a2c4282000000",
-                "80ce00d60d6443118017340c42d1cfaf", "80ce00d60d6443118017340c42d1cfaf");
+        TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key");
         TEST_EVENTS = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < 10; i++) {
             Map<String, Object> event = new HashMap<String, Object>();
@@ -80,6 +83,9 @@ public class KeenClientTest {
         client.setBaseUrl(null);
         client.setDebugMode(true);
         client.setDefaultProject(TEST_PROJECT);
+
+        // Clear the RAM event store.
+        ((RamEventStore) client.getEventStore()).clear();
 
         // Configure a mock HTTP client that will always return an error. This should be replaced
         // by a functioning mock for tests that expect an HTTP request.
@@ -227,28 +233,36 @@ public class KeenClientTest {
 
     @Test
     public void testAddEvent() throws Exception {
-        setMockResponse(201, POST_EVENT_SUCCESS);
-        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+        HttpRequestHandler httpHandler = setMockResponse(201, POST_EVENT_SUCCESS);
+        client.addEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        ArgumentCaptor<HttpURLConnection> conn = ArgumentCaptor.forClass(HttpURLConnection.class);
+        verify(httpHandler).sendPostRequest(conn.capture(), anyString(),
+                any(HttpRequestHandler.OutputSource.class));
+        assertThat(conn.getValue().getURL().toString(), startsWith("https://api.keen.io"));
     }
 
     @Test
     public void testAddEventNonSSL() throws Exception {
         client.setBaseUrl("http://api.keen.io");
-        setMockResponse(201, POST_EVENT_SUCCESS);
-        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+        HttpRequestHandler httpHandler = setMockResponse(201, POST_EVENT_SUCCESS);
+        client.addEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        ArgumentCaptor<HttpURLConnection> conn = ArgumentCaptor.forClass(HttpURLConnection.class);
+        verify(httpHandler).sendPostRequest(conn.capture(), anyString(),
+                any(HttpRequestHandler.OutputSource.class));
+        assertThat(conn.getValue().getURL().toString(), startsWith("http://api.keen.io"));
     }
 
     @Test(expected = ServerException.class)
     public void testAddEventServerFailure() throws Exception {
         setMockResponse(500, "Injected server error");
-        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, null);
+        client.addEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
     }
 
     @Test
     public void testAddEventWithCallback() throws Exception {
         setMockResponse(201, POST_EVENT_SUCCESS);
         final CountDownLatch latch = new CountDownLatch(1);
-        client.addEvent(TEST_PROJECT, TEST_COLLECTION, TEST_EVENTS.get(0), null, new LatchKeenCallback(latch));
+        client.addEvent(null, TEST_COLLECTION, TEST_EVENTS.get(0), null, new LatchKeenCallback(latch));
         latch.await(2, TimeUnit.SECONDS);
     }
 
@@ -274,10 +288,18 @@ public class KeenClientTest {
         // Validate that the store is now empty.
         handleMap = store.getHandles();
         assertEquals(0, handleMap.size());
+
+        // Try sending events again; this should be a no-op.
+        setMockResponse(200, "{}");
+        client.sendQueuedEvents();
+
+        // Validate that the store is still empty.
+        handleMap = store.getHandles();
+        assertEquals(0, handleMap.size());
     }
 
     @Test
-    public void testSendQueuedEventsWithFailure() throws Exception {
+    public void testSendQueuedEventsWithSingleFailure() throws Exception {
         // Queue some events.
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
@@ -307,6 +329,31 @@ public class KeenClientTest {
         assertEquals(1, handles.size());
         Object handle = handles.get(0);
         assertThat(store.get(handle), containsString("test-value-2"));
+    }
+
+    @Test
+    public void testSendQueuedEventsWithServerFailure() throws Exception {
+        // Queue some events.
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
+
+        // Mock a server failure.
+        setMockResponse(500, "Injected server failure");
+
+        // Send the events.
+        try {
+            client.sendQueuedEvents();
+        } catch (ServerException e) {
+            // This exception is expected; continue.
+        }
+
+        // Validate that the store still contains all the events.
+        RamEventStore store = (RamEventStore) client.getEventStore();
+        Map<String, List<Object>> handleMap = store.getHandles();
+        assertEquals(1, handleMap.size());
+        List<Object> handles = handleMap.get(TEST_COLLECTION);
+        assertEquals(3, handles.size());
     }
 
     @Test
@@ -434,13 +481,14 @@ public class KeenClientTest {
         }
     }
 
-    private void setMockResponse(int statusCode, String body) throws IOException {
-        HttpRequestHandler.HttpResponse response = new HttpRequestHandler.HttpResponse(statusCode, body);
+    private HttpRequestHandler setMockResponse(int statusCode, String body) throws IOException {
+        HttpResponse response = new HttpResponse(statusCode, body);
         HttpRequestHandler httpHandler = mock(HttpRequestHandler.class);
         when(httpHandler.sendPostRequest(any(HttpURLConnection.class), anyString(),
                 any(HttpRequestHandler.OutputSource.class))).thenReturn(response);
 
         KeenClient.client().setHttpHandler(httpHandler);
+        return httpHandler;
     }
 
     private Map<String, Object> buildSuccessMap(Map<String, Integer> postedEvents) throws IOException {
