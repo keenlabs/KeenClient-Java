@@ -530,14 +530,30 @@ public abstract class KeenClient {
     ///// PROTECTED CONSTRUCTORS /////
 
     /**
-     * Constructs the singleton instance of the Keen client. This constructor is private to prevent
-     * additional instances from being created.
+     * Constructs a Keen client using system environment variables.
      */
     protected KeenClient() {
+        this(new Environment());
+    }
+
+    /**
+     * Constructs a Keen client using the provided environment.
+     *
+     * NOTE: This constructor is only intended for use by test code, and should not be used
+     * directly. Subclasses should call the default {@link #KeenClient()} constructor.
+     *
+     * @param env The environment to use to attempt to build the default project.
+     */
+    KeenClient(Environment env) {
         this.httpHandler = new HttpRequestHandler();
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
+
+        // If a default project has been specified in environment variables, use it.
+        if (env.getKeenProjectId() != null) {
+            defaultProject = new KeenProject(env);
+        }
     }
 
     ///// PROTECTED METHODS /////

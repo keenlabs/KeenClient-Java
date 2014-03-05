@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -96,6 +97,23 @@ public class KeenClientTest {
     @After
     public void cleanUp() {
         client = null;
+    }
+
+    @Test
+    public void initializeWithEnvironmentVariables() throws Exception {
+        // Construct a new test client and make sure it doesn't have a default project.
+        KeenClient testClient = new TestKeenClient();
+        assertNull(testClient.getDefaultProject());
+
+        // Mock an environment with a project.
+        Environment mockEnv = mock(Environment.class);
+        when(mockEnv.getKeenProjectId()).thenReturn("<project ID>");
+
+        // Make sure a new test client using the mock environment has the expected default project.
+        testClient = new TestKeenClient(mockEnv);
+        KeenProject defaultProject = testClient.getDefaultProject();
+        assertNotNull(defaultProject);
+        assertEquals("<project ID>", defaultProject.getProjectId());
     }
 
     @Test

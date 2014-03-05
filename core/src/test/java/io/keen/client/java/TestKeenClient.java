@@ -55,4 +55,11 @@ public class TestKeenClient extends KeenClient {
         publishExecutor = Executors.newSingleThreadExecutor();
     }
 
+    TestKeenClient(Environment env) {
+        super(env);
+        jsonHandler = new TestJsonHandler();
+        eventStore = new RamEventStore();
+        publishExecutor = Executors.newSingleThreadExecutor();
+    }
+
 }
