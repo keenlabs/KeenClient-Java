@@ -2,19 +2,23 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.10'
 }
 
+def isReleaseBuild() {
+    return !version.endsWith("SNAPSHOT")
+}
+
 allprojects {
     apply plugin: 'idea'
 
-    group = 'io.keen'
-    version = '2.0.0'
-}
-
-subprojects {
-    apply plugin: 'java'
+    version = VERSION_NAME
+    group = GROUP
 
     repositories {
         mavenCentral()
     }
+}
+
+subprojects {
+    apply plugin: 'java'
 
     dependencies {
         testCompile 'commons-io:commons-io:2.4'
@@ -33,6 +37,7 @@ subprojects {
         include '**/*Test.class'
     }
 
+    apply from: '../maven_publish.gradle'
 }
 
 project(':android') {
@@ -47,3 +52,57 @@ project(':java') {
     }
 }
 
+// Get required passwords from either console or dialog. Adapted from:
+// https://www.timroes.de/2014/01/19/using-password-prompts-with-gradle-build-files/
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it.name.contains("uploadArchives") }) {
+        println "Task graph requires signing"
+        def signPw = getPassword("Enter GPG secret key passphrase")
+        def sonatypePw = getPassword("Enter sonatype password")
+        allprojects { ext."signing.password" = signPw }
+        allprojects { ext."sonatypePassword" = sonatypePw }
+    } else {
+        println "Skipping signing"
+        taskGraph.allTasks.findAll {
+            it instanceof Sign
+        }.each {
+            it.enabled = false
+        }
+    }
+}
+
+import groovy.swing.SwingBuilder
+
+String getPassword(String prompt) {
+    def pass = ''
+    if (System.console() == null) {
+        new SwingBuilder().edt {
+            dialog(modal: true, // Otherwise the build will continue running before you closed the dialog
+                title: 'Enter password', // Dialog title
+                alwaysOnTop: true, // pretty much what the name says
+                resizable: false, // Don't allow the user to resize the dialog
+                locationRelativeTo: null, // Place dialog in center of the screen
+                pack: true, // We need to pack the dialog (so it will take the size of it's children)
+                show: true // Let's show it
+            ) {
+                vbox { // Put everything below each other
+                    label(text: prompt)
+                    def input = passwordField()
+                    button(defaultButton: true, text: 'OK', actionPerformed: {
+                        pass = input.password; // Set pass variable to value of input field
+                        dispose(); // Close dialog
+                    })
+                } // vbox end
+            } // dialog end
+        } // edt end
+    } else {
+        pass = System.console().readPassword("\n" + prompt)
+    }
+
+    pass = new String(pass)
+    if (pass.size() <= 0) {
+        throw new InvalidUserDataException("You must enter a password to proceed.")
+    }
+
+    return pass
+}

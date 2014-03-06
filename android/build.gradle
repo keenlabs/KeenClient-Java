@@ -40,9 +40,7 @@ dependencies {
 
 jar {
     from {
-        project(':core').configurations.archives.allArtifacts.files.collect {
-            zipTree(it)
-        }
+        project(':core').sourceSets.main.output
     }
 }
 
