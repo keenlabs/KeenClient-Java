@@ -82,6 +82,7 @@ class HttpRequestHandler {
         try {
             writer = new OutputStreamWriter(connection.getOutputStream(), ENCODING);
             source.write(writer);
+            writer.close();
             return getResponse(connection);
         } finally {
             KeenUtils.closeQuietly(writer);
