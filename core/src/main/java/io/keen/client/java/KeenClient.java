@@ -80,6 +80,15 @@ public abstract class KeenClient {
         return ClientSingleton.INSTANCE.client;
     }
 
+    /**
+     * Gets whether or not the singleton KeenClient has been initialized.
+     *
+     * @return {@code true} if and only if the client has been initialized.
+     */
+    public static boolean isInitialized() {
+        return (ClientSingleton.INSTANCE.client != null);
+    }
+
     ///// PUBLIC METHODS //////
 
     /**
@@ -517,6 +526,15 @@ public abstract class KeenClient {
     }
 
     /**
+     * Gets whether or not the Keen client is running in debug mode.
+     *
+     * @return {@code true} if debug mode is enabled, otherwise {@code false}.
+     */
+    public boolean isDebugMode() {
+        return isDebugMode;
+    }
+
+    /**
      * Sets whether or not the Keen client should run in debug mode. When debug mode is enabled,
      * all exceptions will be thrown immediately; otherwise they will be logged and reported to
      * any callbacks, but never thrown.
@@ -525,6 +543,15 @@ public abstract class KeenClient {
      */
     public void setDebugMode(boolean isDebugMode) {
         this.isDebugMode = isDebugMode;
+    }
+
+    /**
+     * Gets whether or not the client is in active mode.
+     *
+     * @return {@code true} if the client is active,; {@code false} if it is inactive.
+     */
+    public boolean isActive() {
+        return isActive;
     }
 
     ///// PROTECTED CONSTRUCTORS /////
@@ -579,6 +606,18 @@ public abstract class KeenClient {
         }
 
         ClientSingleton.INSTANCE.client = client;
+    }
+
+    /**
+     * Sets whether or not the client is in active mode. When the client is inactive, all requests
+     * will be ignored.
+     *
+     * @param isActive {@code true} to make the client active, or {@code false} to make it
+     *                 inactive.
+     */
+    protected void setActive(boolean isActive) {
+        this.isActive = isActive;
+        KeenLogging.log("Keen Client set to " + (isActive? "active" : "inactive"));
     }
 
     /**
@@ -658,7 +697,6 @@ public abstract class KeenClient {
 
     ///// PRIVATE FIELDS /////
 
-    // TODO: Set this flag to false if the library is not operational for any reason.
     private boolean isActive = true;
     private boolean isDebugMode;
     private KeenProject defaultProject;

@@ -27,7 +27,10 @@ public class JavaKeenClient extends KeenClient {
      * @return The singleton Keen client.
      */
     public static KeenClient initialize() {
-        KeenClient.initialize(new JavaKeenClient());
+        // If the library hasn't been initialized yet then initialize it.
+        if (!KeenClient.isInitialized()) {
+            KeenClient.initialize(new JavaKeenClient());
+        }
         return KeenClient.client();
     }
 
@@ -81,9 +84,16 @@ public class JavaKeenClient extends KeenClient {
      * Constructs a Java client.
      */
     private JavaKeenClient() {
-        jsonHandler = new JacksonJsonHandler();
-        eventStore = new RamEventStore();
-        publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+        // Try to initialize the necessary components. If any of them fails for any reason,
+        // mark the client as inactive.
+        try {
+            jsonHandler = new JacksonJsonHandler();
+            eventStore = new RamEventStore();
+            publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+        } catch (Exception e) {
+            KeenLogging.log("Exception initializing JavaKeenClient: " + e.getMessage());
+            setActive(false);
+        }
     }
 
 }

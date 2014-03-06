@@ -2,15 +2,9 @@ package io.keen.client.android;
 
 import android.content.Context;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.Executor;
 
-import io.keen.client.java.FileEventStore;
-import io.keen.client.java.KeenClient;
-import io.keen.client.java.KeenEventStore;
-import io.keen.client.java.KeenJsonHandler;
-import io.keen.client.java.exceptions.KeenInitializationException;
+import io.keen.client.java.*;
 
 /**
  * Implementation of a {@link io.keen.client.java.KeenClient} on the Android platform.
@@ -38,7 +32,10 @@ public class AndroidKeenClient extends KeenClient {
      * @return The singleton Keen client.
      */
     public static KeenClient initialize(Context context) {
-        KeenClient.initialize(new AndroidKeenClient(context));
+        // If the library hasn't been initialized yet then initialize it.
+        if (!KeenClient.isInitialized()) {
+            KeenClient.initialize(new AndroidKeenClient(context));
+        }
         return KeenClient.client();
     }
 
@@ -56,7 +53,7 @@ public class AndroidKeenClient extends KeenClient {
      * {@inheritDoc}
      */
     @Override
-    public KeenEventStore getEventStore() throws KeenInitializationException {
+    public KeenEventStore getEventStore() {
         return eventStore;
     }
 
@@ -70,13 +67,9 @@ public class AndroidKeenClient extends KeenClient {
 
     ///// PRIVATE FIELDS /////
 
-    /**
-     * The application context in which this client will run.
-     */
-    private final Context context;
-    private final KeenJsonHandler jsonHandler;
-    private final KeenEventStore eventStore;
-    private final Executor publishExecutor;
+    private KeenJsonHandler jsonHandler;
+    private KeenEventStore eventStore;
+    private Executor publishExecutor;
 
     ///// PRIVATE CONSTRUCTORS /////
 
@@ -87,29 +80,16 @@ public class AndroidKeenClient extends KeenClient {
      *                client will run.
      */
     private AndroidKeenClient(Context context) {
-        if (context == null) {
-            throw new IllegalArgumentException("Context must not be null");
-        }
-
-        this.context = context.getApplicationContext();
-        this.jsonHandler = new AndroidJsonHandler();
+        // Try to initialize the necessary components. If any of them fails for any reason,
+        // mark the client as inactive.
         try {
-            this.eventStore = new FileEventStore(getDeviceCacheDirectory());
-        } catch (IOException e) {
-            throw new KeenInitializationException("Error building file event store");
+            jsonHandler = new AndroidJsonHandler();
+            eventStore = new FileEventStore(context.getCacheDir());
+            publishExecutor = new AsyncTaskExecutor();
+        } catch (Exception e) {
+            KeenLogging.log("Exception initializing AndroidKeenClient: " + e.getMessage());
+            setActive(false);
         }
-        this.publishExecutor = new AsyncTaskExecutor();
-    }
-
-    ///// PRIVATE METHODS /////
-
-    /**
-     * Gets the device cache directory.
-     *
-     * @return The device cache directory.
-     */
-    private File getDeviceCacheDirectory() {
-        return context.getCacheDir();
     }
 
 }
