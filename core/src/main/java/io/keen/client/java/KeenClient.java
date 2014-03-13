@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -899,10 +900,29 @@ public abstract class KeenClient {
             }
         };
 
+        // If logging is enabled, log the request being sent.
+        if (KeenLogging.isLoggingEnabled()) {
+            try {
+                StringWriter writer = new StringWriter();
+                getJsonHandler().writeJson(writer, requestData);
+                String request = writer.toString();
+                KeenLogging.log(String.format("Sent request '%s' to URL '%s'", request, url.toString()));
+            } catch (IOException e) {
+                KeenLogging.log("Couldn't log event written to file: ");
+                e.printStackTrace();
+            }
+        }
+
         // Send the request.
         String writeKey = project.getWriteKey();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         HttpResponse response = httpHandler.sendPostRequest(connection, writeKey, source);
+
+        // If logging is enabled, log the response.
+        if (KeenLogging.isLoggingEnabled()) {
+            KeenLogging.log(String.format("Received response: '%s' (%d)", response.body,
+                    response.statusCode));
+        }
 
         // If the request succeeded, return the response body. Otherwise throw an exception.
         if (response.isSuccess()) {

@@ -41,6 +41,15 @@ public class KeenLogging {
         setLogLevel(Level.OFF);
     }
 
+    /**
+     * Whether or not logging is enabled.
+     *
+     * @return a boolean saying whether or not logging is enabled
+    */
+    public static boolean isLoggingEnabled() {
+        return LOGGER.getLevel() == Level.FINER;
+    }
+
     private static void setLogLevel(Level newLevel) {
         LOGGER.setLevel(newLevel);
         for (Handler handler : LOGGER.getHandlers()) {
