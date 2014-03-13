@@ -14,7 +14,9 @@ uploadArchives.repositories.mavenDeployer {
     pom.artifactId = POM_ARTIFACT_ID
 
     repository(url: sonatypeRepositoryUrl) {
-        authentication(userName: sonatypeUsername, password: { sonatypePassword })
+        // Wrap the username and password in closures since they may not exist during
+        // the evaluation phase.
+        authentication(userName: { sonatypeUsername }, password: { sonatypePassword })
     }
 
     pom.project {
