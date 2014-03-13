@@ -2,6 +2,7 @@ package io.keen.client.java;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of a {@link io.keen.client.java.KeenClient} in a standard Java environment.
@@ -61,6 +62,26 @@ public class JavaKeenClient extends KeenClient {
     }
 
     ///// PUBLIC METHODS /////
+
+    /**
+     * Shuts down the shared thread pool.
+     *
+     * Note: New asynchronous operation requests will fail with a
+     * {@link java.util.concurrent.RejectedExecutionException}.
+     *
+     * @param timeout A positive timeout in millis will block the current thread until the shutdown
+     *                completes or the timeout expires. Any other timeout value will result in this
+     *                method returning immediately.
+     * @throws java.lang.InterruptedException If interrupted while waiting for shutdown.
+     */
+    public void shutdownPublishExecutorService(long timeout) throws InterruptedException {
+        if (!publishExecutor.isShutdown()) {
+            publishExecutor.shutdown();
+            if (timeout > 0) {
+                publishExecutor.awaitTermination(timeout, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
 
     /**
      * If the publish {@link java.util.concurrent.ExecutorService} is shutdown, this method
