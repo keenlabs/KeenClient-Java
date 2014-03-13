@@ -81,7 +81,7 @@ For custom clients make sure that the `KeenClient` subclass calls `KeenClient#in
 
 To use the client with the Keen IO API, you have to configure your Keen IO Project ID and its access keys (if you need an account, [sign up here](https://keen.io/) - it's free).
 
-In most scenarios you will always be adding events to the same project, so as a convenience the Keen client allows you to specify the project parameters in environment variables and those parameters will be implicitly used for all requests. The environment variables you should set are `PROJECT_ID`, `WRITE_KEY`, AND `READ_KEY`. Setting a write key is required for publishing events. Setting a read key is required for running queries.
+In most scenarios you will always be adding events to the same project, so as a convenience the Keen client allows you to specify the project parameters in environment variables and those parameters will be implicitly used for all requests. The environment variables you should set are `KEEN_PROJECT_ID`, `KEEN_WRITE_KEY`, and `KEEN_READ_KEY`. Setting a write key is required for publishing events. Setting a read key is required for running queries.
 
 #### Setting Default Project Explicitly
 
