@@ -3,15 +3,13 @@ Keen Java Clients
 
 [![Build Status](https://travis-ci.org/keenlabs/KeenClient-Java.png?branch=master)](https://travis-ci.org/keenlabs/KeenClient-Java)
 
-The Keen Java clients enable you to record data using Keen IO from any Java application. The core
-library supports a variety of different paradigms for uploading events, including synchronous vs. asynchronous and single-event vs. batch. Different clients can be built on top of this core library to provide
-the right behaviors for a given platform or situation. The library currently includes a ["plain"
-Java client ](#plain-java) and an [Android client](#android) , but you can easily create your own
-by extending the base `KeenClient` class.
+The Keen Java clients enable you to record data using Keen IO from any Java application. The core library supports a variety of different paradigms for uploading events, including synchronous vs. asynchronous and single-event vs. batch. Different clients can be built on top of this core library to provide the right behaviors for a given platform or situation. The library currently includes a ["plain" Java client ](#plain-java) and an [Android client](#android), but you can easily create your own by extending the base `KeenClient` class.
 
 ## Installation
 
 You have several choices for how to include the Keen client in your Java application.
+
+**NOTE: The 2.0.0 libraries have not yet been published to Maven. This README will be updated once they're published. Until then, please follow the instructions to [build from source](#build from source).**
 
 ### Gradle
 
@@ -42,19 +40,22 @@ Paste the following snippet into your pom.xml:
 
 Drop the appropriate jar into your project and configure the project to use it. We recommend having a "libs" directory to contain external dependencies, but it's up to you.
 
-* ["Plain" Java Client](http://keen.io/static/code/keen-client-api-java-with-deps.jar) ([sources](http://keen.io/static/code/keen-client-api-java-with-deps-sources.jar)) - This jar includes the necessary Jackson library.
-* ["Plain" Java Client without Jackson](http://keen.io/static/code/keen-client-api-java.jar) - You will need to ensure that the jackson-databind jar is on your classpath.
-* [Android Client](http://keen.io/static/code/keen-client-api-android.jar) ([sources](http://keen.io/static/code/keen-client-api-android-sources.jar))
-* [Core library only](http://keen.io/static/code/keen-client-java-core.jar) ([sources](http://keen.io/static/code/keen-client-java-core-sources.jar)) - This does not include a usable client implementation, so you will have to provide your own.
+**NOTE: As mentioned, the 2.0.0 jars are not posted yet. Stay Tuned.**
+
+* ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
+* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android)
+* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-api-core) - This does not include a usable client implementation, so you will have to provide your own.
 
 ### Build From Source
 
 1. `git clone git@github.com:keenlabs/KeenClient-Java.git`
 1. `cd KeenClient-Java`
-1. Configure the Android SDK location by creating the file `android/local.properties` with the following line:
+1. Do you want/need to build the Android client?
+  1. Yes, I want to build Android: Configure the Android SDK path in the file `android/local.properties`. The path should be to the root of the Android SDK, i.e. the folder containing the "platforms" directory. Note also that the build logic is currently hard-coded to use android-19; if you don't have SDK version 19, update line 35 of `android\build.gradle` to your SDK version. The format of the file is simply:
 
-        sdk.dir=<Android SDK path>
-  **OR**: Remove the `android` project from the `include` directive in `settings.gradle`.
+      sdk.dir=[Android SDK path]
+
+  1. No, I don't need to build Android: Remove the `android` project from the `include` directive in `settings.gradle`.
 1. `export JAVA_HOME=<path to Java>` (Windows: `set JAVA_HOME=<path to Java>`)
 1. `./gradlew build` (Windows: `gradlew.bat build`)
 1. Jars will be built and deposited into the various `build/libs` directories (e.g. `java/build/libs`, `android/build/libs`). You can then use these jars just as if you had downloaded them.
@@ -120,7 +121,19 @@ Here's a very basic example for an app that tracks "purchases":
 
 That's it! After running your code, check your Keen IO Project to see the event has been added.
 
-####
+#### Single Event vs. Batch
+
+To post events to the server one at a time, use the `addEvent` or `addEventAsync` methods.
+
+To store events in a queue and periodically post all queued events in a single batch, use the `queueEvent` and `sendQueuedEvents` (or `sendQueuedEventsAsync`) methods.
+
+#### Synchronous vs. Asynchronous
+
+The `addEvent` and `sendQueuedEvents` methods will perform the entire HTTP request and response processing synchronously in the calling thread. Their `Async` counterparts will submit a task to the client's `publishExecutor`, which will execute it asynchronously.
+
+#### Using Callbacks
+
+By default the library assumes that your events are "fire and forget", that is, you don't need to know when (or even if) they succeed. However if you do need to know for some reason, the client includes overloads of each method which take a `KeenCallback` object. This object allows you to receive notification when a request completes, as well as whether it succeeded and, if it failed, an `Exception` indicating the cause of the failure.
 
 ### Do analysis with Keen IO
 
@@ -170,6 +183,30 @@ The `KeenClient` base class relies on three interfaces to abstract out behaviors
   * `FileEventStore`: Stores events in the local file system. This is persistent but needs to be provided with a working directory that is safe to use across application restarts.
 * `Executor`: The client uses an `Executor` to perform all of the various `*Async` operations. This allows callers to configure thread pools and control shutdown behavior, if they so desire.
 
+## Client-Specific Considerations
+
+### Java Client
+
+The Java client uses an `ExecutorService` to perform asynchronous requests, and you may wish to manage its life-cycle. For simple management, `JavaKeenClient` provides the methods `shutdownPublishExecutorService` and `restartPublishExecutorService` which you can call directly:
+
+```java
+    JavaKeenClient javaClient = (JavaKeenClient) KeenClient.client();
+    javaClient.shutdownPublishExecutorService(0);
+```
+
+For more control you can get a reference to the `ExecutorService` itself:
+
+```java
+    ExecutorService service = (ExecutorService) KeenClient.client().getPublishExecutor();
+    service.awaitTermination(5, TimeUnit.SECONDS);
+```
+
+### Android Client
+
+If using the Android Keen client, you will need to make sure that your application has the `INTERNET` permission. If it’s not already present, add it to your AndroidManifest.xml file. The entry below should appear inside the `<manifest>` tag.
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
 ## Troubleshooting
 
 #### "Unable to find location of Android SDK. Please read documentation" error during build
@@ -190,20 +227,6 @@ The default encryption settings for JDK6+ don't allow using AES-256-CBC, which i
 * [Java 7 Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html)
 
 Follow the install instructions and scoped key generation should work. Note that the policy files will need to be installed on any device which runs your application, or scoped key generation will result in a runtime exception.
-
-## Documentation
-
-### <a name="plain-java"></a>"Plain" Java Client
-
-[Usage Guide](https://keen.io/docs/clients/java/usage-guide/)
-
-[API Reference](https://keen.io/static/java-reference/index.html)
-
-### <a name="android"></a>Android Client
-
-[Usage Guide](https://keen.io/docs/clients/android/usage-guide/)
-
-[API Reference](https://keen.io/static/android-reference/index.html)
 
 ## Changelog
 
