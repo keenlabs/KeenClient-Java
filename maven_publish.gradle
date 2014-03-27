@@ -1,6 +1,29 @@
 apply plugin: 'signing'
 apply plugin: 'maven'
 
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+signing {
+    required {
+        isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives")
+    }
+    sign configurations.archives
+}
+
 def sonatypeRepositoryUrl
 if (isReleaseBuild()) {
     sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
@@ -13,10 +36,10 @@ uploadArchives.repositories.mavenDeployer {
 
     pom.artifactId = POM_ARTIFACT_ID
 
-    repository(url: sonatypeRepositoryUrl) {
-        // Wrap the username and password in closures since they may not exist during
-        // the evaluation phase.
-        authentication(userName: { sonatypeUsername }, password: { sonatypePassword })
+    if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
+        repository(url: sonatypeRepositoryUrl) {
+            authentication(userName: project.sonatypeUsername, password: project.sonatypePassword)
+        }
     }
 
     pom.project {
@@ -52,27 +75,4 @@ uploadArchives.repositories.mavenDeployer {
             }
         }
     }
-}
-
-signing {
-    required {
-        isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives")
-    }
-    sign configurations.archives
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-artifacts {
-    archives jar
-    archives sourcesJar
-    archives javadocJar
 }

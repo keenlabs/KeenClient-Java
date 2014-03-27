@@ -54,18 +54,18 @@ project(':java') {
 
 gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.allTasks.any { it.name.contains("uploadArchives") }) {
-        println "Task graph requires signing"
-        if (project.hasProperty('sonatypeUsername') &&
-            project.hasProperty('signing.keyId') &&
-            project.hasProperty('signing.secretKeyRingFile')) {
+        if (project.hasProperty('signing.keyId') &&
+            project.hasProperty('signing.secretKeyRingFile') &&
+            project.hasProperty('sonatypeUsername') &&
+            project.hasProperty('sonatypePassword')) {
 
+            println "Found signing properties and sonatype credentials"
             ext."signing.password" = getPassword("Enter GPG secret key passphrase")
-            ext."sonatypePassword" = getPassword("Enter sonatype password")
         } else {
             throw new GradleScriptException(
                 "Missing required signing configuration. Ensure that you have a " +
-                "gradle.properties file which defines the values 'sonatypeUsername', " +
-                "'signing.keyId', and 'signing.secretKeyRingFile'.", null);
+                "gradle.properties file which defines the values 'signing.keyId', " +
+                "'signing.secretKeyRingFile', 'sonatypeUsername', and 'sonatypePassword'.", null);
         }
     } else {
         println "No publish tasks; skipping all artifact signing"
