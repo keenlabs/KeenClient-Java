@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Map;
 
@@ -21,12 +22,18 @@ class KeenHttpRequestRunnable implements Runnable {
     private final String eventCollection;
     private final Map<String, Object> event;
     private final AddEventCallback callback;
+    private final Proxy proxy;
 
     KeenHttpRequestRunnable(KeenClient keenClient, String eventCollection, Map<String, Object> event, AddEventCallback callback) {
+        this(keenClient,eventCollection,event,callback,KeenConfig.getProxy());
+    }
+
+    KeenHttpRequestRunnable(KeenClient keenClient, String eventCollection, Map<String, Object> event, AddEventCallback callback, Proxy proxy) {
         this.keenClient = keenClient;
         this.eventCollection = eventCollection;
         this.event = event;
         this.callback = callback;
+        this.proxy = proxy;
     }
 
     @Override
@@ -56,7 +63,7 @@ class KeenHttpRequestRunnable implements Runnable {
         URL url = new URL(urlString);
 
         // set up the POST
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection = openConnection(url);
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json");
@@ -70,6 +77,13 @@ class KeenHttpRequestRunnable implements Runnable {
         KeenClient.MAPPER.writeValue(out, event);
         out.close();
         return connection;
+    }
+
+    HttpURLConnection openConnection(URL url) throws IOException {
+        if(proxy == null){
+            return (HttpURLConnection) url.openConnection();
+        }
+        return (HttpURLConnection)url.openConnection(proxy);
     }
 
     static void handleResult(InputStream input, int responseCode, AddEventCallback callback) {
