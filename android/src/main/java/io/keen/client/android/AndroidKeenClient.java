@@ -3,6 +3,7 @@ package io.keen.client.android;
 import android.content.Context;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import io.keen.client.java.*;
 
@@ -85,11 +86,22 @@ public class AndroidKeenClient extends KeenClient {
         try {
             jsonHandler = new AndroidJsonHandler();
             eventStore = new FileEventStore(context.getCacheDir());
-            publishExecutor = new AsyncTaskExecutor();
+            publishExecutor = buildDefaultExecutor();
         } catch (Exception e) {
             KeenLogging.log("Exception initializing AndroidKeenClient: " + e.getMessage());
             setActive(false);
         }
+    }
+
+    /**
+     * Builds a simple fixed-thread-pool executor, using the number of available processors as the
+     * thread count.
+     *
+     * @return The constructed executor.
+     */
+    private static Executor buildDefaultExecutor() {
+        int procCount = Runtime.getRuntime().availableProcessors();
+        return Executors.newFixedThreadPool(procCount);
     }
 
 }
