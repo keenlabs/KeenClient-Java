@@ -45,7 +45,22 @@ public class ScopedKeys {
      * @return A Keen IO Scoped Key.
      * @throws ScopedKeyException
      */
-    public static String encrypt(String apiKey, Map<String, Object> options) throws ScopedKeyException {
+    public static String encrypt(String apiKey, Map<String, Object> options)
+            throws ScopedKeyException {
+        return encrypt(KeenClient.client(), apiKey, options);
+    }
+
+    /**
+     * Encrypts the given options with a Keen IO API Key and creates a Scoped Key.
+     *
+     * @param client  The KeenClient to use for JSON handling.
+     * @param apiKey  Your Keen IO API Key.
+     * @param options The options you want to encrypt.
+     * @return A Keen IO Scoped Key.
+     * @throws ScopedKeyException
+     */
+    public static String encrypt(KeenClient client, String apiKey, Map<String, Object> options)
+        throws ScopedKeyException {
         try {
             // if the user doesn't give an options, just use an empty one
             if (options == null) {
@@ -57,7 +72,7 @@ public class ScopedKeys {
 
             // json encode the options
             StringWriter writer = new StringWriter();
-            KeenClient.client().getJsonHandler().writeJson(writer, options);
+            client.getJsonHandler().writeJson(writer, options);
             final String jsonOptions = writer.toString();
 
             // setup the API key as the secret
@@ -88,7 +103,22 @@ public class ScopedKeys {
      * @return The decrypted Scoped Key Options.
      * @throws ScopedKeyException
      */
-    public static Map<String, Object> decrypt(String apiKey, String scopedKey) throws ScopedKeyException {
+    public static Map<String, Object> decrypt(String apiKey, String scopedKey)
+            throws ScopedKeyException {
+        return decrypt(KeenClient.client(), apiKey, scopedKey);
+    }
+
+    /**
+     * Decrypts the given Keen IO Scoped Key with an API Key and returns the decrypted Scoped Key Options.
+     *
+     * @param client  The KeenClient to use for JSON handling.
+     * @param apiKey    Your Keen IO API Key.
+     * @param scopedKey The Scoped Key you want to decrypt.
+     * @return The decrypted Scoped Key Options.
+     * @throws ScopedKeyException
+     */
+    public static Map<String, Object> decrypt(KeenClient client, String apiKey, String scopedKey)
+        throws ScopedKeyException {
         try {
             // pad the api key
             final String paddedApiKey = padApiKey(apiKey);
@@ -117,7 +147,7 @@ public class ScopedKeys {
             String plainText = new String(cipher.doFinal(cipherText), "UTF-8");
 
             // return the JSON decoded options map
-            return KeenClient.client().getJsonHandler().readJson(new StringReader(plainText));
+            return client.getJsonHandler().readJson(new StringReader(plainText));
         } catch (Exception e) {
             throw new ScopedKeyException("An error occurred while attempting to decrypt a Scoped Key", e);
         }

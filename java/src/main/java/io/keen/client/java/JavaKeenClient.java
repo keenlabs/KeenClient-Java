@@ -1,5 +1,6 @@
 package io.keen.client.java;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,35 +31,9 @@ public class JavaKeenClient extends KeenClient {
     public static KeenClient initialize() {
         // If the library hasn't been initialized yet then initialize it.
         if (!KeenClient.isInitialized()) {
-            KeenClient.initialize(new JavaKeenClient());
+            KeenClient.initialize(new JavaKeenClient.Builder().build());
         }
         return KeenClient.client();
-    }
-
-    ///// KeenClient METHODS /////
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public KeenJsonHandler getJsonHandler() {
-        return jsonHandler;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public KeenEventStore getEventStore() {
-        return eventStore;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ExecutorService getPublishExecutor() {
-        return publishExecutor;
     }
 
     ///// PUBLIC METHODS /////
@@ -75,45 +50,68 @@ public class JavaKeenClient extends KeenClient {
      * @throws java.lang.InterruptedException If interrupted while waiting for shutdown.
      */
     public void shutdownPublishExecutorService(long timeout) throws InterruptedException {
-        if (!publishExecutor.isShutdown()) {
-            publishExecutor.shutdown();
+        ExecutorService publishExecutorService = tryGetPublishExecutorService();
+        if (!publishExecutorService.isShutdown()) {
+            publishExecutorService.shutdown();
             if (timeout > 0) {
-                publishExecutor.awaitTermination(timeout, TimeUnit.MILLISECONDS);
+                publishExecutorService.awaitTermination(timeout, TimeUnit.MILLISECONDS);
             }
         }
     }
 
-    /**
-     * If the publish {@link java.util.concurrent.ExecutorService} is shutdown, this method
-     * starts a new one. Otherwise it does nothing.
-     */
-    public void restartPublishExecutorService() {
-        if (publishExecutor.isShutdown()) {
-            publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
+    ///// BUILDER IMPLEMENTATION /////
+
+    public static class Builder extends KeenClient.Builder<JavaKeenClient> {
+
+        @Override
+        protected JavaKeenClient newInstance() {
+            return new JavaKeenClient(this);
         }
+
+        @Override
+        protected KeenJsonHandler getDefaultJsonHandler() {
+            return new JacksonJsonHandler();
+        }
+
+        @Override
+        protected KeenEventStore getDefaultEventStore() {
+            return new RamEventStore();
+        }
+
+        /**
+         * Builds a simple fixed-thread-pool executor, using the number of available processors as
+         * the thread count.
+         *
+         * @return The constructed executor.
+         */
+        @Override
+        protected Executor getDefaultPublishExecutor() {
+            int procCount = Runtime.getRuntime().availableProcessors();
+            return Executors.newFixedThreadPool(procCount);
+        }
+
     }
-
-    ///// PRIVATE FIELDS /////
-
-    private KeenJsonHandler jsonHandler;
-    private KeenEventStore eventStore;
-    private ExecutorService publishExecutor;
 
     ///// PRIVATE CONSTRUCTORS /////
 
     /**
      * Constructs a Java client.
+     *
+     * @param builder The builder from which to retrieve this client's interfaces and settings.
      */
-    private JavaKeenClient() {
-        // Try to initialize the necessary components. If any of them fails for any reason,
-        // mark the client as inactive.
-        try {
-            jsonHandler = new JacksonJsonHandler();
-            eventStore = new RamEventStore();
-            publishExecutor = Executors.newFixedThreadPool(KeenConfig.NUM_THREADS_FOR_HTTP_REQUESTS);
-        } catch (Exception e) {
-            KeenLogging.log("Exception initializing JavaKeenClient: " + e.getMessage());
-            setActive(false);
+    private JavaKeenClient(Builder builder) {
+        super(builder);
+    }
+
+    ///// PRIVATE METHODS /////
+
+    private ExecutorService tryGetPublishExecutorService() {
+        Executor publishExecutor = getPublishExecutor();
+        if (publishExecutor instanceof ExecutorService) {
+            return (ExecutorService) publishExecutor;
+        } else {
+            throw new IllegalStateException("Expected publishExecutor to be an ExecutorService " +
+                    "but found: " + publishExecutor.getClass().getCanonicalName());
         }
     }
 

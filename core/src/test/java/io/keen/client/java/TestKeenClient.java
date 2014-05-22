@@ -1,7 +1,6 @@
 package io.keen.client.java;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -20,46 +19,47 @@ public class TestKeenClient extends KeenClient {
      * @return The singleton Keen client.
      */
     public static KeenClient initialize() {
-        KeenClient.initialize(new TestKeenClient());
+        // If the library hasn't been initialized yet then initialize it.
+        if (!KeenClient.isInitialized()) {
+            KeenClient.initialize(new TestKeenClient.Builder().build());
+        }
         return KeenClient.client();
     }
 
-    ///// KeenClient METHODS /////
+    ///// BUILDER IMPLEMENTATION /////
 
-    @Override
-    public KeenJsonHandler getJsonHandler() {
-        return jsonHandler;
+    public static class Builder extends KeenClient.Builder<TestKeenClient> {
+
+        @Override
+        protected TestKeenClient newInstance() {
+            return new TestKeenClient(this);
+        }
+
+        @Override
+        protected KeenJsonHandler getDefaultJsonHandler() {
+            return new TestJsonHandler();
+        }
+
+        @Override
+        protected KeenEventStore getDefaultEventStore() {
+            return new RamEventStore();
+        }
+
+        @Override
+        protected Executor getDefaultPublishExecutor() {
+            return Executors.newSingleThreadExecutor();
+        }
+
     }
 
-    @Override
-    public KeenEventStore getEventStore() {
-        return eventStore;
+    ///// DEFAULT-ACCESS CONSTRUCTORS /////
+
+    TestKeenClient(Builder builder) {
+        super(builder);
     }
 
-    @Override
-    public Executor getPublishExecutor() {
-        return publishExecutor;
-    }
-
-    ///// PRIVATE FIELDS /////
-
-    private KeenJsonHandler jsonHandler;
-    private KeenEventStore eventStore;
-    private ExecutorService publishExecutor;
-
-    ///// PRIVATE CONSTRUCTORS /////
-
-    TestKeenClient() {
-        jsonHandler = new TestJsonHandler();
-        eventStore = new RamEventStore();
-        publishExecutor = Executors.newSingleThreadExecutor();
-    }
-
-    TestKeenClient(Environment env) {
-        super(env);
-        jsonHandler = new TestJsonHandler();
-        eventStore = new RamEventStore();
-        publishExecutor = Executors.newSingleThreadExecutor();
+    TestKeenClient(Builder builder, Environment env) {
+        super(builder, env);
     }
 
 }

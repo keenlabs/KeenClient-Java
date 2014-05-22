@@ -34,8 +34,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -66,7 +66,7 @@ public class KeenClientTest {
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        KeenClient client = new TestKeenClient();
+        KeenClient client = new TestKeenClient.Builder().build();
         KeenClient.initialize(client);
         TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key");
         TEST_EVENTS = new ArrayList<Map<String, Object>>();
@@ -102,7 +102,8 @@ public class KeenClientTest {
     @Test
     public void initializeWithEnvironmentVariables() throws Exception {
         // Construct a new test client and make sure it doesn't have a default project.
-        KeenClient testClient = new TestKeenClient();
+        TestKeenClient.Builder builder = new TestKeenClient.Builder();
+        KeenClient testClient = builder.build();
         assertNull(testClient.getDefaultProject());
 
         // Mock an environment with a project.
@@ -110,7 +111,7 @@ public class KeenClientTest {
         when(mockEnv.getKeenProjectId()).thenReturn("<project ID>");
 
         // Make sure a new test client using the mock environment has the expected default project.
-        testClient = new TestKeenClient(mockEnv);
+        testClient = new TestKeenClient(builder, mockEnv);
         KeenProject defaultProject = testClient.getDefaultProject();
         assertNotNull(defaultProject);
         assertEquals("<project ID>", defaultProject.getProjectId());

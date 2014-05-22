@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -40,32 +39,6 @@ import io.keen.client.java.exceptions.ServerException;
  * @since 1.0.0
  */
 public abstract class KeenClient {
-
-    ///// PUBLIC ABSTRACT METHODS /////
-
-    /**
-     * Gets the {@link io.keen.client.java.KeenJsonHandler} which should be used to handle reading
-     * and writing JSON.
-     *
-     * @return A {@link io.keen.client.java.KeenJsonHandler}.
-     */
-    public abstract KeenJsonHandler getJsonHandler();
-
-    /**
-     * Gets the {@link io.keen.client.java.KeenEventStore} which should be used to handle storing
-     * events in between batch posts.
-     *
-     * @return A {@link io.keen.client.java.KeenEventStore}.
-     */
-    public abstract KeenEventStore getEventStore();
-
-    /**
-     * Gets the {@link java.util.concurrent.Executor} which should be used to process asynchronous
-     * requests.
-     *
-     * @return An {@link java.util.concurrent.Executor}.
-     */
-    public abstract Executor getPublishExecutor();
 
     ///// PUBLIC STATIC METHODS /////
 
@@ -204,7 +177,7 @@ public abstract class KeenClient {
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
         try {
-            getPublishExecutor().execute(new Runnable() {
+            publishExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
                     addEvent(useProject, eventCollection, event, keenProperties, callback);
@@ -270,12 +243,12 @@ public abstract class KeenClient {
 
             // Serialize the event into JSON.
             StringWriter writer = new StringWriter();
-            getJsonHandler().writeJson(writer, newEvent);
+            jsonHandler.writeJson(writer, newEvent);
             String jsonEvent = writer.toString();
             KeenUtils.closeQuietly(writer);
 
             // Save the JSON event out to the event store.
-            getEventStore().store(useProject.getProjectId(), eventCollection, jsonEvent);
+            eventStore.store(useProject.getProjectId(), eventCollection, jsonEvent);
             handleSuccess(callback);
         } catch (Exception e) {
             handleFailure(callback, e);
@@ -324,7 +297,7 @@ public abstract class KeenClient {
 
         try {
             String projectId = useProject.getProjectId();
-            Map<String, List<Object>> eventHandles = getEventStore().getHandles(projectId);
+            Map<String, List<Object>> eventHandles = eventStore.getHandles(projectId);
             Map<String, List<Map<String, Object>>> events = buildEventMap(eventHandles);
             String response = publishAll(useProject, events);
             if (response != null) {
@@ -384,7 +357,7 @@ public abstract class KeenClient {
         // Wrap the asynchronous execute in a try/catch block in case the executor throws a
         // RejectedExecutionException (or anything else).
         try {
-            getPublishExecutor().execute(new Runnable() {
+            publishExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
                     sendQueuedEvents(useProject, callback);
@@ -393,6 +366,33 @@ public abstract class KeenClient {
         } catch (Exception e) {
             handleFailure(callback, e);
         }
+    }
+
+    /**
+     * Gets the JSON handler for this client.
+     *
+     * @return The {@link io.keen.client.java.KeenJsonHandler}.
+     */
+    public KeenJsonHandler getJsonHandler() {
+        return jsonHandler;
+    }
+
+    /**
+     * Gets the event store for this client.
+     *
+     * @return The {@link io.keen.client.java.KeenEventStore}.
+     */
+    public KeenEventStore getEventStore() {
+        return eventStore;
+    }
+
+    /**
+     * Gets the executor for asynchronous publishing for this client.
+     *
+     * @return The {@link java.util.concurrent.Executor}.
+     */
+    public Executor getPublishExecutor() {
+        return publishExecutor;
     }
 
     /**
@@ -555,25 +555,127 @@ public abstract class KeenClient {
         return isActive;
     }
 
+    ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
+
+    /**
+     * Builder class for instantiating Keen clients. Subclasses should override this and
+     * implement the getDefault* methods to provide default behavior.
+     */
+    protected static abstract class Builder<T extends KeenClient> {
+
+        private KeenJsonHandler jsonHandler;
+        private KeenEventStore eventStore;
+        private Executor publishExecutor;
+
+        protected abstract T newInstance();
+        protected abstract KeenJsonHandler getDefaultJsonHandler() throws Exception;
+        protected abstract KeenEventStore getDefaultEventStore() throws Exception;
+        protected abstract Executor getDefaultPublishExecutor() throws Exception;
+
+        public KeenJsonHandler getJsonHandler() {
+            return jsonHandler;
+        }
+
+        public void setJsonHandler(KeenJsonHandler jsonHandler) {
+            this.jsonHandler = jsonHandler;
+        }
+
+        public Builder<T> withJsonHandler(KeenJsonHandler jsonHandler) {
+            setJsonHandler(jsonHandler);
+            return this;
+        }
+
+        public KeenEventStore getEventStore() {
+            return eventStore;
+        }
+
+        public void setEventStore(KeenEventStore eventStore) {
+            this.eventStore = eventStore;
+        }
+
+        public Builder<T> withEventStore(KeenEventStore eventStore) {
+            setEventStore(eventStore);
+            return this;
+        }
+
+        public Executor getPublishExecutor() {
+            return publishExecutor;
+        }
+
+        public void setPublishExecutor(Executor publishExecutor) {
+            this.publishExecutor = publishExecutor;
+        }
+
+        public Builder<T> withPublishExecutor(Executor publishExecutor) {
+            setPublishExecutor(publishExecutor);
+            return this;
+        }
+
+        public T build() {
+            try {
+                if (jsonHandler == null) {
+                    jsonHandler = getDefaultJsonHandler();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building JSON handler: " + e.getMessage());
+            }
+
+            try {
+                if (eventStore == null) {
+                    eventStore = getDefaultEventStore();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building event store: " + e.getMessage());
+            }
+
+            try {
+                if (publishExecutor == null) {
+                    publishExecutor = getDefaultPublishExecutor();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building publish executor: " + e.getMessage());
+            }
+
+            return newInstance();
+        }
+
+    }
+
     ///// PROTECTED CONSTRUCTORS /////
 
     /**
      * Constructs a Keen client using system environment variables.
+     *
+     * @param builder The builder from which to retrieve this client's interfaces and settings.
      */
-    protected KeenClient() {
-        this(new Environment());
+    protected KeenClient(Builder builder) {
+        this(builder, new Environment());
     }
 
     /**
      * Constructs a Keen client using the provided environment.
      *
      * NOTE: This constructor is only intended for use by test code, and should not be used
-     * directly. Subclasses should call the default {@link #KeenClient()} constructor.
+     * directly. Subclasses should call the default {@link #KeenClient(Builder)} constructor.
      *
+     * @param builder The builder from which to retrieve this client's interfaces and settings.
      * @param env The environment to use to attempt to build the default project.
      */
-    KeenClient(Environment env) {
+    KeenClient(Builder builder, Environment env) {
+        // Initial final properties using the builder.
+        this.jsonHandler = builder.jsonHandler;
+        this.eventStore = builder.eventStore;
+        this.publishExecutor = builder.publishExecutor;
+        // SHIPBLOCK: Refactor this into a general-purpose abstraction and add it to the builder.
         this.httpHandler = new HttpRequestHandler();
+
+        // If any of the interfaces are null, mark this client as inactive.
+        if (jsonHandler == null || eventStore == null ||
+            publishExecutor == null || httpHandler == null) {
+            setActive(false);
+        }
+
+        // Initialize other properties.
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
@@ -697,6 +799,10 @@ public abstract class KeenClient {
     private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     ///// PRIVATE FIELDS /////
+
+    private final KeenJsonHandler jsonHandler;
+    private final KeenEventStore eventStore;
+    private final Executor publishExecutor;
 
     private boolean isActive = true;
     private boolean isDebugMode;
@@ -824,11 +930,11 @@ public abstract class KeenClient {
             List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
             for (Object handle : handles) {
                 // Get the event from the store.
-                String jsonEvent = getEventStore().get(handle);
+                String jsonEvent = eventStore.get(handle);
 
                 // De-serialize the event from its JSON.
                 StringReader reader = new StringReader(jsonEvent);
-                Map<String, Object> event = getJsonHandler().readJson(reader);
+                Map<String, Object> event = jsonHandler.readJson(reader);
                 KeenUtils.closeQuietly(reader);
                 events.add(event);
             }
@@ -896,7 +1002,7 @@ public abstract class KeenClient {
         OutputSource source = new OutputSource() {
             @Override
             public void write(Writer out) throws IOException {
-                getJsonHandler().writeJson(out, requestData);
+                jsonHandler.writeJson(out, requestData);
             }
         };
 
@@ -904,7 +1010,7 @@ public abstract class KeenClient {
         if (KeenLogging.isLoggingEnabled()) {
             try {
                 StringWriter writer = new StringWriter();
-                getJsonHandler().writeJson(writer, requestData);
+                jsonHandler.writeJson(writer, requestData);
                 String request = writer.toString();
                 KeenLogging.log(String.format("Sent request '%s' to URL '%s'", request, url.toString()));
             } catch (IOException e) {
@@ -949,7 +1055,7 @@ public abstract class KeenClient {
         // Parse the response into a map.
         StringReader reader = new StringReader(response);
         Map<String, Object> responseMap;
-        responseMap = getJsonHandler().readJson(reader);
+        responseMap = jsonHandler.readJson(reader);
 
         // It's not obvious what the best way is to try and recover from them, but just hoping it
         // doesn't happen is probably the wrong answer.
@@ -994,7 +1100,7 @@ public abstract class KeenClient {
                     // Try to remove the object from the cache. Catch and log exceptions to prevent
                     // a single failure from derailing the rest of the cleanup.
                     try {
-                        getEventStore().remove(handle);
+                        eventStore.remove(handle);
                     } catch (IOException e) {
                         KeenLogging.log("Failed to remove object '" + handle + "' from cache");
                     }
