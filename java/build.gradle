@@ -1,6 +1,9 @@
 // Build instructions for standalone Java library.
 
+apply plugin: 'java'
+
 dependencies {
+    compile project(':core')
     compile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
     testCompile 'junit:junit:4.11'
     testCompile 'org.hamcrest:hamcrest-library:1.3'

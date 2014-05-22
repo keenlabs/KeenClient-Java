@@ -1,5 +1,18 @@
 // Build instructions for Android library.
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.10.+'
+        classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.10.+'
+        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.10.+'
+    }
+}
+
+apply plugin: 'android-sdk-manager'
+apply plugin: 'android-library'
 apply plugin: 'android-test'
 
 android {
@@ -26,9 +39,12 @@ android {
 }
 
 dependencies {
+    compile project(':core')
     androidTestCompile 'junit:junit:4.11'
     androidTestCompile 'org.mockito:mockito-core:1.9.5'
     androidTestCompile 'commons-io:commons-io:2.4'
 }
+
+archivesBaseName = "keen-client-api-android"
 
 apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish-android.gradle")

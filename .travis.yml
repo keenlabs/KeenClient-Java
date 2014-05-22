@@ -3,3 +3,17 @@ jdk:
   - oraclejdk7
   - openjdk7
   - openjdk6
+
+before_install:
+
+  # Install packages needed to execute Android tools on 64-bit Linux.
+  - ./install_prereqs.sh
+
+env:
+  - TERM=dumb
+
+install:
+  - ./gradlew assemble
+
+script:
+  - ./gradlew check

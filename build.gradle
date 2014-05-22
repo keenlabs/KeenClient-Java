@@ -1,12 +1,4 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:0.10.+'
-        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.10.+'
-    }
-}
+// Common build instructions & instructions for the root project.
 
 task wrapper(type: Wrapper) {
     gradleVersion = '1.12'
@@ -20,22 +12,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-    }
-}
-
-project(':android') {
-    apply plugin: 'android-library'
-
-    dependencies {
-        compile project(':core')
-    }
-}
-
-project(':java') {
-    apply plugin: 'java'
-
-    dependencies {
-        compile project(':core')
     }
 }
 
