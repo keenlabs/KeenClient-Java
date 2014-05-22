@@ -1,27 +1,8 @@
-apply plugin: 'signing'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
-
-signing {
-    required {
-        isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives")
-    }
-    sign configurations.archives
+def isReleaseBuild() {
+    return !version.endsWith("SNAPSHOT")
 }
 
 def sonatypeRepositoryUrl
@@ -35,6 +16,8 @@ uploadArchives.repositories.mavenDeployer {
     beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
     pom.artifactId = POM_ARTIFACT_ID
+    pom.groupId = GROUP
+    pom.version = VERSION_NAME
 
     if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
         repository(url: sonatypeRepositoryUrl) {
@@ -75,4 +58,11 @@ uploadArchives.repositories.mavenDeployer {
             }
         }
     }
+}
+
+signing {
+    required {
+        isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives")
+    }
+    sign configurations.archives
 }

@@ -2,12 +2,26 @@
 
 dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.hamcrest:hamcrest-library:1.3'
+    testCompile 'org.mockito:mockito-core:1.9.5'
+    testCompile 'commons-io:commons-io:2.4'
 }
 
 jar {
+    manifest {
+        attributes("Implementation-Vendor": "Keen.io", "Implementation-Version": version)
+    }
+
     from {
         project(':core').sourceSets.main.output
     }
 }
 
+test {
+    include '**/*Test.class'
+}
+
 archivesBaseName = "keen-client-api-java"
+
+apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish-java.gradle")

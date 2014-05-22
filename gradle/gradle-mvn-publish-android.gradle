@@ -1,0 +1,35 @@
+android.libraryVariants.all { variant ->
+    def name = variant.name.capitalize()
+    task "javadoc$name"(type: Javadoc, dependsOn: "assemble$name") {
+        description = "Generates Javadoc for build $name"
+        destinationDir = new File(destinationDir, variant.baseName)
+        source = variant.javaCompile.source
+        classpath = files(android.getBootClasspath(), variant.javaCompile.classpath)
+        options.links("http://docs.oracle.com/javase/7/docs/api/");
+        options.linksOffline("http://d.android.com/reference", "${android.sdkDirectory}/docs/reference");
+        exclude '**/BuildConfig.java'
+        exclude '**/R.java'
+    }
+
+    task "javadocJar$name"(type: Jar, dependsOn: "javadoc$name") {
+        classifier = 'javadoc'
+        from tasks."javadoc$name".destinationDir
+    }
+
+    if (name.equals("Release")) {
+        artifacts {
+            archives tasks.getAt("javadocJar$name")
+        }
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: assembleRelease) {
+    classifier = 'sources'
+    from android.sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish.gradle")

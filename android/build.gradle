@@ -1,47 +1,34 @@
-// Adapted from the Android Gradle plugin code.
-private String getAndroidSdkDir() {
-    def ant = project.ant
-    def sdkDir
+// Build instructions for Android library.
 
-    ant.property(file: 'local.properties')
+apply plugin: 'android-test'
 
-    // Determine the sdkDir value.
-    // First, let's try the sdk.dir property in local.properties file.
-    try {
-        sdkDir = ant['sdk.dir']
-    } catch (MissingPropertyException e) {
-        sdkDir = null
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.1"
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 19
+        versionCode = VERSION_CODE
+        versionName = VERSION_NAME
+        packageName "io.keen"
     }
 
-    if (sdkDir == null || sdkDir.length() == 0) {
-        // No local.properties and/or no sdk.dir property: let's try ANDROID_HOME
-        sdkDir = System.getenv("ANDROID_HOME")
-        // Propagate it to the Gradle's Ant environment
-        if (sdkDir != null) {
-            ant.setProperty("sdk.dir", sdkDir)
-        }
+    sourceSets {
+        main.setRoot('src/main')
+        androidTest.setRoot('src/test')
     }
 
-    // Check for sdkDir correctly valued, and in case throw an error
-    if (sdkDir == null || sdkDir.length() == 0) {
-        throw new MissingPropertyException("Unable to find location of Android SDK. Please read documentation.")
+    androidTest {
+        include '**/*Test.class'
+        exclude '**/espresso/**/*.class'
     }
-
-    return sdkDir
 }
-
-def sdkDir = getAndroidSdkDir()
-// TODO: Handle Android SDK version robustly.
-def androidJar = new File(sdkDir, '/platforms/android-19/android.jar')
 
 dependencies {
-    compile files(androidJar)
+    androidTestCompile 'junit:junit:4.11'
+    androidTestCompile 'org.mockito:mockito-core:1.9.5'
+    androidTestCompile 'commons-io:commons-io:2.4'
 }
 
-jar {
-    from {
-        project(':core').sourceSets.main.output
-    }
-}
-
-archivesBaseName = "keen-client-api-android"
+apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish-android.gradle")
