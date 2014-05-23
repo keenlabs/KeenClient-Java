@@ -23,17 +23,23 @@ import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 
 /**
- * KeenClient has static methods to return managed instances of itself and instance methods to collect new events
- * and upload them through the Keen API.
- * <p/>
- * Example usage:
- * <p/>
- * <pre>
- *     KeenClient.initialize("my_project_id", "my_write_key", "my_read_key");
- *     Map<String, Object> myEvent = new HashMap<String, Object>();
- *     myEvent.put("property name", "property value");
- *     KeenClient.client().addEvent("purchases", myEvent);
- * </pre>
+ * <p>
+ * KeenClient is the base class for concrete client implementations, and provides all of the
+ * functionality required to:
+ * </p>
+ *
+ * <ul>
+ *     <li>Create events from map objects</li>
+ *     <li>Automatically insert properties into events as they are created</li>
+ *     <li>Post events to the Keen server, either one-at-a-time or in batches</li>
+ *     <li>Store events in between batch posts, if desired</li>
+ *     <li>Perform posts either synchronously or asynchronously</li>
+ * </ul>
+ *
+ * <p>
+ * Subclasses should extend the {@link io.keen.client.java.KeenClient.Builder} interface and
+ * provide default implementations of the various abstraction interfaces used by the client.
+ * </p>
  *
  * @author dkador
  * @since 1.0.0
