@@ -19,6 +19,7 @@ repositories {
 }
 dependencies {
     compile 'io.keen:keen-client-api-java:2.0.0'
+    // OR:
     compile 'io.keen:keen-client-api-android:2.0.0'
 }
 ```
@@ -31,6 +32,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
+  <!-- OR: -->
   <artifactId>keen-client-api-android</artifactId>
   <version>2.0.0</version>
 </dependency>
@@ -44,21 +46,17 @@ Drop the appropriate jar into your project and configure the project to use it. 
 
 * ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
 * [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android)
-* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-api-core) - This does not include a usable client implementation, so you will have to provide your own.
+* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-api-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see JavaKeenClient or AndroidKeenClient for examples.
 
 ### Build From Source
 
 1. `git clone git@github.com:keenlabs/KeenClient-Java.git`
 1. `cd KeenClient-Java`
-1. Do you want/need to build the Android client?
-  1. Yes, I want to build Android: Configure the Android SDK path in the file `android/local.properties`. The path should be to the root of the Android SDK, i.e. the folder containing the "platforms" directory. Note also that the build logic is currently hard-coded to use android-19; if you don't have SDK version 19, update line 35 of `android\build.gradle` to your SDK version. The format of the file is simply:
-
-      sdk.dir=[Android SDK path]
-
-  1. No, I don't need to build Android: Remove the `android` project from the `include` directive in `settings.gradle`.
 1. `export JAVA_HOME=<path to Java>` (Windows: `set JAVA_HOME=<path to Java>`)
 1. `./gradlew build` (Windows: `gradlew.bat build`)
 1. Jars will be built and deposited into the various `build/libs` directories (e.g. `java/build/libs`, `android/build/libs`). You can then use these jars just as if you had downloaded them.
+
+Note that this will also result in downloading and installing the Android SDK and various associated components. If you don't want/need the Keen Android library then you can simply remove `android` from the file `settings.gradle` in the root of the repository.
 
 ## Usage
 
@@ -77,6 +75,14 @@ AndroidKeenClient.initialize(this);
 ```
 
 For custom clients make sure that the `KeenClient` subclass calls `KeenClient#initialize` and passes an instance. See the source for `JavaKeenClient` or `AndroidKeenClient` for an example.
+
+### Managing Instances Explicitly
+
+The `initialize` methods set a singleton member of the `KeenClient` class. This is a convenience to allow easy access to the client from anywhere in your process. However some people have [strong preferences against singletons](http://stackoverflow.com/questions/137975/what-is-so-bad-about-singletons), so it is also possible to create your own instance and manage it as you see fit:
+
+```java
+JavaKeenClient client = new JavaKeenClient.Builder().build();
+```
 
 ### Specifying Your Project
 
@@ -183,11 +189,22 @@ The `KeenClient` base class relies on three interfaces to abstract out behaviors
   * `FileEventStore`: Stores events in the local file system. This is persistent but needs to be provided with a working directory that is safe to use across application restarts.
 * `Executor`: The client uses an `Executor` to perform all of the various `*Async` operations. This allows callers to configure thread pools and control shutdown behavior, if they so desire.
 
+### Overriding Default Interfaces
+
+If you want to use a custom implementation of any of the abstraction interfaces described above, you can do so with the appropriate Builder methods. For example:
+
+```java
+MyEventStore eventStore = new MyEventStore(...);
+JavaKeenClient client = new JavaKeenClient.Builder()
+        .withEventStore(eventStore)
+        .build();
+```
+
 ## Client-Specific Considerations
 
 ### Java Client
 
-The Java client uses an `ExecutorService` to perform asynchronous requests, and you may wish to manage its life-cycle. For simple management, `JavaKeenClient` provides the methods `shutdownPublishExecutorService` and `restartPublishExecutorService` which you can call directly:
+The Java client uses an `ExecutorService` to perform asynchronous requests, and you may wish to manage its life-cycle. For simple management, `JavaKeenClient` provides the method `shutdownPublishExecutorService` which you can call directly:
 
 ```java
     JavaKeenClient javaClient = (JavaKeenClient) KeenClient.client();
