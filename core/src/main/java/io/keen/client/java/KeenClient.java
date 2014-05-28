@@ -1,10 +1,10 @@
 package io.keen.client.java;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.Writer;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -14,13 +14,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-import io.keen.client.java.HttpRequestHandler.HttpResponse;
-import io.keen.client.java.HttpRequestHandler.OutputSource;
 import io.keen.client.java.exceptions.InvalidEventCollectionException;
 import io.keen.client.java.exceptions.InvalidEventException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
+import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.OutputSource;
+import io.keen.client.java.http.Request;
+import io.keen.client.java.http.Response;
+import io.keen.client.java.http.UrlConnectionHttpHandler;
 
 /**
  * <p>
@@ -564,19 +568,37 @@ public abstract class KeenClient {
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
     /**
+     * SHIPBLOCK: Add comments to members.
+     *
      * Builder class for instantiating Keen clients. Subclasses should override this and
      * implement the getDefault* methods to provide default behavior.
      */
     protected static abstract class Builder<T extends KeenClient> {
 
+        private HttpHandler httpHandler;
         private KeenJsonHandler jsonHandler;
         private KeenEventStore eventStore;
         private Executor publishExecutor;
 
         protected abstract T newInstance();
         protected abstract KeenJsonHandler getDefaultJsonHandler() throws Exception;
-        protected abstract KeenEventStore getDefaultEventStore() throws Exception;
-        protected abstract Executor getDefaultPublishExecutor() throws Exception;
+
+        protected HttpHandler getDefaultHttpHandler() throws Exception {
+            return new UrlConnectionHttpHandler();
+        }
+
+        public HttpHandler getHttpHandler() {
+            return httpHandler;
+        }
+
+        public void setHttpHandler(HttpHandler httpHandler) {
+            this.httpHandler = httpHandler;
+        }
+
+        public Builder<T> withHttpHandler(HttpHandler httpHandler) {
+            setHttpHandler(httpHandler);
+            return this;
+        }
 
         public KeenJsonHandler getJsonHandler() {
             return jsonHandler;
@@ -591,6 +613,10 @@ public abstract class KeenClient {
             return this;
         }
 
+        protected KeenEventStore getDefaultEventStore() throws Exception {
+            return new RamEventStore();
+        }
+
         public KeenEventStore getEventStore() {
             return eventStore;
         }
@@ -602,6 +628,11 @@ public abstract class KeenClient {
         public Builder<T> withEventStore(KeenEventStore eventStore) {
             setEventStore(eventStore);
             return this;
+        }
+
+        protected Executor getDefaultPublishExecutor() throws Exception {
+            int procCount = Runtime.getRuntime().availableProcessors();
+            return Executors.newFixedThreadPool(procCount);
         }
 
         public Executor getPublishExecutor() {
@@ -669,15 +700,14 @@ public abstract class KeenClient {
      */
     KeenClient(Builder builder, Environment env) {
         // Initial final properties using the builder.
+        this.httpHandler = builder.httpHandler;
         this.jsonHandler = builder.jsonHandler;
         this.eventStore = builder.eventStore;
         this.publishExecutor = builder.publishExecutor;
-        // SHIPBLOCK: Refactor this into a general-purpose abstraction and add it to the builder.
-        this.httpHandler = new HttpRequestHandler();
 
         // If any of the interfaces are null, mark this client as inactive.
-        if (jsonHandler == null || eventStore == null ||
-            publishExecutor == null || httpHandler == null) {
+        if (httpHandler == null || jsonHandler == null ||
+            eventStore == null || publishExecutor == null) {
             setActive(false);
         }
 
@@ -784,12 +814,6 @@ public abstract class KeenClient {
         return newEvent;
     }
 
-    ///// TEST HOOKS /////
-
-    void setHttpHandler(HttpRequestHandler httpHandler) {
-        this.httpHandler = httpHandler;
-    }
-
     ///// PRIVATE TYPES /////
 
     /**
@@ -806,6 +830,7 @@ public abstract class KeenClient {
 
     ///// PRIVATE FIELDS /////
 
+    private final HttpHandler httpHandler;
     private final KeenJsonHandler jsonHandler;
     private final KeenEventStore eventStore;
     private final Executor publishExecutor;
@@ -816,7 +841,6 @@ public abstract class KeenClient {
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
-    private HttpRequestHandler httpHandler;
 
     ///// PRIVATE METHODS /////
 
@@ -1007,8 +1031,9 @@ public abstract class KeenClient {
         // Build an output source which simply writes the serialized JSON to the output.
         OutputSource source = new OutputSource() {
             @Override
-            public void write(Writer out) throws IOException {
-                jsonHandler.writeJson(out, requestData);
+            public void writeTo(OutputStream out) throws IOException {
+                OutputStreamWriter writer = new OutputStreamWriter(out, ENCODING);
+                jsonHandler.writeJson(writer, requestData);
             }
         };
 
@@ -1027,8 +1052,8 @@ public abstract class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        HttpResponse response = httpHandler.sendPostRequest(connection, writeKey, source);
+        Request request = new Request(url, "POST", writeKey, source);
+        Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.
         if (KeenLogging.isLoggingEnabled()) {
@@ -1043,6 +1068,9 @@ public abstract class KeenClient {
             throw new ServerException(response.body);
         }
     }
+
+    ///// PRIVATE CONSTANTS /////
+    private static final String ENCODING = "UTF-8";
 
     /**
      * Handles a response from the Keen service to a batch post events operation. In particular,

@@ -2,9 +2,6 @@ package io.keen.client.android;
 
 import android.content.Context;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import io.keen.client.java.FileEventStore;
 import io.keen.client.java.KeenClient;
 import io.keen.client.java.KeenEventStore;
@@ -66,18 +63,6 @@ public class AndroidKeenClient extends KeenClient {
         @Override
         protected KeenEventStore getDefaultEventStore() throws Exception {
             return new FileEventStore(context.getCacheDir());
-        }
-
-        /**
-         * Builds a simple fixed-thread-pool executor, using the number of available processors as
-         * the thread count.
-         *
-         * @return The constructed executor.
-         */
-        @Override
-        protected Executor getDefaultPublishExecutor() {
-            int procCount = Runtime.getRuntime().availableProcessors();
-            return Executors.newFixedThreadPool(procCount);
         }
 
     }

@@ -2,7 +2,6 @@ package io.keen.client.java;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -71,23 +70,6 @@ public class JavaKeenClient extends KeenClient {
         @Override
         protected KeenJsonHandler getDefaultJsonHandler() {
             return new JacksonJsonHandler();
-        }
-
-        @Override
-        protected KeenEventStore getDefaultEventStore() {
-            return new RamEventStore();
-        }
-
-        /**
-         * Builds a simple fixed-thread-pool executor, using the number of available processors as
-         * the thread count.
-         *
-         * @return The constructed executor.
-         */
-        @Override
-        protected Executor getDefaultPublishExecutor() {
-            int procCount = Runtime.getRuntime().availableProcessors();
-            return Executors.newFixedThreadPool(procCount);
         }
 
     }

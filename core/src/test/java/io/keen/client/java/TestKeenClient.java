@@ -1,8 +1,5 @@
 package io.keen.client.java;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 /**
  * Simple test client which uses a RAM event store, Jackson, and a single thread Executor.
  *
@@ -38,16 +35,6 @@ public class TestKeenClient extends KeenClient {
         @Override
         protected KeenJsonHandler getDefaultJsonHandler() {
             return new TestJsonHandler();
-        }
-
-        @Override
-        protected KeenEventStore getDefaultEventStore() {
-            return new RamEventStore();
-        }
-
-        @Override
-        protected Executor getDefaultPublishExecutor() {
-            return Executors.newSingleThreadExecutor();
         }
 
     }

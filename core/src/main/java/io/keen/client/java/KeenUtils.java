@@ -12,12 +12,12 @@ import java.util.Scanner;
  * @author dkador
  * @since 1.0.0
  */
-class KeenUtils {
+public class KeenUtils {
 
     private final static char[] hexArray = {'0', '1', '2', '3', '4', '5', '6', '7',
             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    static void closeQuietly(Closeable c) {
+    public static void closeQuietly(Closeable c) {
         if (c != null) {
             try {
                 c.close();
@@ -27,26 +27,26 @@ class KeenUtils {
         }
     }
 
-    static String convertFileToString(java.io.File file) throws IOException {
+    public static String convertFileToString(java.io.File file) throws IOException {
         Scanner s = new Scanner(file, "UTF-8").useDelimiter("\\A");
         String result =  s.hasNext() ? s.next() : "";
         s.close();
         return result;
     }
 
-    static String convertStreamToString(java.io.InputStream is) {
+    public static String convertStreamToString(java.io.InputStream is) {
         Scanner s = new Scanner(is).useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }
 
-    static String getStackTraceFromThrowable(Throwable t) {
+    public static String getStackTraceFromThrowable(Throwable t) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         t.printStackTrace(pw);
         return sw.toString(); // stack trace as a string
     }
 
-    static byte[] hexStringToByteArray(String s) {
+    public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         if (len % 2 != 0) {
             throw new IllegalArgumentException("Hex string must have an even length");
@@ -61,7 +61,7 @@ class KeenUtils {
         return data;
     }
 
-    static String byteArrayToHexString(byte[] bytes) {
+    public static String byteArrayToHexString(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
 
         for (int i = 0; i < bytes.length; i++) {

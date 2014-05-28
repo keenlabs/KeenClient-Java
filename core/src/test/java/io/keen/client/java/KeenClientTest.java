@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -19,10 +18,12 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.keen.client.java.HttpRequestHandler.HttpResponse;
 import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
+import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.Request;
+import io.keen.client.java.http.Response;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -32,7 +33,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,6 +62,7 @@ public class KeenClientTest {
     private static ObjectMapper JSON_MAPPER;
 
     private KeenClient client;
+    private HttpHandler mockHttpHandler;
 
     @BeforeClass
     public static void classSetUp() {
@@ -81,17 +82,21 @@ public class KeenClientTest {
 
     @Before
     public void setup() throws IOException {
-        client = KeenClient.client();
+        // Set up a mock HTTP handler.
+        mockHttpHandler = mock(HttpHandler.class);
+        setMockResponse(500, "Unexpected HTTP request");
+
+        // Build the client.
+        client = new TestKeenClient.Builder()
+                .withHttpHandler(mockHttpHandler)
+                .build();
+
         client.setBaseUrl(null);
         client.setDebugMode(true);
         client.setDefaultProject(TEST_PROJECT);
 
         // Clear the RAM event store.
         ((RamEventStore) client.getEventStore()).clear();
-
-        // Configure a mock HTTP client that will always return an error. This should be replaced
-        // by a functioning mock for tests that expect an HTTP request.
-        setMockResponse(500, "Unexpected HTTP request");
     }
 
     @After
@@ -203,7 +208,6 @@ public class KeenClientTest {
 
     @Test
     public void validEvent() throws Exception {
-        KeenClient client = KeenClient.client();
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("valid key", "valid value");
         Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, null);
@@ -218,7 +222,6 @@ public class KeenClientTest {
 
     @Test
     public void validEventWithTimestamp() throws Exception {
-        KeenClient client = KeenClient.client();
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("valid key", "valid value");
         Calendar now = Calendar.getInstance();
@@ -228,7 +231,6 @@ public class KeenClientTest {
 
     @Test
     public void validEventWithNestedKeenProperty() throws Exception {
-        KeenClient client = KeenClient.client();
         Map<String, Object> event = TestUtils.getSimpleEvent();
         Map<String, Object> nested = new HashMap<String, Object>();
         nested.put("keen", "value");
@@ -238,7 +240,6 @@ public class KeenClientTest {
 
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
-        KeenClient client = KeenClient.client();
         client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, null));
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("test key", "test value");
@@ -253,23 +254,21 @@ public class KeenClientTest {
 
     @Test
     public void testAddEvent() throws Exception {
-        HttpRequestHandler httpHandler = setMockResponse(201, POST_EVENT_SUCCESS);
+        setMockResponse(201, POST_EVENT_SUCCESS);
         client.addEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
-        ArgumentCaptor<HttpURLConnection> conn = ArgumentCaptor.forClass(HttpURLConnection.class);
-        verify(httpHandler).sendPostRequest(conn.capture(), anyString(),
-                any(HttpRequestHandler.OutputSource.class));
-        assertThat(conn.getValue().getURL().toString(), startsWith("https://api.keen.io"));
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), startsWith("https://api.keen.io"));
     }
 
     @Test
     public void testAddEventNonSSL() throws Exception {
+        setMockResponse(201, POST_EVENT_SUCCESS);
         client.setBaseUrl("http://api.keen.io");
-        HttpRequestHandler httpHandler = setMockResponse(201, POST_EVENT_SUCCESS);
         client.addEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
-        ArgumentCaptor<HttpURLConnection> conn = ArgumentCaptor.forClass(HttpURLConnection.class);
-        verify(httpHandler).sendPostRequest(conn.capture(), anyString(),
-                any(HttpRequestHandler.OutputSource.class));
-        assertThat(conn.getValue().getURL().toString(), startsWith("http://api.keen.io"));
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), startsWith("http://api.keen.io"));
     }
 
     @Test(expected = ServerException.class)
@@ -288,6 +287,11 @@ public class KeenClientTest {
 
     @Test
     public void testSendQueuedEvents() throws Exception {
+        // Mock the response from the server.
+        Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
+        expectedResponse.put(TEST_COLLECTION, 3);
+        setMockResponse(200, getPostEventsResponse(buildSuccessMap(expectedResponse)));
+
         // Queue some events.
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
@@ -299,10 +303,7 @@ public class KeenClientTest {
         assertEquals(1, handleMap.size());
         assertEquals(3, handleMap.get(TEST_COLLECTION).size());
 
-        // Mock the response from the server, then send the queued events.
-        Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
-        expectedResponse.put(TEST_COLLECTION, 3);
-        setMockResponse(200, getPostEventsResponse(buildSuccessMap(expectedResponse)));
+        // Send the queued events.
         client.sendQueuedEvents();
 
         // Validate that the store is now empty.
@@ -419,7 +420,6 @@ public class KeenClientTest {
 
     private Map<String, Object> runGlobalPropertiesMapTest(Map<String, Object> globalProperties,
                                                            int expectedNumProperties) throws Exception {
-        KeenClient client = KeenClient.client();
         client.setGlobalProperties(globalProperties);
         Map<String, Object> event = TestUtils.getSimpleEvent();
         String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
@@ -469,7 +469,6 @@ public class KeenClientTest {
 
     private Map<String, Object> runGlobalPropertiesEvaluatorTest(GlobalPropertiesEvaluator evaluator,
                                                                  int expectedNumProperties) throws Exception {
-        KeenClient client = KeenClient.client();
         client.setGlobalPropertiesEvaluator(evaluator);
         Map<String, Object> event = TestUtils.getSimpleEvent();
         String eventCollection = String.format("foo%d", Calendar.getInstance().getTimeInMillis());
@@ -480,8 +479,6 @@ public class KeenClientTest {
 
     @Test
     public void testGlobalPropertiesTogether() throws Exception {
-        KeenClient client = KeenClient.client();
-
         // properties from the evaluator should take precedence over properties from the map
         // but properties from the event itself should take precedence over all
         Map<String, Object> globalProperties = new HashMap<String, Object>();
@@ -512,7 +509,6 @@ public class KeenClientTest {
 
     private void runValidateAndBuildEventTest(Map<String, Object> event, String eventCollection, String msg,
                                               String expectedMessage) {
-        KeenClient client = KeenClient.client();
         try {
             client.validateAndBuildEvent(client.getDefaultProject(), eventCollection, event, null);
             fail(msg);
@@ -521,14 +517,9 @@ public class KeenClientTest {
         }
     }
 
-    private HttpRequestHandler setMockResponse(int statusCode, String body) throws IOException {
-        HttpResponse response = new HttpResponse(statusCode, body);
-        HttpRequestHandler httpHandler = mock(HttpRequestHandler.class);
-        when(httpHandler.sendPostRequest(any(HttpURLConnection.class), anyString(),
-                any(HttpRequestHandler.OutputSource.class))).thenReturn(response);
-
-        KeenClient.client().setHttpHandler(httpHandler);
-        return httpHandler;
+    private void setMockResponse(int statusCode, String body) throws IOException {
+        Response response = new Response(statusCode, body);
+        when(mockHttpHandler.execute(any(Request.class))).thenReturn(response);
     }
 
     private Map<String, Object> buildSuccessMap(Map<String, Integer> postedEvents) throws IOException {
