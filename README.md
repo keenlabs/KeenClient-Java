@@ -62,6 +62,8 @@ Note that this will also result in downloading and installing the Android SDK an
 
 ### Initialize the Keen Client
 
+SHIPBLOCK: Update to reflect builder refactoring.
+
 Before you can use the client you must initialize it. The exact method of initialization depends on which concrete `KeenClient` implementation you use. For the plain Java client:
 
 ```java

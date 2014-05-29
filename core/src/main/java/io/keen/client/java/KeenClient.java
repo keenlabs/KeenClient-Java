@@ -28,8 +28,7 @@ import io.keen.client.java.http.UrlConnectionHttpHandler;
 
 /**
  * <p>
- * KeenClient is the base class for concrete client implementations, and provides all of the
- * functionality required to:
+ * KeenClient provides all of the functionality required to:
  * </p>
  *
  * <ul>
@@ -41,14 +40,14 @@ import io.keen.client.java.http.UrlConnectionHttpHandler;
  * </ul>
  *
  * <p>
- * Subclasses should extend the {@link io.keen.client.java.KeenClient.Builder} interface and
- * provide default implementations of the various abstraction interfaces used by the client.
+ * To create a {@link KeenClient}, use a subclass of {@link io.keen.client.java.KeenClient.Builder}
+ * which provides the default interfaces for various operations (HTTP, JSON, queueing, async).
  * </p>
  *
- * @author dkador
+ * @author dkador, klitwack
  * @since 1.0.0
  */
-public abstract class KeenClient {
+public class KeenClient {
 
     ///// PUBLIC STATIC METHODS /////
 
@@ -62,6 +61,26 @@ public abstract class KeenClient {
             throw new IllegalStateException("Please call KeenClient.initialize() before requesting the client.");
         }
         return ClientSingleton.INSTANCE.client;
+    }
+
+    /**
+     * Initializes the static Keen client. Only the first call to this method has any effect. All
+     * subsequent calls are ignored.
+     *
+     * @param client The {@link io.keen.client.java.KeenClient} implementation to use as the
+     *               singleton client for the library.
+     */
+    public static void initialize(KeenClient client) {
+        if (client == null) {
+            throw new IllegalArgumentException("Client must not be null");
+        }
+
+        if (ClientSingleton.INSTANCE.client != null) {
+            // Do nothing.
+            return;
+        }
+
+        ClientSingleton.INSTANCE.client = client;
     }
 
     /**
@@ -568,87 +587,219 @@ public abstract class KeenClient {
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
     /**
-     * SHIPBLOCK: Add comments to members.
-     *
      * Builder class for instantiating Keen clients. Subclasses should override this and
-     * implement the getDefault* methods to provide default behavior.
+     * implement the getDefault* methods to provide new default behavior.
+     * <p/>
+     * This builder doesn't include any default implementation for handling JSON serialization and
+     * de-serialization. Subclasses must provide one.
+     * <p/>
+     * This builder defaults to using HttpURLConnection to handle HTTP requests.
+     * <p/>
+     * To cache events in between batch uploads, this builder defaults to a RAM-based event store.
+     * <p/>
+     * This builder defaults to a fixed thread pool (constructed with
+     * {@link java.util.concurrent.Executors#newFixedThreadPool(int)}) to run asynchronous requests.
      */
-    protected static abstract class Builder<T extends KeenClient> {
+    public static abstract class Builder {
 
         private HttpHandler httpHandler;
         private KeenJsonHandler jsonHandler;
         private KeenEventStore eventStore;
         private Executor publishExecutor;
 
-        protected abstract T newInstance();
-        protected abstract KeenJsonHandler getDefaultJsonHandler() throws Exception;
-
+        /**
+         * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
+         *
+         * This implementation returns a handler that will use {@link java.net.HttpURLConnection}
+         * to make HTTP requests.
+         *
+         * Subclasses should override this to provide an alternative default {@link HttpHandler}.
+         *
+         * @return The default {@link HttpHandler}.
+         * @throws Exception If there is an error creating the {@link HttpHandler}.
+         */
         protected HttpHandler getDefaultHttpHandler() throws Exception {
             return new UrlConnectionHttpHandler();
         }
 
+        /**
+         * Gets the {@link HttpHandler} that this builder is currently configured to use for making
+         * HTTP requests. If null, a default will be used instead.
+         *
+         * @return The {@link HttpHandler} to use.
+         */
         public HttpHandler getHttpHandler() {
             return httpHandler;
         }
 
+        /**
+         * Sets the {@link HttpHandler} to use for making HTTP requests.
+         *
+         * @param httpHandler The {@link HttpHandler} to use.
+         */
         public void setHttpHandler(HttpHandler httpHandler) {
             this.httpHandler = httpHandler;
         }
 
-        public Builder<T> withHttpHandler(HttpHandler httpHandler) {
+        /**
+         * Sets the {@link HttpHandler} to use for making HTTP requests.
+         *
+         * @param httpHandler The {@link HttpHandler} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withHttpHandler(HttpHandler httpHandler) {
             setHttpHandler(httpHandler);
             return this;
         }
 
+        /**
+         * Gets the default {@link KeenJsonHandler} to use if none is explicitly set for this builder.
+         *
+         * Subclasses must override this to provide a default {@link KeenJsonHandler}.
+         *
+         * @return The default {@link KeenJsonHandler}.
+         * @throws Exception If there is an error creating the {@link KeenJsonHandler}.
+         */
+        protected abstract KeenJsonHandler getDefaultJsonHandler() throws Exception;
+
+        /**
+         * Gets the {@link KeenJsonHandler} that this builder is currently configured to use for
+         * handling JSON operations. If null, a default will be used instead.
+         *
+         * @return The {@link KeenJsonHandler} to use.
+         */
         public KeenJsonHandler getJsonHandler() {
             return jsonHandler;
         }
 
+        /**
+         * Sets the {@link KeenJsonHandler} to use for handling JSON operations.
+         *
+         * @param jsonHandler The {@link KeenJsonHandler} to use.
+         */
         public void setJsonHandler(KeenJsonHandler jsonHandler) {
             this.jsonHandler = jsonHandler;
         }
 
-        public Builder<T> withJsonHandler(KeenJsonHandler jsonHandler) {
+        /**
+         * Sets the {@link KeenJsonHandler} to use for handling JSON operations.
+         *
+         * @param jsonHandler The {@link KeenJsonHandler} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withJsonHandler(KeenJsonHandler jsonHandler) {
             setJsonHandler(jsonHandler);
             return this;
         }
 
+        /**
+         * Gets the default {@link KeenEventStore} to use if none is explicitly set for this builder.
+         *
+         * This implementation returns a RAM-based store.
+         *
+         * Subclasses should override this to provide an alternative default {@link KeenEventStore}.
+         *
+         * @return The default {@link KeenEventStore}.
+         * @throws Exception If there is an error creating the {@link KeenEventStore}.
+         */
         protected KeenEventStore getDefaultEventStore() throws Exception {
             return new RamEventStore();
         }
 
+        /**
+         * Gets the {@link KeenEventStore} that this builder is currently configured to use for
+         * storing events between batch publish operations. If null, a default will be used instead.
+         *
+         * @return The {@link KeenEventStore} to use.
+         */
         public KeenEventStore getEventStore() {
             return eventStore;
         }
 
+        /**
+         * Sets the {@link KeenEventStore} to use for storing events in between batch publish
+         * operations.
+         *
+         * @param eventStore The {@link KeenEventStore} to use.
+         */
         public void setEventStore(KeenEventStore eventStore) {
             this.eventStore = eventStore;
         }
 
-        public Builder<T> withEventStore(KeenEventStore eventStore) {
+        /**
+         * Sets the {@link KeenEventStore} to use for storing events in between batch publish
+         * operations.
+         *
+         * @param eventStore The {@link KeenEventStore} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withEventStore(KeenEventStore eventStore) {
             setEventStore(eventStore);
             return this;
         }
 
+        /**
+         * Gets the default {@link Executor} to use if none is explicitly set for this builder.
+         *
+         * This implementation returns a simple fixed thread pool with the number of threads equal
+         * to the number of available processors.
+         *
+         * Subclasses should override this to provide an alternative default {@link Executor}.
+         *
+         * @return The default {@link Executor}.
+         * @throws Exception If there is an error creating the {@link Executor}.
+         */
         protected Executor getDefaultPublishExecutor() throws Exception {
             int procCount = Runtime.getRuntime().availableProcessors();
             return Executors.newFixedThreadPool(procCount);
         }
 
+        /**
+         * Gets the {@link Executor} that this builder is currently configured to use for
+         * asynchronous publishing operations. If null, a default will be used instead.
+         *
+         * @return The {@link Executor} to use.
+         */
         public Executor getPublishExecutor() {
             return publishExecutor;
         }
 
+        /**
+         * Sets the {@link Executor} to use for asynchronous publishing operations.
+         *
+         * @param publishExecutor The {@link Executor} to use.
+         */
         public void setPublishExecutor(Executor publishExecutor) {
             this.publishExecutor = publishExecutor;
         }
 
-        public Builder<T> withPublishExecutor(Executor publishExecutor) {
+        /**
+         * Sets the {@link Executor} to use for asynchronous publishing operations.
+         *
+         * @param publishExecutor The {@link Executor} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withPublishExecutor(Executor publishExecutor) {
             setPublishExecutor(publishExecutor);
             return this;
         }
 
-        public T build() {
+        /**
+         * Builds a new Keen client using the interfaces which have been specified explicitly on
+         * this builder instance via the set* or with* methods, or the default interfaces if none
+         * have been specified.
+         *
+         * @return A newly constructed Keen client.
+         */
+        public KeenClient build() {
+            try {
+                if (httpHandler == null) {
+                    httpHandler = getDefaultHttpHandler();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building HTTP handler: " + e.getMessage());
+            }
+
             try {
                 if (jsonHandler == null) {
                     jsonHandler = getDefaultJsonHandler();
@@ -673,7 +824,18 @@ public abstract class KeenClient {
                 KeenLogging.log("Exception building publish executor: " + e.getMessage());
             }
 
-            return newInstance();
+            return buildInstance();
+        }
+
+        /**
+         * Builds an instance based on this builder. This method is exposed only as a test hook to
+         * allow test classes to modify how the {@link KeenClient} is constructed (i.e. by
+         * providing a mock {@link Environment}.
+         *
+         * @return The new {@link KeenClient}.
+         */
+        protected KeenClient buildInstance() {
+            return new KeenClient(this);
         }
 
     }
@@ -699,7 +861,7 @@ public abstract class KeenClient {
      * @param env The environment to use to attempt to build the default project.
      */
     KeenClient(Builder builder, Environment env) {
-        // Initial final properties using the builder.
+        // Initialize final properties using the builder.
         this.httpHandler = builder.httpHandler;
         this.jsonHandler = builder.jsonHandler;
         this.eventStore = builder.eventStore;
@@ -723,29 +885,6 @@ public abstract class KeenClient {
     }
 
     ///// PROTECTED METHODS /////
-
-    /**
-     * Initializes the Keen client. This method is intended to be called by implementations of
-     * the {@link io.keen.client.java.KeenClient} abstract class, which create an instance that
-     * will become the singleton.
-     * <p/>
-     * Only the first call to this method has any effect. All subsequent calls are ignored.
-     *
-     * @param client The {@link io.keen.client.java.KeenClient} implementation to use as the
-     *               singleton client for the library.
-     */
-    protected static void initialize(KeenClient client) {
-        if (client == null) {
-            throw new IllegalArgumentException("Client must not be null");
-        }
-
-        if (ClientSingleton.INSTANCE.client != null) {
-            // Do nothing.
-            return;
-        }
-
-        ClientSingleton.INSTANCE.client = client;
-    }
 
     /**
      * Sets whether or not the client is in active mode. When the client is inactive, all requests

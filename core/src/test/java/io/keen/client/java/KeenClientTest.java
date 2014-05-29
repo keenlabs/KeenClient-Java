@@ -67,8 +67,6 @@ public class KeenClientTest {
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        KeenClient client = new TestKeenClient.Builder().build();
-        KeenClient.initialize(client);
         TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key");
         TEST_EVENTS = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < 10; i++) {
@@ -87,7 +85,7 @@ public class KeenClientTest {
         setMockResponse(500, "Unexpected HTTP request");
 
         // Build the client.
-        client = new TestKeenClient.Builder()
+        client = new TestKeenClientBuilder()
                 .withHttpHandler(mockHttpHandler)
                 .build();
 
@@ -107,8 +105,7 @@ public class KeenClientTest {
     @Test
     public void initializeWithEnvironmentVariables() throws Exception {
         // Construct a new test client and make sure it doesn't have a default project.
-        TestKeenClient.Builder builder = new TestKeenClient.Builder();
-        KeenClient testClient = builder.build();
+        KeenClient testClient = new TestKeenClientBuilder().build();
         assertNull(testClient.getDefaultProject());
 
         // Mock an environment with a project.
@@ -116,7 +113,7 @@ public class KeenClientTest {
         when(mockEnv.getKeenProjectId()).thenReturn("<project ID>");
 
         // Make sure a new test client using the mock environment has the expected default project.
-        testClient = new TestKeenClient(builder, mockEnv);
+        testClient = new TestKeenClientBuilder(mockEnv).build();
         KeenProject defaultProject = testClient.getDefaultProject();
         assertNotNull(defaultProject);
         assertEquals("<project ID>", defaultProject.getProjectId());

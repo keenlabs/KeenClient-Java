@@ -26,7 +26,7 @@ public class UrlConnectionHttpHandler implements HttpHandler {
     @Override
     public Response execute(Request request) throws IOException {
         HttpURLConnection connection = openConnection(request);
-        // SHIPBLOCK: Should there actually be a disconnect here?
+        // TODO: Should there actually be a disconnect here?
         try {
             sendRequest(connection, request);
             return readResponse(connection);

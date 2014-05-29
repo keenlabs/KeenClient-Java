@@ -19,7 +19,7 @@ public class ScopedKeysTest {
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        TestKeenClient.initialize();
+        KeenClient.initialize(new TestKeenClientBuilder().build());
     }
 
     @Test
