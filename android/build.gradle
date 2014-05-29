@@ -38,6 +38,17 @@ android {
     }
 }
 
+// For each variant add a task to copy the core classes so they are included in the AAR.
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    def copyTask = project.tasks.create(name: "copyCoreToAndroid${name.capitalize()}", type: Copy) {
+        from(project(':core').sourceSets.main.output)
+        into(variant.javaCompile.destinationDir)
+    }
+    copyTask.dependsOn variant.javaCompile
+    variant.packageLibrary.dependsOn copyTask
+}
+
 dependencies {
     compile project(':core')
     androidTestCompile 'junit:junit:4.11'
