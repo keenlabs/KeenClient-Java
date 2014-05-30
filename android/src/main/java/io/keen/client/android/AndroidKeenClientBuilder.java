@@ -8,16 +8,22 @@ import io.keen.client.java.KeenEventStore;
 import io.keen.client.java.KeenJsonHandler;
 
 /**
- * SHIPBLOCK: Fix comments.
- * Implementation of a {@link io.keen.client.java.KeenClient} on the Android platform.
+ * {@link io.keen.client.java.KeenClient.Builder} with defaults suited for use on the Android
+ * platform.
  * <p/>
  * This client uses the built-in Android JSON libraries for reading/writing JSON in order to
- * minimize library size.
+ * minimize library size. For applications which already include a more robust JSON library such
+ * as Jackson or GSON, configure the builder to use an appropriate {@link KeenJsonHandler} via
+ * the {@link #withJsonHandler(KeenJsonHandler)} method.
  * <p/>
  * To cache events in between batch uploads, this client uses a file-based event store with its
- * root in the application's cache directory.
+ * root in the application's cache directory. It is important to use a file-based (or
+ * otherwise persistent, i.e. non-RAM) event store because the application process could be
+ * destroyed without notice.
  * <p/>
- * This client uses a fixed thread pool to run asynchronous requests.
+ * Other defaults are those provided by the parent {@link io.keen.client.java.KeenClient.Builder}
+ * implementation.
+ * <p/>
  *
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0

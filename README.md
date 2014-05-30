@@ -60,31 +60,38 @@ Note that this will also result in downloading and installing the Android SDK an
 
 ## Usage
 
-### Initialize the Keen Client
+### Building a Keen Client
 
-SHIPBLOCK: Update to reflect builder refactoring.
+A `KeenClient` object must be constructed via a `KeenClient.Builder` which specifies which implementations to use for each of the various abstraction interfaces (see below).
 
-Before you can use the client you must initialize it. The exact method of initialization depends on which concrete `KeenClient` implementation you use. For the plain Java client:
-
-```java
-JavaKeenClient.initialize();
-```
-
-For the Android client you must provide a `Context` such as your main `Activity` (the `Context` is used to access the device file system for event caching):
+The Java and Android libraries each provide a `KeenClient.Builder` implementation with reasonable default behavior for the context. To use the plain Java builder:
 
 ```java
-AndroidKeenClient.initialize(this);
+KeenClient client = new JavaKeenClientBuilder().build();
 ```
 
-For custom clients make sure that the `KeenClient` subclass calls `KeenClient#initialize` and passes an instance. See the source for `JavaKeenClient` or `AndroidKeenClient` for an example.
-
-### Managing Instances Explicitly
-
-The `initialize` methods set a singleton member of the `KeenClient` class. This is a convenience to allow easy access to the client from anywhere in your process. However some people have [strong preferences against singletons](http://stackoverflow.com/questions/137975/what-is-so-bad-about-singletons), so it is also possible to create your own instance and manage it as you see fit:
+For the Android builder you must provide a `Context` such as your main `Activity` (the `Context` is used to access the device file system for event caching):
 
 ```java
-JavaKeenClient client = new JavaKeenClient.Builder().build();
+KeenClient client = new AndroidKeenClientBuilder(this).build();
 ```
+
+You may also define a custom builder, or override either of these builders' default behavior via the various `withXxx` methods.
+
+### Using the KeenClient Singleton
+
+As a convenience `KeenClient` includes an `initialize` method which sets a singleton member, allowing you to simply reference `KeenClient.client()` from anywhere in your application:
+
+```java
+// In some initialization logic:
+KeenClient client = new JavaKeenClientBuilder().build();
+KeenClient.initialize(client);
+...
+// In a totally separate piece of application logic:
+KeenClient.client().addEvent(...);
+```
+
+Note that many people have [strong preferences against singletons](http://stackoverflow.com/questions/137975/what-is-so-bad-about-singletons). If you're one of them, feel free to ignore the `initialize` and `client` methods and manage your instance(s) explicitly.
 
 ### Specifying Your Project
 
@@ -98,7 +105,7 @@ If you can't or prefer not to use environment variables, you can also set the de
 
 ```java
 KeenProject project = new KeenProject(PROJECT_ID, WRITE_KEY, READ_KEY);
-KeenClient.client().setDefaultProject(project);
+client.setDefaultProject(project);
 ```
 
 #### Using Multiple Projects
@@ -128,6 +135,8 @@ Here's a very basic example for an app that tracks "purchases":
 ```
 
 That's it! After running your code, check your Keen IO Project to see the event has been added.
+
+NOTE: You are responsible for making sure that the contents of the event map can be properly serialized into JSON by the JSON handler you've configured the `KeenClient` to use. This shouldn't be an issue for standard maps of primitives and lists/arrays, but may be a problem for more complex data structures.
 
 #### Single Event vs. Batch
 
@@ -159,6 +168,18 @@ Here's a simple method to generate a Scoped Write Key:
     }
 ```
 
+### Publish Executor Lifecycle Management
+
+By default both the Java and Android clients use an `ExecutorService` to perform asynchronous requests, and you may wish to manage its life-cycle. For example:
+
+```java
+    ExecutorService service = (ExecutorService) KeenClient.client().getPublishExecutor();
+    service.shutdown();
+    service.awaitTermination(5, TimeUnit.SECONDS);
+```
+
+Note that once you've shut down the publish executor for a given client, there is no way to restart or replace that executor. You will need to build a new client.
+
 ## Working with the Source
 
 ### Using IntelliJ IDEA or Android Studio
@@ -185,6 +206,7 @@ This will generate all of the necessary project files.
 
 The `KeenClient` base class relies on three interfaces to abstract out behaviors which specific client implementations may wish to customize:
 
+* `HttpHandler`: This interface provides an abstraction around executing HTTP requests.
 * `KeenJsonHandler`: The client uses an instance of this interface to serialize and de-serialize JSON objects. This allows the caller to use whatever JSON library is most convenient in their environment, without requiring a specific (and possibly large) library.
 * `KeenEventStore`: This interface is used to store events in between `queueEvent` and `sendQueuedEvents` calls. The library comes with two implementations:
   * `RamEventStore`: Stores events in memory. This is fast but not persistent.
@@ -203,22 +225,6 @@ JavaKeenClient client = new JavaKeenClient.Builder()
 ```
 
 ## Client-Specific Considerations
-
-### Java Client
-
-The Java client uses an `ExecutorService` to perform asynchronous requests, and you may wish to manage its life-cycle. For simple management, `JavaKeenClient` provides the method `shutdownPublishExecutorService` which you can call directly:
-
-```java
-    JavaKeenClient javaClient = (JavaKeenClient) KeenClient.client();
-    javaClient.shutdownPublishExecutorService(0);
-```
-
-For more control you can get a reference to the `ExecutorService` itself:
-
-```java
-    ExecutorService service = (ExecutorService) KeenClient.client().getPublishExecutor();
-    service.awaitTermination(5, TimeUnit.SECONDS);
-```
 
 ### Android Client
 
@@ -251,8 +257,7 @@ Follow the install instructions and scoped key generation should work. Note that
 
 ##### 2.0.0
 
-+ Refactored Java and Android SDKs into a shared core library and two different implementations
-of the `KeenClient` class.
++ Refactored Java and Android SDKs into a shared core library and two different implementations of the `KeenClient.Builder` class.
 
 ##### 1.0.7
 
