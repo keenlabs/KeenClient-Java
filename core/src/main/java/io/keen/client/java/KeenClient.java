@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -918,7 +919,7 @@ public class KeenClient {
         validateEventCollection(eventCollection);
         validateEvent(event);
 
-        KeenLogging.log(String.format("Adding event to collection: %s", eventCollection));
+        KeenLogging.log(String.format(Locale.US, "Adding event to collection: %s", eventCollection));
 
         // build the event
         Map<String, Object> newEvent = new HashMap<String, Object>();
@@ -965,7 +966,8 @@ public class KeenClient {
 
     ///// PRIVATE CONSTANTS /////
 
-    private static final DateFormat ISO_8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private static final DateFormat ISO_8601_FORMAT =
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 
     ///// PRIVATE FIELDS /////
 
@@ -1124,7 +1126,7 @@ public class KeenClient {
     private String publish(KeenProject project, String eventCollection,
                            Map<String, Object> event) throws IOException {
         // just using basic JDK HTTP library
-        String urlString = String.format("%s/%s/projects/%s/events/%s", getBaseUrl(),
+        String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
                 KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
         URL url = new URL(urlString);
         return publishObject(project, url, event);
@@ -1141,7 +1143,7 @@ public class KeenClient {
     private String publishAll(KeenProject project,
                               Map<String, List<Map<String, Object>>> events) throws IOException {
         // just using basic JDK HTTP library
-        String urlString = String.format("%s/%s/projects/%s/events", getBaseUrl(),
+        String urlString = String.format(Locale.US, "%s/%s/projects/%s/events", getBaseUrl(),
                 KeenConstants.API_VERSION, project.getProjectId());
         URL url = new URL(urlString);
         return publishObject(project, url, events);
@@ -1182,7 +1184,8 @@ public class KeenClient {
                 StringWriter writer = new StringWriter();
                 jsonHandler.writeJson(writer, requestData);
                 String request = writer.toString();
-                KeenLogging.log(String.format("Sent request '%s' to URL '%s'", request, url.toString()));
+                KeenLogging.log(String.format(Locale.US, "Sent request '%s' to URL '%s'",
+                        request, url.toString()));
             } catch (IOException e) {
                 KeenLogging.log("Couldn't log event written to file: ");
                 e.printStackTrace();
@@ -1196,7 +1199,8 @@ public class KeenClient {
 
         // If logging is enabled, log the response.
         if (KeenLogging.isLoggingEnabled()) {
-            KeenLogging.log(String.format("Received response: '%s' (%d)", response.body,
+            KeenLogging.log(String.format(Locale.US,
+                    "Received response: '%s' (%d)", response.body,
                     response.statusCode));
         }
 
@@ -1260,7 +1264,8 @@ public class KeenClient {
                     } else {
                         String description = (String) errorDict.get(KeenConstants.DESCRIPTION_PARAM);
                         removeCacheEntry = false;
-                        KeenLogging.log(String.format("The event could not be inserted for some reason. " +
+                        KeenLogging.log(String.format(Locale.US,
+                                "The event could not be inserted for some reason. " +
                                 "Error name and description: %s %s", errorCode,
                                 description));
                     }

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -99,14 +100,15 @@ public class FileEventStore implements KeenEventStore {
         File eventFile = (File) handle;
         if (eventFile.exists() && eventFile.isFile()) {
             if (eventFile.delete()) {
-                KeenLogging.log(String.format("Successfully deleted file: %s",
+                KeenLogging.log(String.format(Locale.US, "Successfully deleted file: %s",
                         eventFile.getAbsolutePath()));
             } else {
-                KeenLogging.log(String.format("CRITICAL ERROR: Could not remove event at %s",
+                KeenLogging.log(String.format(Locale.US,
+                        "CRITICAL ERROR: Could not remove event at %s",
                         eventFile.getAbsolutePath()));
             }
         } else {
-            KeenLogging.log(String.format("WARNING: no event found at %s",
+            KeenLogging.log(String.format(Locale.US, "WARNING: no event found at %s",
                     eventFile.getAbsolutePath()));
         }
     }
@@ -337,8 +339,10 @@ public class FileEventStore implements KeenEventStore {
         File[] eventFiles = getFilesInDir(collectionDir);
         if (eventFiles.length >= getMaxEventsPerCollection()) {
             // need to age out old data so the cache doesn't grow too large
-            KeenLogging.log(String.format("Too many events in cache for %s, aging out old data", eventCollection));
-            KeenLogging.log(String.format("Count: %d and Max: %d", eventFiles.length, getMaxEventsPerCollection()));
+            KeenLogging.log(String.format(Locale.US, "Too many events in cache for %s, " +
+                    "aging out old data", eventCollection));
+            KeenLogging.log(String.format(Locale.US, "Count: %d and Max: %d",
+                    eventFiles.length, getMaxEventsPerCollection()));
 
             // delete the eldest (i.e. first we have to sort the list by name)
             List<File> fileList = Arrays.asList(eventFiles);
@@ -351,7 +355,8 @@ public class FileEventStore implements KeenEventStore {
             for (int i = 0; i < getNumberEventsToForget(); i++) {
                 File f = fileList.get(i);
                 if (!f.delete()) {
-                    KeenLogging.log(String.format("CRITICAL: can't delete file %s, cache is going to be too big",
+                    KeenLogging.log(String.format(Locale.US,
+                            "CRITICAL: can't delete file %s, cache is going to be too big",
                             f.getAbsolutePath()));
                 }
             }

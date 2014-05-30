@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -40,7 +41,7 @@ public class RamEventStore implements KeenEventStore {
                                      String event) throws IOException {
 
         // Create a key from the project ID and event collection.
-        String key = String.format("%s$%s", projectId, eventCollection);
+        String key = String.format(Locale.US, "%s$%s", projectId, eventCollection);
 
         // Get the list of events for the specified key. If no list exists yet, create one.
         List<Long> collectionEvents = collectionIds.get(key);
