@@ -224,6 +224,12 @@ JavaKeenClient client = new JavaKeenClient.Builder()
         .build();
 ```
 
+### State of the Build
+
+As of 2.0.0-rc1 the following non-critical issues are present in the build:
+
+* If you do not have the Android SDK documentation installed, you will see a warning in the build output for the 'android:javadocRelease' task. This can be resolved by running the Android SDK  manager and installing the "Documentation for Android SDK" package. There is no need to bother unless you care about the built Javadoc.
+
 ## Client-Specific Considerations
 
 ### Android Client
