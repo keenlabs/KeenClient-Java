@@ -9,8 +9,6 @@ The Keen Java clients enable you to record data using Keen IO from any Java appl
 
 You have several choices for how to include the Keen client in your Java application.
 
-**NOTE: The 2.0.0 libraries have not yet been published to Maven. This README will be updated once they're published. Until then, please follow the instructions to [build from source](#build from source).**
-
 ### Gradle
 
 ```groovy
