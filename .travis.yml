@@ -3,4 +3,17 @@ jdk:
   - oraclejdk7
   - openjdk7
   - openjdk6
-install: mvn install -DskipTests=true -Dgpg.skip=true -Dmaven.javadoc.skip=true
+
+before_install:
+
+  # Install packages needed to execute Android tools on 64-bit Linux.
+  - ./install_prereqs.sh
+
+env:
+  - TERM=dumb
+
+install:
+  - ./gradlew assemble
+
+script:
+  - ./gradlew check

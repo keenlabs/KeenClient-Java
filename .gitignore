@@ -18,3 +18,6 @@ javadocs
 build
 classes
 .gradle
+
+# configuration
+local.properties

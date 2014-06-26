@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Ignore the TrulyRandom issue in ScopedKeys.class. The use of PRNGs by the ScopedKeys
+         implementation should be fine, and it's not worth fixing this given the likelihood of
+         scoped key generation moving to a server-side API call. -->
+    <issue id="TrulyRandom">
+        <ignore path="**/ScopedKeys.class" />
+    </issue>
+</lint>

@@ -1,0 +1,61 @@
+// Build instructions for Android library.
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.10.+'
+        classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.10.+'
+        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.10.+'
+    }
+}
+
+apply plugin: 'android-sdk-manager'
+apply plugin: 'android-library'
+apply plugin: 'android-test'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.1"
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 19
+        versionCode = VERSION_CODE
+        versionName = VERSION_NAME
+        packageName "io.keen"
+    }
+
+    sourceSets {
+        main.setRoot('src/main')
+        androidTest.setRoot('src/test')
+    }
+
+    androidTest {
+        include '**/*Test.class'
+        exclude '**/espresso/**/*.class'
+    }
+}
+
+// For each variant add a task to copy the core classes so they are included in the AAR.
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    def copyTask = project.tasks.create(name: "copyCoreToAndroid${name.capitalize()}", type: Copy) {
+        from(project(':core').sourceSets.main.output)
+        into(variant.javaCompile.destinationDir)
+    }
+    copyTask.dependsOn variant.javaCompile
+    variant.packageLibrary.dependsOn copyTask
+}
+
+dependencies {
+    compile project(':core')
+    androidTestCompile 'junit:junit:4.11'
+    androidTestCompile 'org.mockito:mockito-core:1.9.5'
+    androidTestCompile 'commons-io:commons-io:2.4'
+}
+
+archivesBaseName = "keen-client-api-android"
+
+apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish-android.gradle")
