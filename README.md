@@ -17,9 +17,13 @@ repositories {
 }
 dependencies {
     compile 'io.keen:keen-client-api-java:2.0.0'
-    // OR:
-    compile 'io.keen:keen-client-api-android:2.0.0'
 }
+```
+
+For Android, use:
+
+```groovy
+    compile 'io.keen:keen-client-api-android:2.0.0@aar'
 ```
 
 ### Maven
@@ -30,10 +34,15 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <!-- OR: -->
-  <artifactId>keen-client-api-android</artifactId>
   <version>2.0.0</version>
 </dependency>
+```
+
+For Android, replace the `artifactId` element with these two elements:
+
+```xml
+  <artifactId>keen-client-api-android</artifactId>
+  <type>aar</type>
 ```
 
 ### JAR Download
@@ -43,8 +52,8 @@ Drop the appropriate jar into your project and configure the project to use it. 
 **NOTE: As mentioned, the 2.0.0 jars are not posted yet. Stay Tuned.**
 
 * ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
-* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android)
-* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-api-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see JavaKeenClient or AndroidKeenClient for examples.
+* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
+* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see JavaKeenClient or AndroidKeenClient for examples.
 
 ### Build From Source
 
@@ -224,9 +233,9 @@ JavaKeenClient client = new JavaKeenClient.Builder()
 
 ### State of the Build
 
-As of 2.0.0-rc1 the following non-critical issues are present in the build:
+As of 2.0.0 the following non-critical issues are present in the build:
 
-* If you do not have the Android SDK documentation installed, you will see a warning in the build output for the 'android:javadocRelease' task. This can be resolved by running the Android SDK  manager and installing the "Documentation for Android SDK" package. There is no need to bother unless you care about the built Javadoc.
+* If you do not have the Android SDK documentation installed, you will see a warning in the build output for the 'android:javadocRelease' task. This can be resolved by running the Android SDK manager and installing the "Documentation for Android SDK" package. There is no need to bother unless you care about the built Javadoc.
 
 ## Client-Specific Considerations
 
