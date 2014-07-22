@@ -49,8 +49,6 @@ For Android, replace the `artifactId` element with these two elements:
 
 Drop the appropriate jar into your project and configure the project to use it. We recommend having a "libs" directory to contain external dependencies, but it's up to you.
 
-**NOTE: As mentioned, the 2.0.0 jars are not posted yet. Stay Tuned.**
-
 * ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
 * [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
 * [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see JavaKeenClient or AndroidKeenClient for examples.
