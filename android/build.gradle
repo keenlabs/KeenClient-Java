@@ -38,15 +38,23 @@ android {
     }
 }
 
-// For each variant add a task to copy the core classes so they are included in the AAR.
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
+
+    // For each variant add a task to copy the core classes so they are included in the AAR.
     def copyTask = project.tasks.create(name: "copyCoreToAndroid${name.capitalize()}", type: Copy) {
         from(project(':core').sourceSets.main.output)
         into(variant.javaCompile.destinationDir)
     }
     copyTask.dependsOn variant.javaCompile
     variant.packageLibrary.dependsOn copyTask
+
+    // Also define a task to create a raw JAR to support non-AAR users.
+    def rawJarTask = project.tasks.create(name: "rawAndroidJar${name.capitalize()}", type: Jar) {
+        archiveName="keen-client-api-android-${project.version}.jar"
+        from(variant.javaCompile.destinationDir)
+    }
+    rawJarTask.dependsOn copyTask
 }
 
 dependencies {

@@ -19,6 +19,7 @@ android.libraryVariants.all { variant ->
     if (name.equals("Release")) {
         artifacts {
             archives tasks.getAt("javadocJar$name")
+            archives tasks.getAt("rawAndroidJar$name")
         }
     }
 }
