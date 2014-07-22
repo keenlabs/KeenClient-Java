@@ -51,6 +51,7 @@ class AndroidJsonHandler implements KeenJsonHandler {
 
         JSONObject jsonObject = new JSONObject(value);
         writer.write(jsonObject.toString());
+        writer.close();
     }
 
     ///// PRIVATE CONSTANTS /////
