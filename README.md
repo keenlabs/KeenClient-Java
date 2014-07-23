@@ -3,7 +3,7 @@ Keen Java Clients
 
 [![Build Status](https://travis-ci.org/keenlabs/KeenClient-Java.png?branch=master)](https://travis-ci.org/keenlabs/KeenClient-Java)
 
-The Keen Java clients enable you to record data using Keen IO from any Java application. The core library supports a variety of different paradigms for uploading events, including synchronous vs. asynchronous and single-event vs. batch. Different clients can be built on top of this core library to provide the right behaviors for a given platform or situation. The library currently includes a "plain" Java client and an Android client, but you can easily create your own by extending the base `KeenClient` class.
+The Keen Java clients enable you to record data using Keen IO from any Java application. The core library supports a variety of different paradigms for uploading events, including synchronous vs. asynchronous and single-event vs. batch. Different clients can be built on top of this core library to provide the right behaviors for a given platform or situation. The library currently includes a "plain" Java client and an Android client, but you can easily create your own by extending the base `KeenClient.Builder` class.
 
 ## Installation
 
