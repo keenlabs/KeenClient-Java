@@ -51,7 +51,7 @@ Drop the appropriate jar into your project and configure the project to use it. 
 
 * ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
 * [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
-* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see JavaKeenClient or AndroidKeenClient for examples.
+* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see `JavaKeenClientBuilder` or `AndroidKeenClientBuilder` for examples.
 
 ### Build From Source
 
