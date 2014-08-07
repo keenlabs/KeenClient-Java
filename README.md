@@ -266,6 +266,10 @@ Follow the install instructions and scoped key generation should work. Note that
 
 ## Changelog
 
+##### 2.0.1
+
++ Minor bugfix to address issue with logging in Android.
+
 ##### 2.0.0
 
 + Refactored Java and Android SDKs into a shared core library and two different implementations of the `KeenClient.Builder` class.
