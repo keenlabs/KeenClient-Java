@@ -16,15 +16,20 @@ import java.util.logging.StreamHandler;
 public class KeenLogging {
 
     private static final Logger LOGGER;
+    private static final StreamHandler HANDLER;
 
     static {
         LOGGER = Logger.getLogger(KeenLogging.class.getName());
-        LOGGER.addHandler(new StreamHandler(System.out, new SimpleFormatter()));
+        HANDLER = new StreamHandler(System.out, new SimpleFormatter());
+        LOGGER.addHandler(HANDLER);
         disableLogging();
     }
 
     static void log(String msg) {
-        LOGGER.log(Level.FINER, msg);
+        if (isLoggingEnabled()) {
+            LOGGER.log(Level.FINER, msg);
+            HANDLER.flush();
+        }
     }
 
     /**
