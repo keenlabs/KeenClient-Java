@@ -243,6 +243,17 @@ If using the Android Keen client, you will need to make sure that your applicati
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
+##### FAQs
+
+Q: What happens when the device is offline? Will events automatically be sent when the device connects to wifi again?
+
+A: Our SDK handles offline data collection and have built-in limits to prevent too much data from building up. We also handle re-posting events so that you don't have to worry about this.
+
+Here's how it works. You specify when events should be uploaded to Keen (e.g. when the app is backgrounded).
+
+If your player is offline when that happens, their data will be collected on the device and it will not be posted to Keen IO.
+However, the next time they trigger the code that send events (e.g. backgrounding the app again) all the data from the previous sessions will also be posted (the timestamps will reflect the times the events actually happened).
+
 ## Troubleshooting
 
 #### "Unable to find location of Android SDK. Please read documentation" error during build
