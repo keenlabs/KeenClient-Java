@@ -2,6 +2,16 @@
 
 apply plugin: 'java'
 
+// Set the source and target to Java 6. Note that if compiled using Java 7 (or later) this may
+// produce the following warning:
+//
+//   warning: [options] bootstrap class path not set in conjunction with -source 1.6
+//
+// It may be safe to ignore this warning, but the best approach is to just compile with Java 6.
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
+}
+
 dependencies {
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
     testCompile 'commons-io:commons-io:2.4'

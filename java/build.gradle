@@ -2,6 +2,11 @@
 
 apply plugin: 'java'
 
+// Set the source and target to Java 6.
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
+}
+
 dependencies {
     compile project(':core')
     compile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'

@@ -38,6 +38,11 @@ android {
     }
 }
 
+// Set the source and target to Java 6.
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
+}
+
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
 
