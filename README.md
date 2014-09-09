@@ -16,14 +16,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.0.1'
+    compile 'io.keen:keen-client-api-java:2.0.2'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.0.1@aar'
+    compile 'io.keen:keen-client-api-android:2.0.2@aar'
 ```
 
 ### Maven
@@ -34,7 +34,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
 </dependency>
 ```
 
@@ -231,7 +231,7 @@ JavaKeenClient client = new JavaKeenClient.Builder()
 
 ### State of the Build
 
-As of 2.0.1 the following non-critical issues are present in the build:
+As of 2.0.2 the following non-critical issues are present in the build:
 
 * If you do not have the Android SDK documentation installed, you will see a warning in the build output for the 'android:javadocRelease' task. This can be resolved by running the Android SDK manager and installing the "Documentation for Android SDK" package. There is no need to bother unless you care about the built Javadoc.
 
@@ -276,6 +276,11 @@ The default encryption settings for JDK6+ don't allow using AES-256-CBC, which i
 Follow the install instructions and scoped key generation should work. Note that the policy files will need to be installed on any device which runs your application, or scoped key generation will result in a runtime exception.
 
 ## Changelog
+
+##### 2.0.2
+
++ Fixed bug which caused older versions of Android (pre-KitKat) to be unable to post events.
++ Enabled building with Java 6 (to ensure backwards compatibility).
 
 ##### 2.0.1
 
