@@ -227,6 +227,18 @@ public class KeenClientTest {
     }
 
     @Test
+    public void validEventWithKeenPropertiesWithoutTimestamp() throws Exception {
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("valid key", "valid value");
+        Map<String, Object> keenProperties = new HashMap<String, Object>();
+        Map<String, Object> result = client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, keenProperties);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> keenPropResult = (Map<String, Object>)result.get("keen");
+        assertNotNull(keenPropResult.get("timestamp"));
+        assertNull(keenProperties.get("timestamp"));
+    }
+
+    @Test
     public void validEventWithNestedKeenProperty() throws Exception {
         Map<String, Object> event = TestUtils.getSimpleEvent();
         Map<String, Object> nested = new HashMap<String, Object>();

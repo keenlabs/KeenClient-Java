@@ -931,6 +931,9 @@ public class KeenClient {
             keenProperties.put("timestamp", timestamp);
         } else {
             if (!keenProperties.containsKey("timestamp")) {
+                // we need to make a copy if we are setting the timestamp since
+                // they might reuse the original keepProperties object. See #14.
+                keenProperties = new HashMap<String, Object>(keenProperties);
                 keenProperties.put("timestamp", timestamp);
             }
         }
