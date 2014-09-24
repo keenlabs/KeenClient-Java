@@ -231,11 +231,15 @@ public class KeenClientTest {
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("valid key", "valid value");
         Map<String, Object> keenProperties = new HashMap<String, Object>();
+        keenProperties.put("keen key", "keen value");
         Map<String, Object> result = client.validateAndBuildEvent(client.getDefaultProject(), "foo", event, keenProperties);
         @SuppressWarnings("unchecked")
         Map<String, Object> keenPropResult = (Map<String, Object>)result.get("keen");
         assertNotNull(keenPropResult.get("timestamp"));
         assertNull(keenProperties.get("timestamp"));
+        assertEquals(keenProperties.get("keen key"), "keen value");
+        assertEquals(keenPropResult.get("keen key"), "keen value");
+        assertEquals(keenProperties.get("keen key"), keenPropResult.get("keen key"));
     }
 
     @Test
