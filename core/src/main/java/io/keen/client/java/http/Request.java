@@ -1,6 +1,7 @@
 package io.keen.client.java.http;
 
 import java.net.URL;
+import java.net.Proxy;
 
 /**
  * Encapsulates an HTTP request.
@@ -16,14 +17,20 @@ public final class Request {
     public final String method;
     public final String authorization;
     public final OutputSource body;
+    public final Proxy proxy;
 
     ///// PUBLIC CONSTRUCTORS /////
 
     public Request(URL url, String method, String authorization, OutputSource body) {
+        this(url, method, authorization, body, null);
+    }
+
+    public Request(URL url, String method, String authorization, OutputSource body, Proxy proxy) {
         this.url = url;
         this.method = method;
         this.authorization = authorization;
         this.body = body;
+        this.proxy = proxy;
     }
 
 }

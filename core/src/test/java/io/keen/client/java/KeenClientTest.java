@@ -596,4 +596,16 @@ public class KeenClientTest {
         }
     }
 
+    @Test
+    public void testProxy() throws Exception {
+        KeenClient testClient = new TestKeenClientBuilder().build();
+
+        testClient.setProxy("1.2.3.4", 1234);
+        assertNotNull(testClient.getProxy());
+        assertEquals("/1.2.3.4:1234", testClient.getProxy().address().toString());
+
+        testClient.clearProxy();
+        assertNull(testClient.getProxy());
+    }
+
 }

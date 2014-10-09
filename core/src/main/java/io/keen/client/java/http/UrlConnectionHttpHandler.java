@@ -43,7 +43,12 @@ public class UrlConnectionHttpHandler implements HttpHandler {
      * @throws IOException If there is an error opening the connection.
      */
     protected HttpURLConnection openConnection(Request request) throws IOException {
-        HttpURLConnection result = (HttpURLConnection) request.url.openConnection();
+        HttpURLConnection result;
+        if (request.proxy != null) {
+            result = (HttpURLConnection) request.url.openConnection(request.proxy);
+        } else {
+            result = (HttpURLConnection) request.url.openConnection();
+        }
         result.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
         result.setReadTimeout(DEFAULT_READ_TIMEOUT);
         return result;

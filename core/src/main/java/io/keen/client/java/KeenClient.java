@@ -6,6 +6,8 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.net.Proxy;
+import java.net.InetSocketAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,6 +51,8 @@ import io.keen.client.java.http.UrlConnectionHttpHandler;
  * @since 1.0.0
  */
 public class KeenClient {
+
+    private Proxy proxy;
 
     ///// PUBLIC STATIC METHODS /////
 
@@ -584,6 +588,32 @@ public class KeenClient {
     public boolean isActive() {
         return isActive;
     }
+
+    /**
+      * Sets an HTTP proxy server configuration for this client.
+      *
+      * @param proxyHost The proxy hostname or IP address.
+      * @param proxyPort The proxy port number.
+      */
+     public void setProxy(String proxyHost, int proxyPort) {
+         this.proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+     }
+
+    /**
+     * Gets the client Proxy.
+     *
+     * @return the proxy.
+     */
+     public Proxy getProxy() {
+         return proxy;
+     }
+
+     /**
+      * Clears the proxy, such that a proxy no longer be used.
+      */
+     public void clearProxy() {
+         proxy = null;
+     }
 
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
@@ -1195,7 +1225,7 @@ public class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        Request request = new Request(url, "POST", writeKey, source);
+        Request request = new Request(url, "POST", writeKey, source, proxy);
         Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.
