@@ -1,7 +1,7 @@
 package io.keen.client.java.http;
 
-import java.net.URL;
 import java.net.Proxy;
+import java.net.URL;
 
 /**
  * Encapsulates an HTTP request.

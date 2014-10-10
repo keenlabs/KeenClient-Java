@@ -604,7 +604,7 @@ public class KeenClientTest {
         assertNotNull(testClient.getProxy());
         assertEquals("/1.2.3.4:1234", testClient.getProxy().address().toString());
 
-        testClient.clearProxy();
+        testClient.setProxy(null);
         assertNull(testClient.getProxy());
     }
 
