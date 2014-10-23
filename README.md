@@ -185,6 +185,16 @@ By default both the Java and Android clients use an `ExecutorService` to perform
 
 Note that once you've shut down the publish executor for a given client, there is no way to restart or replace that executor. You will need to build a new client.
 
+### Using an HTTP proxy
+
+The KeenClient supports HTTP proxies via the `setProxy(String proxyHost, int proxyPort)` and `setProxy(Proxy proxy)` methods of a `KeenClient` instance. Simply use one of those methods after building a client like so:
+
+```java
+KeenClient client = new JavaKeenClientBuilder().build();
+client.setProxy("secureproxy.example.com", 2570);
+// now use the client object as you normally would
+```
+
 ## Working with the Source
 
 ### Using IntelliJ IDEA or Android Studio

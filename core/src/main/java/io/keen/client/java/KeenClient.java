@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -585,6 +587,34 @@ public class KeenClient {
         return isActive;
     }
 
+    /**
+      * Sets an HTTP proxy server configuration for this client.
+      *
+      * @param proxyHost The proxy hostname or IP address.
+      * @param proxyPort The proxy port number.
+      */
+     public void setProxy(String proxyHost, int proxyPort) {
+         this.proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+     }
+
+    /**
+      * Sets an HTTP proxy server configuration for this client.
+      *
+      * @param proxy The Proxy object to set.
+      */
+     public void setProxy(Proxy proxy) {
+         this.proxy = proxy;
+     }
+
+    /**
+     * Gets the client Proxy.
+     *
+     * @return the proxy.
+     */
+     public Proxy getProxy() {
+         return proxy;
+     }
+
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
     /**
@@ -983,6 +1013,7 @@ public class KeenClient {
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
     private Map<String, Object> globalProperties;
+    private Proxy proxy;
 
     ///// PRIVATE METHODS /////
 
@@ -1195,7 +1226,7 @@ public class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        Request request = new Request(url, "POST", writeKey, source);
+        Request request = new Request(url, "POST", writeKey, source, proxy);
         Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.
