@@ -335,9 +335,7 @@ Follow the install instructions and scoped key generation should work. Note that
 
 ### Questions & Support
 
-If you have any questions, bugs, or suggestions, please
-report them via Github Issues. Or, come chat with us anytime
-at [users.keen.io](http://users.keen.io). We'd love to hear your feedback and ideas!
+If you have any questions, bugs, or suggestions, please use Github Issues section of this repo! That's the fastest way to get a response from the people who know this library best :).
 
 ### Contributing
 This is an open source project and we love involvement from the community! Hit us up with pull requests and issues.
