@@ -4,6 +4,10 @@ package io.keen.client.android;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -22,6 +26,8 @@ import static org.junit.Assert.assertTrue;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.2
  */
+@Config(emulateSdk = 18)
+@RunWith(RobolectricTestRunner.class)
 public class AndroidJsonHandlerTest {
 
     private AndroidJsonHandler handler;
