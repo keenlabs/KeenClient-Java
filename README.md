@@ -16,14 +16,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.0.2'
+    compile 'io.keen:keen-client-api-java:2.0.3'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.0.2@aar'
+    compile 'io.keen:keen-client-api-android:2.0.3@aar'
 ```
 
 ### Maven
@@ -34,7 +34,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.0.2</version>
+  <version>2.0.3</version>
 </dependency>
 ```
 
@@ -286,6 +286,11 @@ The default encryption settings for JDK6+ don't allow using AES-256-CBC, which i
 Follow the install instructions and scoped key generation should work. Note that the policy files will need to be installed on any device which runs your application, or scoped key generation will result in a runtime exception.
 
 ## Changelog
+
+##### 2.0.3
+
++ Added HTTP Proxy support
++ Minor bugfixes
 
 ##### 2.0.2
 
