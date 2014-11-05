@@ -61,6 +61,12 @@ android.libraryVariants.all { variant ->
     rawJarTask.dependsOn copyTask
 }
 
+configurations {
+    // Exclude modules that are provided by Android to avoid compilation warning.
+    all*.exclude module: 'commons-logging'
+    all*.exclude module: 'httpclient'
+}
+
 dependencies {
     compile project(':core')
     androidTestCompile 'org.robolectric:robolectric:2.3'
