@@ -121,9 +121,6 @@ public class KeenClientTest {
 
     @Test
     public void testInvalidEventCollection() throws KeenException {
-        runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), "$asd", "collection can't start with $",
-                "An event collection name cannot start with the dollar sign ($) character.");
-
         String tooLong = TestUtils.getString(257);
         runValidateAndBuildEventTest(TestUtils.getSimpleEvent(), tooLong, "collection can't be longer than 256 chars",
                 "An event collection name cannot be longer than 256 characters.");
@@ -155,15 +152,6 @@ public class KeenClientTest {
         event.put("ab.cd", "whatever");
         runValidateAndBuildEventTest(event, "foo", ". in property name",
                 "An event cannot contain a property with the period (.) character in it.");
-    }
-
-    @Test
-    public void eventWithInitialDollarPropertyName() throws Exception {
-        Map<String, Object> event = new HashMap<String, Object>();
-        event.put("$a", "whatever");
-        runValidateAndBuildEventTest(event, "foo", "$ at start of property name",
-                "An event cannot contain a property that starts with the dollar sign ($) " +
-                        "character in it.");
     }
 
     @Test

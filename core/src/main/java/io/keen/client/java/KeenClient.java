@@ -1028,10 +1028,6 @@ public class KeenClient {
             throw new InvalidEventCollectionException("You must specify a non-null, " +
                     "non-empty event collection: " + eventCollection);
         }
-        if (eventCollection.startsWith("$")) {
-            throw new InvalidEventCollectionException("An event collection name cannot start with the dollar sign ($)" +
-                    " character.");
-        }
         if (eventCollection.length() > 256) {
             throw new InvalidEventCollectionException("An event collection name cannot be longer than 256 characters.");
         }
@@ -1070,10 +1066,6 @@ public class KeenClient {
             if (key.contains(".")) {
                 throw new InvalidEventException("An event cannot contain a property with the period (.) character in " +
                         "it.");
-            }
-            if (key.startsWith("$")) {
-                throw new InvalidEventException("An event cannot contain a property that starts with the dollar sign " +
-                        "($) character in it.");
             }
             if (key.length() > 256) {
                 throw new InvalidEventException("An event cannot contain a property name longer than 256 characters.");
