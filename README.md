@@ -124,6 +124,25 @@ public static final KeenProject PROJECT_B = new KeenProject(PROJECT_B_ID, PROJEC
 KeenClient.client().addEvent(PROJECT_A, "collection", event, null, null);
 ```
 
+#### Logging
+
+By default, logging from ```KeenClient``` will be disabled and any Exceptions thrown will be caught and ignored. This is useful for two reasons:
+
+* On development environments you may want to use a dummy API key.
+* Your production application will never crash if an unchecked Exception is thrown.
+
+If you want to re-enable logging then use the following statement after you create your ```KeenClient``` object:
+
+```java
+KeenLogging.enableLogging();
+```
+
+You can also explicitly disable Exception catching by using the following statement:
+
+```java
+KeenClient.client().setDebugMode(true);
+```
+
 ### Send Events to Keen IO
 
 Here's a very basic example for an app that tracks "purchases":
