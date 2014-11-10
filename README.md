@@ -176,6 +176,29 @@ To store events in a queue and periodically post all queued events in a single b
 
 The `addEvent` and `sendQueuedEvents` methods will perform the entire HTTP request and response processing synchronously in the calling thread. Their `Async` counterparts will submit a task to the client's `publishExecutor`, which will execute it asynchronously.
 
+#### Global Properties
+
+To have a static set of properties automatically added to every event submitted, use the `setGlobalProperties` method:
+
+```java
+Map<String, Object> map = new HashMap<String, Object>();
+map.put("some standard key", "some standard value");
+client.setGlobalProperties(map);
+```
+
+To provide a dynamic set of properties at event creation time, use the `setGlobalPropertiesEvaluator` method:
+
+```java
+GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
+    public Map<String, Object> getGlobalProperties(String eventCollection) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("some dynamic property name", "some dynamic property value");
+        return map;
+    }
+};
+client.setGlobalPropertiesEvaluator(evaluator);
+```
+
 #### Using Callbacks
 
 By default the library assumes that your events are "fire and forget", that is, you don't need to know when (or even if) they succeed. However if you do need to know for some reason, the client includes overloads of each method which take a `KeenCallback` object. This object allows you to receive notification when a request completes, as well as whether it succeeded and, if it failed, an `Exception` indicating the cause of the failure.
