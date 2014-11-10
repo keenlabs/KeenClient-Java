@@ -199,6 +199,26 @@ GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
 client.setGlobalPropertiesEvaluator(evaluator);
 ```
 
+#### Addons
+
+[Addons](https://keen.io/docs/data-collection/data-enrichment/) may be applied by adding a list of addon maps to the `keenProperties` argument of `addEvent` or `queueEvent` (or their `Async` variants):
+
+```java
+Map<String, Object> event = new HashMap<String, Object>();
+event.put("ip_address", "${keen.ip}");
+Map<String, Object> keenProperties = new HashMap<String, Object>();
+List<Object> addons = new ArrayList<Object>();
+Map<String, Object> ipToGeo = new HashMap<String, Object>();
+ipToGeo.put("name", "keen:ip_to_geo");
+Map<String, Object> ipToGeoInput = new HashMap<String, Object>();
+ipToGeoInput.put("ip", "ip_address");
+ipToGeo.put("input", ipToGeoInput);
+ipToGeo.put("output", "ip_geo_info");
+addons.add(ipToGeo);
+keenProperties.put("addons", addons);
+KeenClient.client().queueEvent("android-sample-button-clicks", event, keenProperties);
+```
+
 #### Using Callbacks
 
 By default the library assumes that your events are "fire and forget", that is, you don't need to know when (or even if) they succeed. However if you do need to know for some reason, the client includes overloads of each method which take a `KeenCallback` object. This object allows you to receive notification when a request completes, as well as whether it succeeded and, if it failed, an `Exception` indicating the cause of the failure.
@@ -330,6 +350,18 @@ The default encryption settings for JDK6+ don't allow using AES-256-CBC, which i
 * [Java 7 Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html)
 
 Follow the install instructions and scoped key generation should work. Note that the policy files will need to be installed on any device which runs your application, or scoped key generation will result in a runtime exception.
+
+#### InvalidEventException: "An event cannot contain a root-level property named 'keen'."
+
+Your event maps can't contain properties in the keen namespace directly. If you want to add properties to the keen namespace (such as to override the timestamp or apply add-ons) you must use the `keenProperties` parameter to `queueEvent`/`addEvent`:
+
+```java
+Map<String, Object> event = new HashMap<String, Object>();
+event.put("property", "value");
+Map<String, Object> keenProperties = new HashMap<String, Object>();
+keenProperties.put("timestamp", "2014-11-01T12:00:00.000Z");
+client.addEvent("collection-name", event, keenProperties);
+```
 
 ## Changelog
 
