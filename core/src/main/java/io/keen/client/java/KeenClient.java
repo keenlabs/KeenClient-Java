@@ -325,6 +325,13 @@ public class KeenClient {
             handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
             return;
         }
+
+        if (!isNetworkConnected()) {
+            KeenLogging.log("Not sending events because there is no network connection. " +
+                            "Events will be retried next time `sendQueuedEvents` is called.");
+            return;
+        }
+
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
@@ -615,6 +622,7 @@ public class KeenClient {
          return proxy;
      }
 
+
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
     /**
@@ -869,6 +877,14 @@ public class KeenClient {
             return new KeenClient(this);
         }
 
+        /**
+         * Gets the connectivity state of the network. This is handled
+         * differently between Android and plain Java.
+         *
+         * @return true if the device is connected to the internet
+         */
+        abstract public boolean isNetworkConnected();
+
     }
 
     ///// PROTECTED CONSTRUCTORS /////
@@ -908,6 +924,7 @@ public class KeenClient {
         this.baseUrl = KeenConstants.SERVER_ADDRESS;
         this.globalPropertiesEvaluator = null;
         this.globalProperties = null;
+        this.builder = builder;
 
         // If a default project has been specified in environment variables, use it.
         if (env.getKeenProjectId() != null) {
@@ -1006,6 +1023,7 @@ public class KeenClient {
     private final KeenJsonHandler jsonHandler;
     private final KeenEventStore eventStore;
     private final Executor publishExecutor;
+    private final Builder builder;
 
     private boolean isActive = true;
     private boolean isDebugMode;
@@ -1242,6 +1260,15 @@ public class KeenClient {
         } else {
             throw new ServerException(response.body);
         }
+    }
+
+    /**
+     * Returns the status of the network connection
+     *
+     * @return true if there is network connection
+     */
+    private boolean isNetworkConnected() {
+        return builder.isNetworkConnected();
     }
 
     ///// PRIVATE CONSTANTS /////

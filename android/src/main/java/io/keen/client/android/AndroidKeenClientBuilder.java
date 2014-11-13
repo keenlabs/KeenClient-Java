@@ -1,6 +1,8 @@
 package io.keen.client.android;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import io.keen.client.java.FileEventStore;
 import io.keen.client.java.KeenClient;
@@ -44,6 +46,15 @@ public class AndroidKeenClientBuilder extends KeenClient.Builder {
     @Override
     protected KeenEventStore getDefaultEventStore() throws Exception {
         return new FileEventStore(context.getCacheDir());
+    }
+
+    @Override
+    public boolean isNetworkConnected() {
+        // Check if there is an active network connection
+        ConnectivityManager connectivityManager
+            = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
 }
