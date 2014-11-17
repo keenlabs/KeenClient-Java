@@ -645,7 +645,13 @@ public class KeenClientTest {
         networkStatusHandler.setNetworkConnected(false);
 
         // Attempt to send the events.
-        client.sendQueuedEvents();
+        Exception e = null;
+        try {
+            client.sendQueuedEvents();
+        } catch (Exception ex) {
+            e = ex;
+        }
+        assertNotNull(e);
 
         // Validate that the store still contains all the events.
         handleMap = store.getHandles(TEST_PROJECT.getProjectId());

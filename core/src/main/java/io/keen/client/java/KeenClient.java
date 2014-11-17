@@ -329,6 +329,7 @@ public class KeenClient {
         if (!isNetworkConnected()) {
             KeenLogging.log("Not sending events because there is no network connection. " +
                             "Events will be retried next time `sendQueuedEvents` is called.");
+            handleFailure(callback, new Exception("Network not connected."));
             return;
         }
 
