@@ -622,7 +622,6 @@ public class KeenClient {
          return proxy;
      }
 
-
     ///// PROTECTED ABSTRACT BUILDER IMPLEMENTATION /////
 
     /**
