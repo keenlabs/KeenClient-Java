@@ -619,8 +619,8 @@ public class KeenClientTest {
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
 
-        // Mock a server success. This shouldn't get accessed until the
-        // builder.isNetworkConnected is set to true. It is here because
+        // Mock a server success. This shouldn't get accessed until
+        // builder.isNetworkConnected() is true. It is here because
         // if the isNetworkConnected function doesn't work properly, we should
         // get a 200 and clear all events, which would cause the first half of
         // this test to fail.
@@ -634,7 +634,7 @@ public class KeenClientTest {
         assertEquals(3, handles.size());
 
         // ensure that the events remain if there no network.
-        builder.isNetworkConnected = false;
+        builder.setNetworkConnected(false);
 
         // Attempt to send the events.
         client.sendQueuedEvents();
@@ -647,7 +647,7 @@ public class KeenClientTest {
 
 
         // now, ensure that the events get cleared if there is network.
-        builder.isNetworkConnected = true;
+        builder.setNetworkConnected(true);
 
         // Actually send the events.
         client.sendQueuedEvents();

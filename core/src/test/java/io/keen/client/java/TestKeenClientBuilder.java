@@ -9,7 +9,7 @@ package io.keen.client.java;
 public class TestKeenClientBuilder extends KeenClient.Builder {
 
     private final Environment environment;
-    boolean isNetworkConnected = true;
+    private boolean isNetworkConnected = true;
 
     public TestKeenClientBuilder() {
         this(new Environment());
@@ -19,9 +19,8 @@ public class TestKeenClientBuilder extends KeenClient.Builder {
         this.environment = environment;
     }
 
-    public TestKeenClientBuilder setNetworkConnected(boolean networkConnected) {
+    public void setNetworkConnected(boolean networkConnected) {
         isNetworkConnected = networkConnected;
-        return this;
     }
 
     @Override
