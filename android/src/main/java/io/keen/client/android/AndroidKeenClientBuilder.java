@@ -1,13 +1,12 @@
 package io.keen.client.android;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 import io.keen.client.java.FileEventStore;
 import io.keen.client.java.KeenClient;
 import io.keen.client.java.KeenEventStore;
 import io.keen.client.java.KeenJsonHandler;
+import io.keen.client.java.KeenNetworkStatusHandler;
 
 /**
  * {@link io.keen.client.java.KeenClient.Builder} with defaults suited for use on the Android
@@ -49,12 +48,8 @@ public class AndroidKeenClientBuilder extends KeenClient.Builder {
     }
 
     @Override
-    public boolean isNetworkConnected() {
-        // Check if there is an active network connection
-        ConnectivityManager connectivityManager
-            = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    protected KeenNetworkStatusHandler getDefaultNetworkStatusHandler() {
+        return new AndroidNetworkStatusHandler(context);
     }
 
 }

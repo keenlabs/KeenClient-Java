@@ -19,10 +19,6 @@ public class TestKeenClientBuilder extends KeenClient.Builder {
         this.environment = environment;
     }
 
-    public void setNetworkConnected(boolean networkConnected) {
-        isNetworkConnected = networkConnected;
-    }
-
     @Override
     protected KeenJsonHandler getDefaultJsonHandler() {
         return new TestJsonHandler();
@@ -31,11 +27,6 @@ public class TestKeenClientBuilder extends KeenClient.Builder {
     @Override
     protected KeenClient buildInstance() {
         return new KeenClient(this, environment);
-    }
-
-    @Override
-    public boolean isNetworkConnected() {
-        return this.isNetworkConnected;
     }
 
 }

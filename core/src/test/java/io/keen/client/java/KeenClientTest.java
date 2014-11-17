@@ -63,7 +63,6 @@ public class KeenClientTest {
 
     private KeenClient client;
     private HttpHandler mockHttpHandler;
-    private TestKeenClientBuilder builder;
 
     @BeforeClass
     public static void classSetUp() {
@@ -86,8 +85,7 @@ public class KeenClientTest {
         setMockResponse(500, "Unexpected HTTP request");
 
         // Build the client.
-        builder = new TestKeenClientBuilder();
-        client = builder
+        client = new TestKeenClientBuilder()
                 .withHttpHandler(mockHttpHandler)
                 .build();
 
@@ -612,6 +610,16 @@ public class KeenClientTest {
 
     @Test
     public void testNotConnected() throws Exception {
+        TestNetworkStatusHandler networkStatusHandler = new TestNetworkStatusHandler(false);
+        client = new TestKeenClientBuilder()
+                .withHttpHandler(mockHttpHandler)
+                .withNetworkStatusHandler(networkStatusHandler)
+                .build();
+
+        client.setBaseUrl(null);
+        client.setDebugMode(true);
+        client.setDefaultProject(TEST_PROJECT);
+
         RamEventStore store = (RamEventStore) client.getEventStore();
 
         // Queue some events.
@@ -620,10 +628,10 @@ public class KeenClientTest {
         client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
 
         // Mock a server success. This shouldn't get accessed until
-        // builder.isNetworkConnected() is true. It is here because
-        // if the isNetworkConnected function doesn't work properly, we should
-        // get a 200 and clear all events, which would cause the first half of
-        // this test to fail.
+        // isNetworkConnected() is true. It is here because if the
+        // isNetworkConnected function doesn't work properly, we should get a
+        // 200 and clear all events, which would cause the first half of this
+        // test to fail.
         Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
         expectedResponse.put(TEST_COLLECTION, 3);
         setMockResponse(200, getPostEventsResponse(buildSuccessMap(expectedResponse)));
@@ -634,7 +642,7 @@ public class KeenClientTest {
         assertEquals(3, handles.size());
 
         // ensure that the events remain if there no network.
-        builder.setNetworkConnected(false);
+        networkStatusHandler.setNetworkConnected(false);
 
         // Attempt to send the events.
         client.sendQueuedEvents();
@@ -647,7 +655,7 @@ public class KeenClientTest {
 
 
         // now, ensure that the events get cleared if there is network.
-        builder.setNetworkConnected(true);
+        networkStatusHandler.setNetworkConnected(true);
 
         // Actually send the events.
         client.sendQueuedEvents();

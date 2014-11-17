@@ -28,9 +28,4 @@ public class JavaKeenClientBuilder extends KeenClient.Builder {
         return new JacksonJsonHandler();
     }
 
-    @Override
-    public boolean isNetworkConnected() {
-        return true;
-    }
-
 }
