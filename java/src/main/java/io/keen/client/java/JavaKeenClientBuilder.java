@@ -23,13 +23,6 @@ import java.util.Enumeration;
  */
 public class JavaKeenClientBuilder extends KeenClient.Builder {
 
-    private String networkInterfaceName;
-
-    public JavaKeenClientBuilder setNetworkInterfaceName(String ifname) {
-        networkInterfaceName = ifname;
-        return this;
-    }
-
     @Override
     protected KeenJsonHandler getDefaultJsonHandler() {
         return new JacksonJsonHandler();
@@ -37,34 +30,7 @@ public class JavaKeenClientBuilder extends KeenClient.Builder {
 
     @Override
     public boolean isNetworkConnected() {
-        // if no network interface is specified, skip this check
-        if (networkInterfaceName == null) {
-            return true;
-        }
-
-        try {
-            // loop through the interfaces, looking for the one that matches
-            // `networkInterfaceName`.
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = interfaces.nextElement();
-                if (!networkInterfaceName.equals(networkInterface.getDisplayName())) {
-                    continue;
-                }
-
-                // if we find a network interface matching
-                // `networkInterfaceName`, check if it is up.
-                if (networkInterface.isUp()) {
-                    return true;
-                }
-            }
-        } catch(Exception e) {
-            // quietly fail
-        }
-
-        // if we get here, we didn't find a network interface with a matching
-        // name, or if we did find one, it wasn't up.
-        return false;
+        return true;
     }
 
 }
