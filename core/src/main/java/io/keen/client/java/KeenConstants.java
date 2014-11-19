@@ -14,6 +14,7 @@ class KeenConstants {
     // Keen API constants
 
     static final int MAX_EVENT_DEPTH = 1000;
+    static final int DEFAULT_MAX_ATTEMPTS = 3;
     static final String NAME_PARAM = "name";
     static final String SUCCESS_PARAM = "success";
     static final String ERROR_PARAM = "error";

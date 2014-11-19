@@ -17,7 +17,7 @@ import static org.junit.Assert.assertThat;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class RamEventStoreTest extends EventStoreTestBase {
+public class RamEventStoreTest extends AttemptCountingEventStoreTestBase {
 
     @Override
     protected KeenEventStore buildStore() {

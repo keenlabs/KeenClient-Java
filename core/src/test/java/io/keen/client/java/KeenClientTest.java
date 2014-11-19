@@ -391,6 +391,69 @@ public class KeenClientTest {
     }
 
     @Test
+    public void testSendQueuedEventsCountingAttemptsWithServerFailure() throws Exception {
+        // Queue some events.
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
+
+        // Mock a server failure.
+        setMockResponse(500, "Injected server failure");
+
+        // Send the events.
+        try {
+            client.sendQueuedEvents();
+        } catch (ServerException e) {
+            // This exception is expected; continue.
+        }
+
+        // Validate that the store still contains all the events.
+        RamEventStore store = (RamEventStore) client.getEventStore();
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(1, handleMap.size());
+        List<Object> handles = handleMap.get(TEST_COLLECTION);
+        assertEquals(3, handles.size());
+
+        String attemptsJSON = store.getAttempts(TEST_PROJECT.getProjectId(), TEST_COLLECTION);
+        assertNotNull(attemptsJSON);
+        Map<String, Integer> attempts = JSON_MAPPER.readValue(attemptsJSON, Map.class);
+        assertEquals(3, attempts.entrySet().size());
+        assertEquals(2, attempts.values().toArray()[0]);
+
+
+        // Send the events again.
+        try {
+            client.sendQueuedEvents();
+        } catch (ServerException e) {
+            // This exception is expected; continue.
+        }
+
+        // Send the events yet again.
+        try {
+            client.sendQueuedEvents();
+        } catch (ServerException e) {
+            // This exception is expected; continue.
+        }
+
+        // Try to send the events again, but this time they'll get dropped
+        try {
+            client.sendQueuedEvents();
+        } catch (ServerException e) {
+            // This exception is expected; continue.
+        }
+
+        // Validate that the store still contains all the events.
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(0, handleMap.size());
+
+        attemptsJSON = store.getAttempts(TEST_PROJECT.getProjectId(), TEST_COLLECTION);
+        assertNotNull(attemptsJSON);
+        attempts = JSON_MAPPER.readValue(attemptsJSON, Map.class);
+        assertEquals(3, attempts.entrySet().size());
+        assertEquals(-1, attempts.values().toArray()[0]);
+    }
+
+    @Test
     public void testSendQueuedEventsConcurrentProjects() throws Exception {
         // Queue some events in each of two separate projects
         KeenProject otherProject = new KeenProject("<other project>", "<write>", "<read>");
