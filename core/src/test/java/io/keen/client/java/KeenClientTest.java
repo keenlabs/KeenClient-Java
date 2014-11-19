@@ -648,6 +648,7 @@ public class KeenClientTest {
         Exception e = null;
         try {
             client.sendQueuedEvents();
+            fail("sendQueueEvents should throw an error when there is no network.");
         } catch (Exception ex) {
             e = ex;
         }
