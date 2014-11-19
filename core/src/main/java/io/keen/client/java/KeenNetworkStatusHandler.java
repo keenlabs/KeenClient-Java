@@ -4,7 +4,7 @@ package io.keen.client.java;
  * This interface holds methods for checking network conditions.
  *
  * @author Simon Murtha Smith
- * @since 2.0.0
+ * @since 2.1.0
  */
 public interface KeenNetworkStatusHandler {
 
