@@ -596,4 +596,68 @@ public class KeenClientTest {
         assertNull(testClient.getProxy());
     }
 
+    @Test
+    public void testNotConnected() throws Exception {
+        TestNetworkStatusHandler networkStatusHandler = new TestNetworkStatusHandler(false);
+        client = new TestKeenClientBuilder()
+                .withHttpHandler(mockHttpHandler)
+                .withNetworkStatusHandler(networkStatusHandler)
+                .build();
+
+        client.setBaseUrl(null);
+        client.setDebugMode(true);
+        client.setDefaultProject(TEST_PROJECT);
+
+        RamEventStore store = (RamEventStore) client.getEventStore();
+
+        // Queue some events.
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(0));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(1));
+        client.queueEvent(TEST_COLLECTION, TEST_EVENTS.get(2));
+
+        // Mock a server success. This shouldn't get accessed until
+        // isNetworkConnected() is true. It is here because if the
+        // isNetworkConnected function doesn't work properly, we should get a
+        // 200 and clear all events, which would cause the first half of this
+        // test to fail.
+        Map<String, Integer> expectedResponse = new HashMap<String, Integer>();
+        expectedResponse.put(TEST_COLLECTION, 3);
+        setMockResponse(200, getPostEventsResponse(buildSuccessMap(expectedResponse)));
+
+        Map<String, List<Object>> handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(1, handleMap.size());
+        List<Object> handles = handleMap.get(TEST_COLLECTION);
+        assertEquals(3, handles.size());
+
+        // ensure that the events remain if there no network.
+        networkStatusHandler.setNetworkConnected(false);
+
+        // Attempt to send the events.
+        Exception e = null;
+        try {
+            client.sendQueuedEvents();
+            fail("sendQueueEvents should throw an error when there is no network.");
+        } catch (Exception ex) {
+            e = ex;
+        }
+        assertNotNull(e);
+
+        // Validate that the store still contains all the events.
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(1, handleMap.size());
+        handles = handleMap.get(TEST_COLLECTION);
+        assertEquals(3, handles.size());
+
+
+        // now, ensure that the events get cleared if there is network.
+        networkStatusHandler.setNetworkConnected(true);
+
+        // Actually send the events.
+        client.sendQueuedEvents();
+
+        // Validate that the store no longer contains the events.
+        handleMap = store.getHandles(TEST_PROJECT.getProjectId());
+        assertEquals(0, handleMap.size());
+    }
+
 }

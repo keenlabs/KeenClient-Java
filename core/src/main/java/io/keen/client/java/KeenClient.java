@@ -325,6 +325,14 @@ public class KeenClient {
             handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
             return;
         }
+
+        if (!isNetworkConnected()) {
+            KeenLogging.log("Not sending events because there is no network connection. " +
+                            "Events will be retried next time `sendQueuedEvents` is called.");
+            handleFailure(callback, new Exception("Network not connected."));
+            return;
+        }
+
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
@@ -637,6 +645,7 @@ public class KeenClient {
         private KeenJsonHandler jsonHandler;
         private KeenEventStore eventStore;
         private Executor publishExecutor;
+        private KeenNetworkStatusHandler networkStatusHandler;
 
         /**
          * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
@@ -816,6 +825,49 @@ public class KeenClient {
         }
 
         /**
+         * Gets the default {@link KeenNetworkStatusHandler} to use if none is explicitly set for this builder.
+         *
+         * This implementation always returns true.
+         *
+         * Subclasses should override this to provide an alternative default {@link KeenNetworkStatusHandler}.
+         *
+         * @return The default {@link KeenNetworkStatusHandler}.
+         */
+        protected KeenNetworkStatusHandler getDefaultNetworkStatusHandler() {
+            return new AlwaysConnectedNetworkStatusHandler();
+        }
+
+        /**
+         * Gets the {@link KeenNetworkStatusHandler} that this builder is currently configured to use.
+         * If null, a default will be used instead.
+         *
+         * @return The {@link KeenNetworkStatusHandler} to use.
+         */
+        public KeenNetworkStatusHandler getNetworkStatusHandler () {
+            return networkStatusHandler;
+        }
+
+        /**
+         * Sets the {@link KeenNetworkStatusHandler} to use.
+         *
+         * @param networkStatusHandler The {@link KeenNetworkStatusHandler} to use.
+         */
+        public void setNetworkStatusHandler(KeenNetworkStatusHandler networkStatusHandler) {
+            this.networkStatusHandler = networkStatusHandler;
+        }
+
+        /**
+         * Sets the {@link KeenNetworkStatusHandler} to use.
+         *
+         * @param networkStatusHandler The {@link KeenNetworkStatusHandler} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withNetworkStatusHandler(KeenNetworkStatusHandler networkStatusHandler) {
+            setNetworkStatusHandler(networkStatusHandler);
+            return this;
+        }
+
+        /**
          * Builds a new Keen client using the interfaces which have been specified explicitly on
          * this builder instance via the set* or with* methods, or the default interfaces if none
          * have been specified.
@@ -853,6 +905,14 @@ public class KeenClient {
                 }
             } catch (Exception e) {
                 KeenLogging.log("Exception building publish executor: " + e.getMessage());
+            }
+
+            try {
+                if (networkStatusHandler == null) {
+                    networkStatusHandler = getDefaultNetworkStatusHandler();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building network status handler: " + e.getMessage());
             }
 
             return buildInstance();
@@ -897,6 +957,7 @@ public class KeenClient {
         this.jsonHandler = builder.jsonHandler;
         this.eventStore = builder.eventStore;
         this.publishExecutor = builder.publishExecutor;
+        this.networkStatusHandler = builder.networkStatusHandler;
 
         // If any of the interfaces are null, mark this client as inactive.
         if (httpHandler == null || jsonHandler == null ||
@@ -1006,6 +1067,7 @@ public class KeenClient {
     private final KeenJsonHandler jsonHandler;
     private final KeenEventStore eventStore;
     private final Executor publishExecutor;
+    private final KeenNetworkStatusHandler networkStatusHandler;
 
     private boolean isActive = true;
     private boolean isDebugMode;
@@ -1234,6 +1296,15 @@ public class KeenClient {
         } else {
             throw new ServerException(response.body);
         }
+    }
+
+    /**
+     * Returns the status of the network connection
+     *
+     * @return true if there is network connection
+     */
+    private boolean isNetworkConnected() {
+        return networkStatusHandler.isNetworkConnected();
     }
 
     ///// PRIVATE CONSTANTS /////
