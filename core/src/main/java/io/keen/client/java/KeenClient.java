@@ -1502,7 +1502,7 @@ public class KeenClient {
      *
      * @param projectId the project id
      * @param eventCollection the collection name
-     * @return a Map of collection names to attempt strings
+     * @return a Map of event hashCodes to attempt counts
      * @throws IOException
      */
     private Map<String, Integer> getAttemptsMap(String projectId, String eventCollection) throws IOException {
