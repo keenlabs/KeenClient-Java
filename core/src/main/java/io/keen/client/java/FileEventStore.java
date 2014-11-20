@@ -154,6 +154,11 @@ public class FileEventStore implements KeenAttemptCountingEventStore {
             OutputStream out = new FileOutputStream(cacheFile);
             writer = new OutputStreamWriter(out, ENCODING);
             writer.write(attemptsString);
+        } catch(Exception ex) {
+             KeenLogging.log(String.format(Locale.US, "Failed to set the attempt count for collection: " +
+                     "%s. The events were still queued and will be POSTed to api.keen.io, but " +
+                     "they will only be attempted once. The exception was: " + ex,
+                     eventCollection));
         } finally {
             KeenUtils.closeQuietly(writer);
         }
