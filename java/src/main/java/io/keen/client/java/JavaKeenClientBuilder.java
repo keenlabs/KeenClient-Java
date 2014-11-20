@@ -1,5 +1,11 @@
 package io.keen.client.java;
 
+import java.io.IOException;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.UnknownHostException;
+import java.util.Enumeration;
+
 /**
  * {@link io.keen.client.java.KeenClient.Builder} with defaults suited for use in a standard Java
  * environment.

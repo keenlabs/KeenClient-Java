@@ -19,7 +19,7 @@ import java.util.Map;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class RamEventStore implements KeenEventStore {
+public class RamEventStore implements KeenAttemptCountingEventStore {
 
     ///// PUBLIC CONSTRUCTORS /////
 
@@ -120,6 +120,39 @@ public class RamEventStore implements KeenEventStore {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAttempts(String projectId, String eventCollection) {
+        if (attempts == null) {
+            return null;
+        }
+        Map<String, String> project = attempts.get(projectId);
+        if (project == null) {
+            return null;
+        }
+        return project.get(eventCollection);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAttempts(String projectId, String eventCollection, String attemptsString) {
+        if (attempts == null) {
+            attempts = new HashMap<String, Map<String, String>>();
+        }
+
+        Map<String, String> project = attempts.get(projectId);
+        if (project == null) {
+            project = new HashMap<String, String>();
+            attempts.put(projectId, project);
+        }
+
+        project.put(eventCollection, attemptsString);
+    }
+
     ///// PUBLIC METHODS /////
 
     /**
@@ -150,6 +183,7 @@ public class RamEventStore implements KeenEventStore {
     private Map<String, List<Long>> collectionIds;
     private Map<Long, String> events;
     private int maxEventsPerCollection = 10000;
+    private Map<String, Map<String, String>> attempts;
 
     ///// PRIVATE METHODS /////
 

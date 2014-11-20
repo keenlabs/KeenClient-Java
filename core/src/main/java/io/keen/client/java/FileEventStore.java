@@ -24,7 +24,7 @@ import java.util.Map;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class FileEventStore implements KeenEventStore {
+public class FileEventStore implements KeenAttemptCountingEventStore {
 
     ///// PUBLIC CONSTRUCTORS /////
 
@@ -126,6 +126,44 @@ public class FileEventStore implements KeenEventStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAttempts(String projectId, String eventCollection) throws IOException {
+        File projectDir = getProjectDir(projectId, false);
+        File collectionDir = new File(projectDir, eventCollection);
+        File attemptsFile = new File(collectionDir, ATTEMPTS_JSON_FILE_NAME);
+        return get(attemptsFile);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAttempts(String projectId, String eventCollection, String attemptsString) throws IOException {
+        // Prepare the collection cache directory.
+        File collectionCacheDir = prepareCollectionDir(projectId, eventCollection);
+
+        // Create the cache file.
+        File cacheFile = new File(collectionCacheDir, ATTEMPTS_JSON_FILE_NAME);
+
+        // Write the event to the cache file.
+        Writer writer = null;
+        try {
+            OutputStream out = new FileOutputStream(cacheFile);
+            writer = new OutputStreamWriter(out, ENCODING);
+            writer.write(attemptsString);
+        } catch(Exception ex) {
+             KeenLogging.log(String.format(Locale.US, "Failed to set the attempt count for collection: " +
+                     "%s. The events were still queued and will be POSTed to api.keen.io, but " +
+                     "they will only be attempted once. The exception was: " + ex,
+                     eventCollection));
+        } finally {
+            KeenUtils.closeQuietly(writer);
+        }
+    }
+
     ///// PRIVATE CONSTANTS /////
 
     /**
@@ -142,6 +180,11 @@ public class FileEventStore implements KeenEventStore {
      * The number of events to drop when aging out.
      */
     private static final int NUMBER_EVENTS_TO_FORGET = 100;
+
+    /**
+     * The file name of the attempts json data
+     */
+    private static final String ATTEMPTS_JSON_FILE_NAME = "__attempts.json";
 
     ///// PRIVATE FIELDS /////
 
