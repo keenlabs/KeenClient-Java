@@ -133,7 +133,7 @@ public class FileEventStore implements KeenAttemptCountingEventStore {
     public String getAttempts(String projectId, String eventCollection) throws IOException {
         File projectDir = getProjectDir(projectId, false);
         File collectionDir = new File(projectDir, eventCollection);
-        File attemptsFile = new File(collectionDir, "__attempts.json");
+        File attemptsFile = new File(collectionDir, ATTEMPTS_JSON_FILE_NAME);
         return get(attemptsFile);
     }
 
@@ -146,7 +146,7 @@ public class FileEventStore implements KeenAttemptCountingEventStore {
         File collectionCacheDir = prepareCollectionDir(projectId, eventCollection);
 
         // Create the cache file.
-        File cacheFile = new File(collectionCacheDir, "__attempts.json");
+        File cacheFile = new File(collectionCacheDir, ATTEMPTS_JSON_FILE_NAME);
 
         // Write the event to the cache file.
         Writer writer = null;
@@ -175,6 +175,11 @@ public class FileEventStore implements KeenAttemptCountingEventStore {
      * The number of events to drop when aging out.
      */
     private static final int NUMBER_EVENTS_TO_FORGET = 100;
+
+    /**
+     * The file name of the attempts json data
+     */
+    private static final String ATTEMPTS_JSON_FILE_NAME = "__attempts.json";
 
     ///// PRIVATE FIELDS /////
 
