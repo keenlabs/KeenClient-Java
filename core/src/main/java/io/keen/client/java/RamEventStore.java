@@ -125,9 +125,13 @@ public class RamEventStore implements KeenAttemptCountingEventStore {
      */
     @Override
     public String getAttempts(String projectId, String eventCollection) {
-        if (attempts == null) return null;
+        if (attempts == null) {
+            return null;
+        }
         Map<String, String> project = attempts.get(projectId);
-        if (project == null) return null;
+        if (project == null) {
+            return null;
+        }
         return project.get(eventCollection);
     }
 
@@ -136,7 +140,9 @@ public class RamEventStore implements KeenAttemptCountingEventStore {
      */
     @Override
     public void setAttempts(String projectId, String eventCollection, String attemptsString) {
-        if (attempts == null) attempts = new HashMap<String, Map<String, String>>();
+        if (attempts == null) {
+            attempts = new HashMap<String, Map<String, String>>();
+        }
 
         Map<String, String> project = attempts.get(projectId);
         if (project == null) {
