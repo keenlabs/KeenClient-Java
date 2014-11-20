@@ -1227,7 +1227,6 @@ public class KeenClient {
                 StringReader reader = new StringReader(jsonEvent);
                 Map<String, Object> event = jsonHandler.readJson(reader);
                 KeenUtils.closeQuietly(reader);
-                events.add(event);
 
                 String attemptsKey = "" + handle.hashCode();
                 Integer remainingAttempts = attempts.get(attemptsKey);
