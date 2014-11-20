@@ -419,6 +419,8 @@ public class KeenClientTest {
         Map<String, Integer> attempts = JSON_MAPPER.readValue(attemptsJSON, Map.class);
         assertEquals(3, attempts.entrySet().size());
         assertEquals(2, attempts.values().toArray()[0]);
+        assertEquals(2, attempts.values().toArray()[1]);
+        assertEquals(2, attempts.values().toArray()[2]);
 
 
         // Send the events again.
@@ -435,6 +437,14 @@ public class KeenClientTest {
             // This exception is expected; continue.
         }
 
+        attemptsJSON = store.getAttempts(TEST_PROJECT.getProjectId(), TEST_COLLECTION);
+        assertNotNull(attemptsJSON);
+        attempts = JSON_MAPPER.readValue(attemptsJSON, Map.class);
+        assertEquals(3, attempts.entrySet().size());
+        assertEquals(0, attempts.values().toArray()[0]);
+        assertEquals(0, attempts.values().toArray()[1]);
+        assertEquals(0, attempts.values().toArray()[2]);
+
         // Try to send the events again, but this time they'll get dropped
         try {
             client.sendQueuedEvents();
@@ -448,9 +458,9 @@ public class KeenClientTest {
 
         attemptsJSON = store.getAttempts(TEST_PROJECT.getProjectId(), TEST_COLLECTION);
         assertNotNull(attemptsJSON);
+
         attempts = JSON_MAPPER.readValue(attemptsJSON, Map.class);
-        assertEquals(3, attempts.entrySet().size());
-        assertEquals(-1, attempts.values().toArray()[0]);
+        assertEquals(0, attempts.entrySet().size());
     }
 
     @Test
