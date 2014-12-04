@@ -283,10 +283,13 @@ public class KeenClient {
             try {
                 // Save the JSON event out to the event store.
                 Object handle = eventStore.store(useProject.getProjectId(), eventCollection, jsonEvent);
-                synchronized (attemptsLock) {
-                    Map<String, Integer> attempts = getAttemptsMap(useProject.getProjectId(), eventCollection);
-                    attempts.put("" + handle.hashCode(), maxAttempts);
-                    setAttemptsMap(useProject.getProjectId(), eventCollection, attempts);
+
+                if (eventStore instanceof KeenAttemptCountingEventStore) {
+                    synchronized (attemptsLock) {
+                        Map<String, Integer> attempts = getAttemptsMap(useProject.getProjectId(), eventCollection);
+                        attempts.put("" + handle.hashCode(), maxAttempts);
+                        setAttemptsMap(useProject.getProjectId(), eventCollection, attempts);
+                    }
                 }
             } catch(IOException ex) {
                 KeenLogging.log("Failed to set the event POST attempt count. The event was still " +
@@ -1226,55 +1229,55 @@ public class KeenClient {
             List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
 
             Map<String, Integer> attempts;
-            synchronized (attemptsLock) {
-                try {
-                    attempts = getAttemptsMap(projectId, eventCollection);
-                } catch (IOException ex) {
-                    // setting this to a fresh map will effectively declare this the "last attempt" for
-                    // these events.
-                    attempts = new HashMap<String, Integer>();
-                    KeenLogging.log("Failed to read attempt counts map. Events will still be POSTed. " +
-                            "Exception: " + ex);
-                }
+            if (eventStore instanceof KeenAttemptCountingEventStore) {
+                synchronized (attemptsLock) {
+                    try {
+                        attempts = getAttemptsMap(projectId, eventCollection);
+                    } catch (IOException ex) {
+                        // setting this to a fresh map will effectively declare this the "last attempt" for
+                        // these events.
+                        attempts = new HashMap<String, Integer>();
+                        KeenLogging.log("Failed to read attempt counts map. Events will still be POSTed. " +
+                                "Exception: " + ex);
+                    }
 
+                    for (Object handle : handles) {
+                        Map<String, Object> event = getEvent(handle);
+
+                        String attemptsKey = "" + handle.hashCode();
+                        Integer remainingAttempts = attempts.get(attemptsKey);
+                        if (remainingAttempts == null) {
+                            // treat null as "this is the last attempt"
+                            remainingAttempts = 1;
+                        }
+
+                        // decrement the remaining attempts count and put the new value on the map
+                        remainingAttempts--;
+                        attempts.put(attemptsKey, remainingAttempts);
+
+                        if (remainingAttempts >= 0) {
+                            // if we had some remaining attempts, then try again
+                            events.add(event);
+                        } else {
+                            // otherwise remove it from the store
+                            eventStore.remove(handle);
+
+                            // iff eventStore.remove succeeds we can do some housekeeping and remove the
+                            // key from the attempts hash.
+                            attempts.remove(attemptsKey);
+                        }
+                    }
+
+                    try {
+                        setAttemptsMap(projectId, eventCollection, attempts);
+                    } catch(IOException ex) {
+                        KeenLogging.log("Failed to update event POST attempts counts while sending queued " +
+                                "events. Events will still be POSTed. Exception: " + ex);
+                    }
+                }
+            } else {
                 for (Object handle : handles) {
-                    // Get the event from the store.
-                    String jsonEvent = eventStore.get(handle);
-
-                    // De-serialize the event from its JSON.
-                    StringReader reader = new StringReader(jsonEvent);
-                    Map<String, Object> event = jsonHandler.readJson(reader);
-                    KeenUtils.closeQuietly(reader);
-
-                    String attemptsKey = "" + handle.hashCode();
-                    Integer remainingAttempts = attempts.get(attemptsKey);
-                    if (remainingAttempts == null) {
-                        // treat null as "this is the last attempt"
-                        remainingAttempts = 1;
-                    }
-
-                    // decrement the remaining attempts count and put the new value on the map
-                    remainingAttempts--;
-                    attempts.put(attemptsKey, remainingAttempts);
-
-                    if (remainingAttempts >= 0) {
-                        // if we had some remaining attempts, then try again
-                        events.add(event);
-                    } else {
-                        // otherwise remove it from the store
-                        eventStore.remove(handle);
-
-                        // iff eventStore.remove succeeds we can do some housekeeping and remove the
-                        // key from the attempts hash.
-                        attempts.remove(attemptsKey);
-                    }
-                }
-
-                try {
-                    setAttemptsMap(projectId, eventCollection, attempts);
-                } catch(IOException ex) {
-                    KeenLogging.log("Failed to update event POST attempts counts while sending queued " +
-                        "events. Events will still be POSTed. Exception: " + ex);
+                    events.add(getEvent(handle));
                 }
             }
 
@@ -1522,6 +1525,24 @@ public class KeenClient {
                 "properly and is inactive"));
     }
 
+    /**
+     * Get an event object from the eventStore.
+     *
+     * @param handle the handle object
+     * @return the event object for handle
+     * @throws IOException
+     */
+    private Map<String, Object> getEvent(Object handle) throws IOException {
+        // Get the event from the store.
+        String jsonEvent = eventStore.get(handle);
+
+        // De-serialize the event from its JSON.
+        StringReader reader = new StringReader(jsonEvent);
+        Map<String, Object> event = jsonHandler.readJson(reader);
+        KeenUtils.closeQuietly(reader);
+        return event;
+    }
+    
     /**
      * Gets the map of attempt counts from the eventStore
      *
