@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-public class FileEventStoreTest extends EventStoreTestBase {
+public class FileEventStoreTest extends AttemptCountingEventStoreTestBase {
 
     private static final File TEST_STORE_ROOT = new File("test_store_root");
 
