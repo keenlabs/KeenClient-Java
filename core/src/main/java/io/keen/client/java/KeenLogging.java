@@ -45,6 +45,14 @@ public class KeenLogging {
     public static void disableLogging() {
         setLogLevel(Level.OFF);
     }
+    
+    /**
+     * Disable the default log handler installed by the Keen Client to allow 
+     * log management by standard j.u.l mechanisms.
+     */
+    public static void disableDefaultLogHandler(){
+    	LOGGER.removeHandler(HANDLER);	//returns silently if given handler is null or not found
+    }
 
     /**
      * Whether or not logging is enabled.
