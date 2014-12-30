@@ -259,7 +259,7 @@ public class FileEventStore implements KeenAttemptCountingEventStore {
     private File[] getFilesInDir(File dir) {
         return dir.listFiles(new FileFilter() {
             public boolean accept(File file) {
-                return file.isFile();
+                return file.isFile() && !file.getName().equals(ATTEMPTS_JSON_FILE_NAME);
             }
         });
     }
