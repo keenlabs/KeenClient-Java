@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.0.3'
+    compile 'io.keen:keen-client-api-java:2.1.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.0.3@aar'
+    compile 'io.keen:keen-client-api-android:2.1.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.0.3</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -364,6 +364,12 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 2.1.0
+
++ In Android SDK, check for network connectivity before attempting to POST.
++ Limit the number of times a failed event will be retried.
++ Updated version of KeenCallback with more information included.
 
 ##### 2.0.3
 
