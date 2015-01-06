@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -139,7 +140,8 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null, project, eventCollection, event, keenProperties,
+            		new IllegalStateException("No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -151,9 +153,9 @@ public class KeenClient {
 
             // Publish the event.
             publish(useProject, eventCollection, newEvent);
-            handleSuccess(callback);
+            handleSuccess(callback, project, eventCollection, event, keenProperties);
         } catch (Exception e) {
-            handleFailure(callback, e);
+            handleFailure(callback, project, eventCollection, event, keenProperties, e);
         }
     }
 
@@ -201,7 +203,7 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
             return;
         }
         final KeenProject useProject = (project == null ? defaultProject : project);
@@ -216,7 +218,7 @@ public class KeenClient {
                 }
             });
         } catch (Exception e) {
-            handleFailure(callback, e);
+            handleFailure(callback, project, eventCollection, event, keenProperties, e);
         }
     }
 
@@ -263,7 +265,7 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -279,11 +281,24 @@ public class KeenClient {
             String jsonEvent = writer.toString();
             KeenUtils.closeQuietly(writer);
 
-            // Save the JSON event out to the event store.
-            eventStore.store(useProject.getProjectId(), eventCollection, jsonEvent);
-            handleSuccess(callback);
+            try {
+                // Save the JSON event out to the event store.
+                Object handle = eventStore.store(useProject.getProjectId(), eventCollection, jsonEvent);
+
+                if (eventStore instanceof KeenAttemptCountingEventStore) {
+                    synchronized (attemptsLock) {
+                        Map<String, Integer> attempts = getAttemptsMap(useProject.getProjectId(), eventCollection);
+                        attempts.put("" + handle.hashCode(), maxAttempts);
+                        setAttemptsMap(useProject.getProjectId(), eventCollection, attempts);
+                    }
+                }
+            } catch(IOException ex) {
+                KeenLogging.log("Failed to set the event POST attempt count. The event was still " +
+                        "queued and will we POSTed.");
+            }
+            handleSuccess(callback, project, eventCollection, event, keenProperties);
         } catch (Exception e) {
-            handleFailure(callback, e);
+            handleFailure(callback, project, eventCollection, event, keenProperties, e);
         }
     }
 
@@ -325,12 +340,20 @@ public class KeenClient {
             handleFailure(null, new IllegalStateException("No project specified, but no default project found"));
             return;
         }
+
+        if (!isNetworkConnected()) {
+            KeenLogging.log("Not sending events because there is no network connection. " +
+                            "Events will be retried next time `sendQueuedEvents` is called.");
+            handleFailure(callback, new Exception("Network not connected."));
+            return;
+        }
+
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
             String projectId = useProject.getProjectId();
             Map<String, List<Object>> eventHandles = eventStore.getHandles(projectId);
-            Map<String, List<Map<String, Object>>> events = buildEventMap(eventHandles);
+            Map<String, List<Map<String, Object>>> events = buildEventMap(projectId, eventHandles);
             String response = publishAll(useProject, events);
             if (response != null) {
                 try {
@@ -468,6 +491,24 @@ public class KeenClient {
         } else {
             this.baseUrl = baseUrl;
         }
+    }
+
+    /**
+     * Sets the maximum number of HTTPS POST retry attempts for all events added in the future.
+     *
+     * @param maxAttempts the maximum number attempts
+     */
+    public void setMaxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
+    /**
+     * Sets the maximum number of HTTPS POST retry attempts for all events added in the future.
+     *
+     * @return the maximum number attempts
+     */
+    public int getMaxAttempts() {
+        return maxAttempts;
     }
 
     /**
@@ -637,6 +678,7 @@ public class KeenClient {
         private KeenJsonHandler jsonHandler;
         private KeenEventStore eventStore;
         private Executor publishExecutor;
+        private KeenNetworkStatusHandler networkStatusHandler;
 
         /**
          * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
@@ -816,6 +858,49 @@ public class KeenClient {
         }
 
         /**
+         * Gets the default {@link KeenNetworkStatusHandler} to use if none is explicitly set for this builder.
+         *
+         * This implementation always returns true.
+         *
+         * Subclasses should override this to provide an alternative default {@link KeenNetworkStatusHandler}.
+         *
+         * @return The default {@link KeenNetworkStatusHandler}.
+         */
+        protected KeenNetworkStatusHandler getDefaultNetworkStatusHandler() {
+            return new AlwaysConnectedNetworkStatusHandler();
+        }
+
+        /**
+         * Gets the {@link KeenNetworkStatusHandler} that this builder is currently configured to use.
+         * If null, a default will be used instead.
+         *
+         * @return The {@link KeenNetworkStatusHandler} to use.
+         */
+        public KeenNetworkStatusHandler getNetworkStatusHandler () {
+            return networkStatusHandler;
+        }
+
+        /**
+         * Sets the {@link KeenNetworkStatusHandler} to use.
+         *
+         * @param networkStatusHandler The {@link KeenNetworkStatusHandler} to use.
+         */
+        public void setNetworkStatusHandler(KeenNetworkStatusHandler networkStatusHandler) {
+            this.networkStatusHandler = networkStatusHandler;
+        }
+
+        /**
+         * Sets the {@link KeenNetworkStatusHandler} to use.
+         *
+         * @param networkStatusHandler The {@link KeenNetworkStatusHandler} to use.
+         * @return This instance (for method chaining).
+         */
+        public Builder withNetworkStatusHandler(KeenNetworkStatusHandler networkStatusHandler) {
+            setNetworkStatusHandler(networkStatusHandler);
+            return this;
+        }
+
+        /**
          * Builds a new Keen client using the interfaces which have been specified explicitly on
          * this builder instance via the set* or with* methods, or the default interfaces if none
          * have been specified.
@@ -853,6 +938,14 @@ public class KeenClient {
                 }
             } catch (Exception e) {
                 KeenLogging.log("Exception building publish executor: " + e.getMessage());
+            }
+
+            try {
+                if (networkStatusHandler == null) {
+                    networkStatusHandler = getDefaultNetworkStatusHandler();
+                }
+            } catch (Exception e) {
+                KeenLogging.log("Exception building network status handler: " + e.getMessage());
             }
 
             return buildInstance();
@@ -897,6 +990,7 @@ public class KeenClient {
         this.jsonHandler = builder.jsonHandler;
         this.eventStore = builder.eventStore;
         this.publishExecutor = builder.publishExecutor;
+        this.networkStatusHandler = builder.networkStatusHandler;
 
         // If any of the interfaces are null, mark this client as inactive.
         if (httpHandler == null || jsonHandler == null ||
@@ -1006,9 +1100,12 @@ public class KeenClient {
     private final KeenJsonHandler jsonHandler;
     private final KeenEventStore eventStore;
     private final Executor publishExecutor;
+    private final KeenNetworkStatusHandler networkStatusHandler;
+    private final Object attemptsLock = new Object();
 
     private boolean isActive = true;
     private boolean isDebugMode;
+    private int maxAttempts = KeenConstants.DEFAULT_MAX_ATTEMPTS;
     private KeenProject defaultProject;
     private String baseUrl;
     private GlobalPropertiesEvaluator globalPropertiesEvaluator;
@@ -1108,7 +1205,7 @@ public class KeenClient {
      * @return A map from collection name to a list of event maps.
      * @throws IOException If there is an error retrieving events from the store.
      */
-    private Map<String, List<Map<String, Object>>> buildEventMap(
+    private Map<String, List<Map<String, Object>>> buildEventMap(String projectId,
             Map<String, List<Object>> eventHandles) throws IOException {
         Map<String, List<Map<String, Object>>> result =
                 new HashMap<String, List<Map<String, Object>>>();
@@ -1123,16 +1220,61 @@ public class KeenClient {
 
             // Build the event list by retrieving events from the store.
             List<Map<String, Object>> events = new ArrayList<Map<String, Object>>(handles.size());
-            for (Object handle : handles) {
-                // Get the event from the store.
-                String jsonEvent = eventStore.get(handle);
 
-                // De-serialize the event from its JSON.
-                StringReader reader = new StringReader(jsonEvent);
-                Map<String, Object> event = jsonHandler.readJson(reader);
-                KeenUtils.closeQuietly(reader);
-                events.add(event);
+            Map<String, Integer> attempts;
+            if (eventStore instanceof KeenAttemptCountingEventStore) {
+                synchronized (attemptsLock) {
+                    try {
+                        attempts = getAttemptsMap(projectId, eventCollection);
+                    } catch (IOException ex) {
+                        // setting this to a fresh map will effectively declare this the "last attempt" for
+                        // these events.
+                        attempts = new HashMap<String, Integer>();
+                        KeenLogging.log("Failed to read attempt counts map. Events will still be POSTed. " +
+                                "Exception: " + ex);
+                    }
+
+                    for (Object handle : handles) {
+                        Map<String, Object> event = getEvent(handle);
+
+                        String attemptsKey = "" + handle.hashCode();
+                        Integer remainingAttempts = attempts.get(attemptsKey);
+                        if (remainingAttempts == null) {
+                            // treat null as "this is the last attempt"
+                            remainingAttempts = 1;
+                        }
+
+                        // decrement the remaining attempts count and put the new value on the map
+                        remainingAttempts--;
+                        attempts.put(attemptsKey, remainingAttempts);
+
+                        if (remainingAttempts >= 0) {
+                            // if we had some remaining attempts, then try again
+                            events.add(event);
+                        } else {
+                            // otherwise remove it from the store
+                            eventStore.remove(handle);
+
+                            // iff eventStore.remove succeeds we can do some housekeeping and remove the
+                            // key from the attempts hash.
+                            attempts.remove(attemptsKey);
+                        }
+                    }
+
+                    try {
+                        setAttemptsMap(projectId, eventCollection, attempts);
+                    } catch(IOException ex) {
+                        KeenLogging.log("Failed to update event POST attempts counts while sending queued " +
+                                "events. Events will still be POSTed. Exception: " + ex);
+                    }
+                }
+            } else {
+                for (Object handle : handles) {
+                    events.add(getEvent(handle));
+                }
             }
+
+
             result.put(eventCollection, events);
         }
         return result;
@@ -1236,6 +1378,15 @@ public class KeenClient {
         }
     }
 
+    /**
+     * Returns the status of the network connection
+     *
+     * @return true if there is network connection
+     */
+    private boolean isNetworkConnected() {
+        return networkStatusHandler.isNetworkConnected();
+    }
+
     ///// PRIVATE CONSTANTS /////
     private static final String ENCODING = "UTF-8";
 
@@ -1329,6 +1480,34 @@ public class KeenClient {
     }
 
     /**
+     * Reports success to a callback. If the callback is null, this is a no-op. Any exceptions
+     * thrown by the callback are silently ignored.
+     *
+     * @param callback A callback; may be null.
+     * @param project         The project in which the event was published. If a default project has been set
+     *                        on the client, this parameter may be null, in which case the default project
+     *                        was used.
+     * @param eventCollection The name of the collection in which the event was published
+     * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
+     *                        docs). Nested Maps and lists are acceptable (and encouraged!).
+     * @param keenProperties  A Map that consists of key/value pairs to override default properties.
+     *                        ex: "timestamp" -> Calendar.getInstance()
+     */
+    private void handleSuccess(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
+			Map<String, Object> keenProperties) {
+    	handleSuccess(callback);
+        if (callback != null) {
+            try {
+                if(callback instanceof KeenDetailedCallback){
+                	((KeenDetailedCallback)callback).onSuccess(project, eventCollection, event, keenProperties);
+                }
+            } catch (Exception userException) {
+                // Do nothing.
+            }
+        }
+    }
+
+    /**
      * Handles a failure in the Keen library. If the client is running in debug mode, this will
      * immediately throw a runtime exception. Otherwise, this will log an error message and, if the
      * callback is non-null, call the {@link KeenCallback#onFailure(Exception)} method. Any
@@ -1355,6 +1534,47 @@ public class KeenClient {
             }
         }
     }
+    
+    /**
+     * Handles a failure in the Keen library. If the client is running in debug mode, this will
+     * immediately throw a runtime exception. Otherwise, this will log an error message and, if the
+     * callback is non-null, call the {@link KeenCallback#onFailure(Exception)} method. Any
+     * exceptions thrown by the callback are silently ignored.
+     *
+     * @param callback A callback; may be null.
+     * @param project         The project in which the event was published. If a default project has been set
+     *                        on the client, this parameter may be null, in which case the default project
+     *                        was used.
+     * @param eventCollection The name of the collection in which the event was published
+     * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
+     *                        docs). Nested Maps and lists are acceptable (and encouraged!).
+     * @param keenProperties  A Map that consists of key/value pairs to override default properties.
+     *                        ex: "timestamp" -> Calendar.getInstance()
+     * @param e        The exception which caused the failure.
+     */
+    private void handleFailure(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
+    			Map<String, Object> keenProperties, Exception e) {
+        if (isDebugMode) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } else {
+        	handleFailure(callback, e);
+        	
+            KeenLogging.log("Encountered error: " + e.getMessage());
+            if (callback != null) {
+                try {
+                    if(callback instanceof KeenDetailedCallback){
+                    	((KeenDetailedCallback)callback).onFailure(project, eventCollection, event, keenProperties, e);
+                    }
+                } catch (Exception userException) {
+                    // Do nothing.
+                }
+            }
+        }
+    }
 
     /**
      * Reports failure when the library is inactive due to failed initialization.
@@ -1367,4 +1587,71 @@ public class KeenClient {
                 "properly and is inactive"));
     }
 
+    /**
+     * Get an event object from the eventStore.
+     *
+     * @param handle the handle object
+     * @return the event object for handle
+     * @throws IOException
+     */
+    private Map<String, Object> getEvent(Object handle) throws IOException {
+        // Get the event from the store.
+        String jsonEvent = eventStore.get(handle);
+
+        // De-serialize the event from its JSON.
+        StringReader reader = new StringReader(jsonEvent);
+        Map<String, Object> event = jsonHandler.readJson(reader);
+        KeenUtils.closeQuietly(reader);
+        return event;
+    }
+    
+    /**
+     * Gets the map of attempt counts from the eventStore
+     *
+     * @param projectId the project id
+     * @param eventCollection the collection name
+     * @return a Map of event hashCodes to attempt counts
+     * @throws IOException
+     */
+    private Map<String, Integer> getAttemptsMap(String projectId, String eventCollection) throws IOException {
+        Map<String, Integer> attempts = new HashMap<String, Integer>();
+        if (eventStore instanceof KeenAttemptCountingEventStore) {
+            KeenAttemptCountingEventStore res = (KeenAttemptCountingEventStore)eventStore;
+            String attemptsJSON = res.getAttempts(projectId, eventCollection);
+            if (attemptsJSON != null) {
+                StringReader reader = new StringReader(attemptsJSON);
+                Map<String, Object> attemptTmp = jsonHandler.readJson(reader);
+                for (Entry<String, Object> entry : attemptTmp.entrySet()) {
+                    if (entry.getValue() instanceof Number) {
+                        attempts.put(entry.getKey(), ((Number)entry.getValue()).intValue());
+                    }
+                }
+            }
+        }
+
+        return attempts;
+    }
+
+    /**
+     * Set the attempts Map in the eventStore
+     *
+     * @param projectId the project id
+     * @param eventCollection the collection name
+     * @param attempts the current attempts Map
+     * @throws IOException
+     */
+    private void setAttemptsMap(String projectId, String eventCollection, Map<String, Integer> attempts) throws IOException {
+        if (eventStore instanceof KeenAttemptCountingEventStore) {
+            KeenAttemptCountingEventStore res = (KeenAttemptCountingEventStore)eventStore;
+            StringWriter writer = null;
+            try {
+                writer = new StringWriter();
+                jsonHandler.writeJson(writer, attempts);
+                String attemptsJSON = writer.toString();
+                res.setAttempts(projectId, eventCollection, attemptsJSON);
+            } finally {
+                KeenUtils.closeQuietly(writer);
+            }
+        }
+    }
 }
