@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.1.0'
+    compile 'io.keen:keen-client-api-java:2.1.1'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.1.0@aar'
+    compile 'io.keen:keen-client-api-android:2.1.1@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.1.0</version>
+  <version>2.1.1</version>
 </dependency>
 ```
 
@@ -379,6 +379,10 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 2.1.1
+
++ Fixed bug that caused extra/corrupted events to be sent.
 
 ##### 2.1.0
 
