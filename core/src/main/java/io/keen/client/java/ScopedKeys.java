@@ -21,9 +21,23 @@ import io.keen.client.java.exceptions.ScopedKeyException;
  * <p/>
  * <pre>
  *     String apiKey = "YOUR_API_KEY_HERE";
+ *
+ *     //Filters to apply to the key
+ *     Map<String, String> filter = new HashMap<String, String>();
+ *     List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
+ *
+ *     //Create and add a filter
+ *     filter.put("property_name", "user_id");
+ *     filter.put("operator", "eq");
+ *     filter.put("property_value", "123");
+ *
+ *     filters.add(filter);
+ *
  *     // create the options we'll use
  *     Map<String, Object> options = new HashMap<String, Object>();
  *     options.put("allowed_operations", Arrays.asList("write"));
+ *     options.put("filters", filters);
+ *
  *     // do the encryption
  *     String scopedKey = ScopedKeys.encrypt(apiKey, options);
  * </pre>

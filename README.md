@@ -244,14 +244,24 @@ By default the library assumes that your events are "fire and forget", that is, 
 
 ### Generate a Scoped Key for Keen IO
 
-Here's a simple method to generate a Scoped Write Key:
+Here's a simple example of generating a Scoped Write Key:
 
 ```java
-    public String getScopedWriteKey(String apiKey) throws ScopedKeyException {
+    String masterApiKey = "YOUR_KEY_HERE"
+        Map<String, String> filter = new HashMap<String, String>();
+        List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
         Map<String, Object> options = new HashMap<String, Object>();
+
+        filter.put("property_name", "user_id");
+        filter.put("operator", "eq");
+        filter.put("property_value", "123");
+
+        filters.add(filter);
+
         options.put("allowed_operations", Arrays.asList("write"));
-        return ScopedKeys.encrypt(apiKey, options);
-    }
+        options.put("filters", filters);
+
+        ScopedKeys.encrypt(masterApiKey, options);
 ```
 
 ### Publish Executor Lifecycle Management
