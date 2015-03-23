@@ -248,20 +248,20 @@ Here's a simple example of generating a Scoped Write Key:
 
 ```java
     String masterApiKey = "YOUR_KEY_HERE"
-        Map<String, String> filter = new HashMap<String, String>();
-        List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
-        Map<String, Object> options = new HashMap<String, Object>();
+    Map<String, String> filter = new HashMap<String, String>();
+    List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
+    Map<String, Object> options = new HashMap<String, Object>();
 
-        filter.put("property_name", "user_id");
-        filter.put("operator", "eq");
-        filter.put("property_value", "123");
+    filter.put("property_name", "user_id");
+    filter.put("operator", "eq");
+    filter.put("property_value", "123");
 
-        filters.add(filter);
+    filters.add(filter);
 
-        options.put("allowed_operations", Arrays.asList("write"));
-        options.put("filters", filters);
+    options.put("allowed_operations", Arrays.asList("write"));
+    options.put("filters", filters);
 
-        ScopedKeys.encrypt(masterApiKey, options);
+    ScopedKeys.encrypt(masterApiKey, options);
 ```
 
 ### Publish Executor Lifecycle Management
