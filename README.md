@@ -248,7 +248,7 @@ Here's a simple example of generating a Scoped Write Key:
 
 ```java
     String masterApiKey = "YOUR_KEY_HERE"
-    Map<String, String> filter = new HashMap<String, String>();
+    Map<String, Object> filter = new HashMap<String, Object>();
     List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
     Map<String, Object> options = new HashMap<String, Object>();
 

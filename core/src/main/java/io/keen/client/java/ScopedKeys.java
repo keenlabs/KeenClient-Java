@@ -23,7 +23,7 @@ import io.keen.client.java.exceptions.ScopedKeyException;
  *     String apiKey = "YOUR_API_KEY_HERE";
  *
  *     //Filters to apply to the key
- *     Map<String, String> filter = new HashMap<String, String>();
+ *     Map<String, Object> filter = new HashMap<String, Object>();
  *     List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
  *
  *     //Create and add a filter
