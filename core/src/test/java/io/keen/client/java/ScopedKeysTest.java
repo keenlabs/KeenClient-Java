@@ -45,6 +45,33 @@ public class ScopedKeysTest {
         assertEquals(options, decryptedOptions);
     }
 
+    /**
+     * Test the sample code that is used in the documentation.
+     */
+    @Test
+    public void testSampleCode() {
+        String apiKey = "YOUR_API_KEY_HERE";
+
+             //Filters to apply to the key
+             Map<String, Object> filter = new HashMap<String, Object>();
+             List<Map<String, Object>> filters = new ArrayList<Map<String, Object>>();
+
+             //Create and add a filter
+             filter.put("property_name", "user_id");
+             filter.put("operator", "eq");
+             filter.put("property_value", "123");
+
+             filters.add(filter);
+
+             // create the options we'll use
+             Map<String, Object> options = new HashMap<String, Object>();
+             options.put("allowed_operations", Arrays.asList("write"));
+             options.put("filters", filters);
+
+             // do the encryption
+             String scopedKey = ScopedKeys.encrypt(apiKey, options);
+    }
+
     private Map<String, Object> getFilter(String propertyName, String operator, Object propertyValue) {
         Map<String, Object> filter = new HashMap<String, Object>();
         filter.put("property_name", propertyName);
