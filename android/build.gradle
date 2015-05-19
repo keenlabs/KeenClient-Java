@@ -5,15 +5,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.2'
+        classpath 'com.android.tools.build:gradle:1.2.3'
         classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.12.0'
-        classpath 'org.robolectric:robolectric-gradle-plugin:0.12.0'
+        classpath 'org.robolectric:robolectric-gradle-plugin:1.1.0'
     }
 }
 
 apply plugin: 'android-sdk-manager'
 apply plugin: 'com.android.library'
-apply plugin: 'robolectric'
+apply plugin: 'org.robolectric'
 
 android {
     compileSdkVersion 19
@@ -24,12 +24,6 @@ android {
         targetSdkVersion 19
         versionCode = VERSION_CODE
         versionName = VERSION_NAME
-        applicationId "io.keen"
-    }
-
-    sourceSets {
-        main.setRoot('src/main')
-        androidTest.setRoot('src/test')
     }
 
     lintOptions {
@@ -51,7 +45,9 @@ android.libraryVariants.all { variant ->
         into(variant.javaCompile.destinationDir)
     }
     copyTask.dependsOn variant.javaCompile
-    variant.packageLibrary.dependsOn copyTask
+    variant.outputs.each { output ->
+        output.packageLibrary.dependsOn copyTask
+    }
 
     // Also define a task to create a raw JAR to support non-AAR users.
     def rawJarTask = project.tasks.create(name: "rawAndroidJar${name.capitalize()}", type: Jar) {
