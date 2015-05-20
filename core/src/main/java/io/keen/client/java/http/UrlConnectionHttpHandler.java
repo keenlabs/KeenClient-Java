@@ -81,6 +81,8 @@ public class UrlConnectionHttpHandler implements HttpHandler {
      * Reads a {@link Response} from an existing connection. This method should only be
      * called on a connection for which the entire request has been sent.
      *
+     * @param connection The connection that sent the response.
+     * @return The {@link Response}
      * @throws IOException If there is an error reading the response from the connection.
      */
     protected Response readResponse(HttpURLConnection connection) throws IOException {

@@ -16,10 +16,11 @@ import io.keen.client.java.exceptions.ScopedKeyException;
 /**
  * ScopedKeys is a utility class for dealing with Keen IO Scoped Keys. You'll probably only ever need the
  * encrypt method. However, for completeness, there's also a decrypt method.
- * <p/>
+ * <p>
  * Example usage:
- * <p/>
+ * </p>
  * <pre>
+ *     {@code
  *     String apiKey = "YOUR_API_KEY_HERE";
  *
  *     //Filters to apply to the key
@@ -40,6 +41,7 @@ import io.keen.client.java.exceptions.ScopedKeyException;
  *
  *     // do the encryption
  *     String scopedKey = ScopedKeys.encrypt(apiKey, options);
+ *     }
  * </pre>
  *
  * @author dkador
@@ -57,7 +59,7 @@ public class ScopedKeys {
      * @param apiKey  Your Keen IO API Key.
      * @param options The options you want to encrypt.
      * @return A Keen IO Scoped Key.
-     * @throws ScopedKeyException
+     * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
     public static String encrypt(String apiKey, Map<String, Object> options)
             throws ScopedKeyException {
@@ -71,7 +73,7 @@ public class ScopedKeys {
      * @param apiKey  Your Keen IO API Key.
      * @param options The options you want to encrypt.
      * @return A Keen IO Scoped Key.
-     * @throws ScopedKeyException
+     * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
     public static String encrypt(KeenClient client, String apiKey, Map<String, Object> options)
         throws ScopedKeyException {
@@ -115,7 +117,7 @@ public class ScopedKeys {
      * @param apiKey    Your Keen IO API Key.
      * @param scopedKey The Scoped Key you want to decrypt.
      * @return The decrypted Scoped Key Options.
-     * @throws ScopedKeyException
+     * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.
      */
     public static Map<String, Object> decrypt(String apiKey, String scopedKey)
             throws ScopedKeyException {
@@ -129,7 +131,7 @@ public class ScopedKeys {
      * @param apiKey    Your Keen IO API Key.
      * @param scopedKey The Scoped Key you want to decrypt.
      * @return The decrypted Scoped Key Options.
-     * @throws ScopedKeyException
+     * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.
      */
     public static Map<String, Object> decrypt(KeenClient client, String apiKey, String scopedKey)
         throws ScopedKeyException {
