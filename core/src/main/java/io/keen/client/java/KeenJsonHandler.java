@@ -26,13 +26,13 @@ public interface KeenJsonHandler {
      * Integers, Booleans, etc.), Maps, or Iterables.
      *
      * @param reader The {@link java.io.Reader} from which to read the JSON data.
-     * @return The object which was read, held in a {@code Map&lt;String, Object&gt;}.
+     * @return The object which was read, held in a {@code Map<String, Object>}.
      * @throws IOException If there is an error reading from the input.
      */
     Map<String, Object> readJson(Reader reader) throws IOException;
 
     /**
-     * Writes the given object (in the form of a {@code Map&lt;String, Object&gt;} to the specified
+     * Writes the given object (in the form of a {@code Map<String, Object>} to the specified
      * {@link java.io.Writer}.
      *
      * @param writer The {@link java.io.Writer} to which the JSON data should be written.

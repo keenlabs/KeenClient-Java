@@ -118,7 +118,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
     public void addEvent(String eventCollection, Map<String, Object> event,
                          Map<String, Object> keenProperties) {
@@ -136,7 +136,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param callback        An optional callback to receive notification of success or failure.
      */
     public void addEvent(KeenProject project, String eventCollection, Map<String, Object> event,
@@ -187,7 +187,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
     public void addEventAsync(String eventCollection, Map<String, Object> event,
                               final Map<String, Object> keenProperties) {
@@ -205,7 +205,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param callback        An optional callback to receive notification of success or failure.
      */
     public void addEventAsync(final KeenProject project, final String eventCollection,
@@ -258,7 +258,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
     public void queueEvent(String eventCollection, Map<String, Object> event,
                            Map<String, Object> keenProperties) {
@@ -277,7 +277,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param callback        An optional callback to receive notification of success or failure.
      */
     public void queueEvent(KeenProject project, String eventCollection, Map<String, Object> event,
@@ -1524,7 +1524,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
     private void handleSuccess(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
 			Map<String, Object> keenProperties) {
@@ -1582,7 +1582,7 @@ public class KeenClient {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -&lt; Calendar.getInstance()
+     *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param e        The exception which caused the failure.
      */
     private void handleFailure(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,

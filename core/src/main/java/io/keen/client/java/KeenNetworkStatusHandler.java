@@ -11,7 +11,7 @@ public interface KeenNetworkStatusHandler {
     /**
      * Reports on whether there is a network connection
      *
-     * @return The object which was read, held in a {@code Map&lt;String, Object&gt;}.
+     * @return The object which was read, held in a {@code Map<String, Object>}.
      */
     public boolean isNetworkConnected();
 
