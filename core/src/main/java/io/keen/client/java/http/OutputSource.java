@@ -17,7 +17,7 @@ public interface OutputSource {
     /**
      * Writes data to the given {@link java.io.OutputStream}. This method is used to send the body
      * of an HTTP request.
-     * <p/>
+     * <p>
      * Implementers of this method should NOT close {@code out}; the calling code will ensure
      * that it is closed.
      *

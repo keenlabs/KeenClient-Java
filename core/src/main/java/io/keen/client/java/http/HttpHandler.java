@@ -13,9 +13,10 @@ public interface HttpHandler {
     /**
      * Executes the given request and returns the received response.
      *
-     * @param request
+     * @param request   The {@link Request} to send.
      * @throws java.io.IOException If there is an error executing the request or processing the
      * response.
+     * @return The {@link Response} received.
      */
     Response execute(Request request) throws IOException;
 
