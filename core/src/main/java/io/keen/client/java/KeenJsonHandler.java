@@ -9,11 +9,11 @@ import java.util.Map;
  * Interface for abstracting the tasks of converting an input {@link java.io.Reader} into an
  * in-memory object (in the form of a {@code Map&lt;String, Object&gt;}), and for writing that
  * object back out to a {@link java.io.Writer}.
- * <p/>
+ * <p>
  * This interface allows the Keen library to be configured to use different JSON implementations
  * in different environments, depending upon requirements for speed versus size (or other
  * considerations).
- *
+ * </p>
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */

@@ -25,7 +25,7 @@ public interface KeenDetailedCallback extends KeenCallback {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -> Calendar.getInstance()
+     *                        ex: "timestamp" -&lt; Calendar.getInstance()
      */
     public void onSuccess(KeenProject project, String eventCollection, Map<String, Object> event,
             Map<String, Object> keenProperties);
@@ -40,7 +40,7 @@ public interface KeenDetailedCallback extends KeenCallback {
      * @param event           A Map that consists of key/value pairs. Keen naming conventions apply (see
      *                        docs). Nested Maps and lists are acceptable (and encouraged!).
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
-     *                        ex: "timestamp" -> Calendar.getInstance()
+     *                        ex: "timestamp" -&lt; Calendar.getInstance()
      * @param e An exception indicating the cause of the failure.
      */
     public void onFailure(KeenProject project, String eventCollection, Map<String, Object> event,
