@@ -11,11 +11,11 @@ import java.util.Map;
 /**
  * Implementation of {@link KeenEventStore} which simply keeps a copy of each event in memory until
  * it is explicitly removed.
- * <p/>
+ * <p>
  * NOTE: This implementation synchronizes all operations in order to ensure thread safety, but as
  * a result it may perform poorly under high load. For applications that require high throughput,
  * a custom {@link io.keen.client.java.KeenEventStore} implementation is recommended.
- *
+ * </p>
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
