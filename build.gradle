@@ -1,7 +1,7 @@
 // Common build instructions & instructions for the root project.
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.12'
+    gradleVersion = '2.3'
 }
 
 allprojects {
