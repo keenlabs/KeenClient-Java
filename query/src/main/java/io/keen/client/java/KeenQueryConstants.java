@@ -52,4 +52,13 @@ public class KeenQueryConstants {
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
 
+    // Funnel property names
+    static final String STEPS = "steps";
+    static final String ACTOR_PROPERTY = "actor_property";
+
+    // return
+    static final String RESULT = "result";
+    static final String ERROR_CODE = "error_code";
+    static final String MESSAGE = "message";
+
 }
