@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -13,18 +12,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-
-import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
