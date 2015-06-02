@@ -1,3 +1,4 @@
 include 'core'
 include 'java'
 include 'android'
+include 'query'
