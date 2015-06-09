@@ -41,7 +41,7 @@ public class KeenQueryConstants {
 
     // filter operators
     static final String EQUAL_TO = "eq";
-    static final String NOT_EQUSL = "ne";
+    static final String NOT_EQUAL = "ne";
     static final String LESS_THAN = "lt";
     static final String LESS_THAN_EQUAL = "lte";
     static final String GREATER_THAN = "gt";
@@ -60,5 +60,10 @@ public class KeenQueryConstants {
     static final String RESULT = "result";
     static final String ERROR_CODE = "error_code";
     static final String MESSAGE = "message";
+
+    // absolute timeframe
+    static final String START = "start";
+    static final String END = "end";
+
 
 }

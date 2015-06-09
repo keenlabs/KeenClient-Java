@@ -13,19 +13,21 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.keen.client.java.exceptions.KeenQueryClientException;
+import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.instanceOf;
 
 import io.keen.client.java.KeenQueryParams.QueryParamBuilder;
 
@@ -79,62 +81,25 @@ public class KeenQueryTest {
 
         KeenQueryClient queryClientTest = new TestKeenQueryClientBuilder(queryProject).build();
 
-//            List<Map<String, Object>> listSteps = new ArrayList<Map<String, Object>>();
-//            Map<String, Object> steps = new HashMap<String, Object>();
-//            steps.put("actor_property", "click-count");
-//            steps.put("event_collection", TEST_EVENT_COLLECTION);
-//
-//            listSteps.add(steps);
-//
-//            Map<String, Object> result = queryClientTest.funnel(listSteps);
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withMaxAge(300)
+                .build();
 
-//            queryClientTest.extraction(TEST_EVENT_COLLECTION, "clairez@gmail.com");
-//            assertNotNull(result.get("result"));
-
-        List<Map<String, Object>> listSteps = new ArrayList<Map<String, Object>>();
-        Map<String, Object> steps = new HashMap<String, Object>();
-        steps.put(KeenQueryConstants.ACTOR_PROPERTY, "click-count");
-        steps.put(KeenQueryConstants.EVENT_COLLECTION, TEST_EVENT_COLLECTION);
-
-        listSteps.add(steps);
-
-//        Map<String, Object> result = queryClientTest.funnel(listSteps);
-
-
+//        Object result = queryClientTest.count(queryParams);
 
     }
 
 
-    // todo: remove this production test.
-//    @Test
-//    public void testRealQuery2() throws KeenException {
-//        KeenProject queryProject = new KeenProject("555190333bc696371aaaebb0", "<write key>", "eee2b89b5dab28bb4a66dcb7d676387959b2c518f884c287edf40fd048335db7b9b7e0d9eb6572e9152a9f3d96f0e413398310ad97dc9433c3a9a3298944f942d5b85f989b36087db42795539ac321e84ca53592c2c99d45bfba64417070a037e9e765c1e8594c62f1f75b6ea794afa0");
-//
-//        KeenQueryClient queryClientTest = new TestKeenQueryClientBuilder(queryProject).build();
-//        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
-//                .withEventCollection("android-sample-button-clicks")
-//                .build();
-//        queryParams.addFilter("click-number", KeenQueryConstants.LESS_THAN, "5");
-//        queryParams.addFilter("click-number", KeenQueryConstants.GREATER_THAN, "1");
-//
-//        try {
-//            Map<String, Object> result = queryClientTest.count(queryParams);
-//            assertNotNull(result.get("result"));
-//        } catch (IOException e) {
-//
-//        }
-//
-//    }
-
-
-    // TEST BASIC REQUIRED PARAMETERS
+    // TEST BASIC REQUIRED PARAMETERSf
     @Test
     public void testCount()  throws Exception {
         setMockResponse(200, "{\"result\": 21}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.count(TEST_EVENT_COLLECTION);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.count(TEST_EVENT_COLLECTION);
+
+        assertThat(result, instanceOf(Integer.class));
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -145,16 +110,13 @@ public class KeenQueryTest {
         String requestString = outputStream.toString(ENCODING);
         assertEquals(requestString, "{\"" + KeenQueryConstants.EVENT_COLLECTION + "\":\"" + TEST_EVENT_COLLECTION + "\"}");
 
-//        "{event_collection : android-test-...}"
-
     }
     @Test
     public void testCountUniqueQuery()  throws Exception {
         setMockResponse(200, "{\"result\": 9}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -167,11 +129,10 @@ public class KeenQueryTest {
     }
     @Test
     public void testMinimum()  throws Exception {
-        setMockResponse(201, "{\"result\": 0}");
+        setMockResponse(200, "{\"result\": 0}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -184,10 +145,9 @@ public class KeenQueryTest {
     }
     @Test
     public void testMaximum()  throws Exception {
-        setMockResponse(201, "{\"result\": 8}");
+        setMockResponse(200, "{\"result\": 8}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -201,10 +161,9 @@ public class KeenQueryTest {
 
     @Test
     public void testAverage()  throws Exception {
-        setMockResponse(201, "{\"result\": 3.0952380952380953}");
+        setMockResponse(200, "{\"result\": 3.0952380952380953}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -219,10 +178,9 @@ public class KeenQueryTest {
 
     @Test
     public void testMedian()  throws Exception {
-        setMockResponse(201, "{\"result\": 3}");
+        setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -233,13 +191,13 @@ public class KeenQueryTest {
         String resultString = outputStream.toString(ENCODING);
         assertEquals(resultString, TEST_REQ_EVENT_COLLECITON_AND_TARGET_PROP);
     }
+
     @Test
     public void testPercentile()  throws Exception {
-        setMockResponse(201, "{\"result\": 3}");
+        setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         // todo: fix this
-        Map<String, Object> result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, "50");
-        assertNotNull(result.get("result"));
+        Object result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, 50.0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -248,14 +206,13 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, "{\""+KeenQueryConstants.TARGET_PROPERTY+"\":\""+TEST_TARGET_PROPERTY+"\",\"percentile\":\"50\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        assertEquals(resultString, "{\""+KeenQueryConstants.TARGET_PROPERTY+"\":\""+TEST_TARGET_PROPERTY+"\",\"percentile\":50.0,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
     @Test
     public void testSum()  throws Exception {
-        setMockResponse(201, "{\"result\": 65}");
+        setMockResponse(200, "{\"result\": 65}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -269,10 +226,9 @@ public class KeenQueryTest {
     }
     @Test
     public void testSelectUnique()  throws Exception {
-        setMockResponse(201, "{\"result\": [0, 1, 2, 3, 4, 5, 6, 7, 8]}");
+        setMockResponse(200, "{\"result\": [0, 1, 2, 3, 4, 5, 6, 7, 8]}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.selectUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.selectUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -287,11 +243,10 @@ public class KeenQueryTest {
 
     @Test
     public void testExtraction()  throws Exception {
-        setMockResponse(201, "{\"result\":[{\"keen\": {\"timestamp\": \"2015-05-12T05:55:55.833Z\", \"created_at\": \"2015-05-12T05:56:49.502Z\", \"id\": \"555196212fd4b12ed0fe00a6\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-12T05:55:57.669Z\", \"created_at\": \"2015-05-12T05:56:49.502Z\", \"id\": \"555196212fd4b12ed0fe00a7\"}, \"click-number\": 1}, {\"keen\": {\"timestamp\": \"2015-05-12T05:57:54.837Z\", \"created_at\": \"2015-05-12T05:58:56.026Z\", \"id\": \"555196a02fd4b12ee6d51030\"}, \"click-number\": 2}, {\"keen\": {\"timestamp\": \"2015-05-12T05:58:30.022Z\", \"created_at\": \"2015-05-12T05:58:56.027Z\", \"id\": \"555196a02fd4b12ee6d51031\"}, \"click-number\": 3}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:09.249Z\", \"created_at\": \"2015-05-12T05:59:31.575Z\", \"id\": \"555196c32fd4b12ec02d3560\"}, \"click-number\": 4}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:11.741Z\", \"created_at\": \"2015-05-12T05:59:31.575Z\", \"id\": \"555196c32fd4b12ec02d3561\"}, \"click-number\": 5}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:12.379Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3562\"}, \"click-number\": 6}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:12.942Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3563\"}, \"click-number\": 7}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:13.533Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3564\"}, \"click-number\": 8}, {\"keen\": {\"timestamp\": \"2015-05-12T22:22:39.964Z\", \"created_at\": \"2015-05-13T21:48:04.499Z\", \"id\": \"5553c694c2266c32a3bab9ae\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-13T21:47:17.520Z\", \"created_at\": \"2015-05-13T21:48:04.499Z\", \"id\": \"5553c694c2266c32a3bab9af\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:22.496Z\", \"created_at\": \"2015-05-14T05:15:10.940Z\", \"id\": \"55542f5ec2266c32526aaf81\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:25.883Z\", \"created_at\": \"2015-05-14T05:15:10.940Z\", \"id\": \"55542f5ec2266c32526aaf82\"}, \"click-number\": 1}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:43.388Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf83\"}, \"click-number\": 2}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:44.087Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf84\"}, \"click-number\": 3}, {\"keen\": {\"timestamp\": \"2015-05-14T03:32:12.947Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf85\"}, \"click-number\": 4}, {\"keen\": {\"timestamp\": \"2015-05-14T03:32:44.058Z\", \"created_at\": \"2015-05-14T05:15:10.942Z\", \"id\": \"55542f5ec2266c32526aaf86\"}, \"click-number\": 5}, {\"keen\": {\"timestamp\": \"2015-05-14T03:33:05.368Z\", \"created_at\": \"2015-05-14T05:15:10.942Z\", \"id\": \"55542f5ec2266c32526aaf87\"}, \"click-number\": 6}, {\"keen\": {\"timestamp\": \"2015-05-14T03:33:15.033Z\", \"created_at\": \"2015-05-14T05:15:10.943Z\", \"id\": \"55542f5ec2266c32526aaf88\"}, \"click-number\": 7}, {\"keen\": {\"timestamp\": \"2015-05-15T18:01:00.773Z\", \"created_at\": \"2015-05-15T18:01:11.498Z\", \"id\": \"555634672fd4b12ed06db81f\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-15T18:01:52.746Z\", \"created_at\": \"2015-05-15T18:02:09.143Z\", \"id\": \"555634a12fd4b12ebabfcaf8\"}, \"click-number\": 1}]}");
+        setMockResponse(200, "{\"result\":[{\"keen\": {\"timestamp\": \"2015-05-12T05:55:55.833Z\", \"created_at\": \"2015-05-12T05:56:49.502Z\", \"id\": \"555196212fd4b12ed0fe00a6\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-12T05:55:57.669Z\", \"created_at\": \"2015-05-12T05:56:49.502Z\", \"id\": \"555196212fd4b12ed0fe00a7\"}, \"click-number\": 1}, {\"keen\": {\"timestamp\": \"2015-05-12T05:57:54.837Z\", \"created_at\": \"2015-05-12T05:58:56.026Z\", \"id\": \"555196a02fd4b12ee6d51030\"}, \"click-number\": 2}, {\"keen\": {\"timestamp\": \"2015-05-12T05:58:30.022Z\", \"created_at\": \"2015-05-12T05:58:56.027Z\", \"id\": \"555196a02fd4b12ee6d51031\"}, \"click-number\": 3}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:09.249Z\", \"created_at\": \"2015-05-12T05:59:31.575Z\", \"id\": \"555196c32fd4b12ec02d3560\"}, \"click-number\": 4}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:11.741Z\", \"created_at\": \"2015-05-12T05:59:31.575Z\", \"id\": \"555196c32fd4b12ec02d3561\"}, \"click-number\": 5}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:12.379Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3562\"}, \"click-number\": 6}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:12.942Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3563\"}, \"click-number\": 7}, {\"keen\": {\"timestamp\": \"2015-05-12T05:59:13.533Z\", \"created_at\": \"2015-05-12T05:59:31.576Z\", \"id\": \"555196c32fd4b12ec02d3564\"}, \"click-number\": 8}, {\"keen\": {\"timestamp\": \"2015-05-12T22:22:39.964Z\", \"created_at\": \"2015-05-13T21:48:04.499Z\", \"id\": \"5553c694c2266c32a3bab9ae\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-13T21:47:17.520Z\", \"created_at\": \"2015-05-13T21:48:04.499Z\", \"id\": \"5553c694c2266c32a3bab9af\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:22.496Z\", \"created_at\": \"2015-05-14T05:15:10.940Z\", \"id\": \"55542f5ec2266c32526aaf81\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:25.883Z\", \"created_at\": \"2015-05-14T05:15:10.940Z\", \"id\": \"55542f5ec2266c32526aaf82\"}, \"click-number\": 1}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:43.388Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf83\"}, \"click-number\": 2}, {\"keen\": {\"timestamp\": \"2015-05-14T03:31:44.087Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf84\"}, \"click-number\": 3}, {\"keen\": {\"timestamp\": \"2015-05-14T03:32:12.947Z\", \"created_at\": \"2015-05-14T05:15:10.941Z\", \"id\": \"55542f5ec2266c32526aaf85\"}, \"click-number\": 4}, {\"keen\": {\"timestamp\": \"2015-05-14T03:32:44.058Z\", \"created_at\": \"2015-05-14T05:15:10.942Z\", \"id\": \"55542f5ec2266c32526aaf86\"}, \"click-number\": 5}, {\"keen\": {\"timestamp\": \"2015-05-14T03:33:05.368Z\", \"created_at\": \"2015-05-14T05:15:10.942Z\", \"id\": \"55542f5ec2266c32526aaf87\"}, \"click-number\": 6}, {\"keen\": {\"timestamp\": \"2015-05-14T03:33:15.033Z\", \"created_at\": \"2015-05-14T05:15:10.943Z\", \"id\": \"55542f5ec2266c32526aaf88\"}, \"click-number\": 7}, {\"keen\": {\"timestamp\": \"2015-05-15T18:01:00.773Z\", \"created_at\": \"2015-05-15T18:01:11.498Z\", \"id\": \"555634672fd4b12ed06db81f\"}, \"click-number\": 0}, {\"keen\": {\"timestamp\": \"2015-05-15T18:01:52.746Z\", \"created_at\": \"2015-05-15T18:02:09.143Z\", \"id\": \"555634a12fd4b12ebabfcaf8\"}, \"click-number\": 1}]}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.extraction(TEST_EVENT_COLLECTION);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.extraction(TEST_EVENT_COLLECTION);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -325,7 +280,7 @@ public class KeenQueryTest {
     }
     @Test
     public void testFunnel() throws Exception {
-        setMockResponse(201, "{\"steps\": [{\"with_actors\": false, \"actor_property\": \"click-count\", \"filters\": [], \"timeframe\": null, \"timezone\": null, \"event_collection\": \"android-sample-button-clicks\", \"optional\": false, \"inverted\": false}], \"result\": [1]}");
+        setMockResponse(200, "{\"steps\": [{\"with_actors\": false, \"actor_property\": \"click-count\", \"filters\": [], \"timeframe\": null, \"timezone\": null, \"event_collection\": \"android-sample-button-clicks\", \"optional\": false, \"inverted\": false}], \"result\": [1]}");
         List<Map<String, Object>> listSteps = new ArrayList<Map<String, Object>>();
 
         Map<String, Object> steps = new HashMap<String, Object>();
@@ -335,8 +290,7 @@ public class KeenQueryTest {
         listSteps.add(steps);
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Map<String, Object> result = queryClient.funnel(listSteps);
-        assertNotNull(result.get("result"));
+        Object result = queryClient.funnel(listSteps);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -344,63 +298,160 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
+        String requestString = outputStream.toString(ENCODING);
 
-        assertEquals(resultString, "{\""+KeenQueryConstants.STEPS+"\":[{\""+KeenQueryConstants.ACTOR_PROPERTY+"\":\"click-count\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}]}");
+        assertEquals(requestString, "{\""+KeenQueryConstants.STEPS+"\":[{\""+KeenQueryConstants.ACTOR_PROPERTY+"\":\"click-count\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}]}");
+    }
 
-
+    // Test Server error
+    @Test(expected = ServerException.class)
+    public void testAddEventServerFailure() throws Exception {
+        setMockResponse(500, "Injected server error");
+        queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
     }
 
     // TEST OPTIONAL PARAMETERS
     // TODO: much more work
     @Test
     public void testFilterValid()  throws Exception {
-        setMockResponse(201, "{\"result\": 6}");
+        setMockResponse(200, "{\"result\": 6}");
         try {
             KeenQueryParams queryParams = new QueryParamBuilder()
                     .withEventCollection(TEST_EVENT_COLLECTION)
                     .build();
 
-//            KeenQueryParams extraParams = new KeenQueryParams();
-            // TODO: this should be numeric
-            // TODO: maybe overload these functions to accept an Object
-            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, "5");
-            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.GREATER_THAN, "1");
+            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, 5);
+            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.GREATER_THAN, 1);
 
-            Map<String, Object> result = queryClient.count(queryParams);
-            assertNotNull(result.get("result"));
+            Object result = queryClient.count(queryParams);
         } catch (IOException e) {
         }
     }
 
+    @Test(expected=KeenQueryClientException.class)
+    public void testFilterInvalid1()  throws Exception {
+
+        // in reality this would be a 400 error - just testing if no "result" in 200 response.
+        setMockResponse(200, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .build();
+        queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, 5);
+        queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.WITHIN, "INVALID");
+
+        Object result = queryClient.count(queryParams);
+    }
+
+    @Test(expected=ServerException.class)
+    public void testFilterInvalid2() throws Exception {
+        setMockResponse(400, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .build();
+        queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, 5);
+        queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.WITHIN, "INVALID");
+
+        Object result = queryClient.count(queryParams);
+    }
+
     @Test
-    public void testFilterInvalidGeo()  throws Exception {
-        setMockResponse(201, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
-        try {
-            KeenQueryParams queryParams = new QueryParamBuilder()
-                    .withEventCollection(TEST_EVENT_COLLECTION)
-                    .build();
-            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, "5");
-            queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.WITHIN, "INVALID");
+    public void testAbsoluteTimeframe() throws Exception  {
+        setMockResponse(200, "{\"result\": 44}");
 
-            ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        String startTime = "2012-08-13T19:00:00.000Z";
+        String endTime = "2015-06-07T19:00:00.000Z";
 
-            Map<String, Object> result = queryClient.count(queryParams);
+        Map<String, Object> absoluteTimeframe = new HashMap<String, Object>();
+        absoluteTimeframe.put(KeenQueryConstants.START, startTime);
+        absoluteTimeframe.put(KeenQueryConstants.END, endTime);
 
-            verify(mockHttpHandler).execute(capturedRequest.capture());
-            Request request = capturedRequest.getValue();
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withAbsoluteTimeframe(absoluteTimeframe)
+                .build();
 
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            request.body.writeTo(outputStream);
-            String resultString = outputStream.toString(ENCODING);
+        String requestString = mockCaptureCountQueryRequest(queryParams);
 
-            assertEquals(resultString, "{\"filters\":[{\"property_value\":\"5\",\"property_name\":\"click-number\",\"operator\":\"lt\"},{\"property_value\":\"INVALID\",\"property_name\":\"click-number\",\"operator\":\"within\"}],\"event_collection\":\"android-sample-button-clicks\"}");
+        assertEquals( requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":{\""+KeenQueryConstants.START+"\":\""+startTime+"\",\""+KeenQueryConstants.END+"\":\""+endTime+"\"},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
 
-            assertNull(result.get("result"));
-            assertNotNull(result.get("message"));
-            assertNotNull(result.get("error_code"));
-        } catch (IOException e) {
-        }
+    @Test
+    public void testRelativeTimeframe() throws Exception {
+        setMockResponse(200, "{\"result\": 2}");
+
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withRelativeTimeframe("this_month")
+                .build();
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        assertEquals( requestString,  "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
+    // interval requires timeframe.
+    @Test
+    public void testInterval() throws Exception {
+        setMockResponse(200, "{\"result\": [{\"value\": 2, \"timeframe\": {\"start\": \"2015-06-01T00:00:00.000Z\", \"end\": \"2015-06-07T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-07T00:00:00.000Z\", \"end\": \"2015-06-14T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-14T00:00:00.000Z\", \"end\": \"2015-06-21T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-21T00:00:00.000Z\", \"end\": \"2015-06-28T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-28T00:00:00.000Z\", \"end\": \"2015-07-01T00:00:00.000Z\"}}]}");
+
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withInterval("weekly")
+                .withRelativeTimeframe("this_month")
+                .build();
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        assertEquals( requestString, "{\""+KeenQueryConstants.INTERVAL+"\":\"weekly\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
+    @Test
+    public void testTimezone() throws Exception {
+        setMockResponse(200, "{\"result\": 2}");
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withRelativeTimeframe("this_month")
+                .withTimezone("UTC")
+                .build();
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        assertEquals( requestString, "{\"timezone\":\"UTC\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
+    @Test
+    public void testGroupBy() throws Exception {
+        setMockResponse(200, "{\"result\": [{\"result\": 10, \"click-number\": 0}, {\"result\": 7, \"click-number\": 1}, {\"result\": 6, \"click-number\": 2}, {\"result\": 5, \"click-number\": 3}, {\"result\": 4, \"click-number\": 4}, {\"result\": 4, \"click-number\": 5}, {\"result\": 3, \"click-number\": 6}, {\"result\": 2, \"click-number\": 7}, {\"result\": 1, \"click-number\": 8}, {\"result\": 2, \"click-number\": null}]}");
+
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withGroupBy("click-number")
+                .build();
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        assertEquals( requestString, "{\"group_by\":\"click-number\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
+    @Test
+    public void testMaxAge() throws Exception {
+        setMockResponse(200, "{\"result\": 44}");
+
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withMaxAge(300)
+                .build();
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        assertEquals( requestString, "{\"max_age\":300,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
+    private String mockCaptureCountQueryRequest(KeenQueryParams inputParams) throws Exception {
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        Object result = queryClient.count(inputParams);
+
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        Request request = capturedRequest.getValue();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        request.body.writeTo(outputStream);
+        return outputStream.toString(ENCODING);
     }
 
     private void setMockResponse(int statusCode, String body) throws IOException {
