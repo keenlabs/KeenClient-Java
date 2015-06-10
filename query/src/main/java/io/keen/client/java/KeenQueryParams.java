@@ -20,7 +20,7 @@ public class KeenQueryParams {
     private List<Map<String, Object>> filters;
     private String relativeTimeframe;
     private Map<String, Object> absoluteTimeframe;  // absolute timeframe with "start" and "end" keys
-    private String interval;
+    private String interval;    // requires timeframe to be set
     private String timezone;
     private String groupBy;
     private Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
@@ -33,7 +33,7 @@ public class KeenQueryParams {
     private String email;
 
 
-    private Map<String, Object> multiAnalysis;      // required for Multi-Analysis
+    private Map<String, Object> analyses;      // required for Multi-Analysis
     private List<Map<String, Object>> funnelSteps;  // required for funnel
 
     /**
@@ -92,8 +92,8 @@ public class KeenQueryParams {
         if (null != absoluteTimeframe && absoluteTimeframe.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
         }
-        if (null != multiAnalysis && multiAnalysis.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.ANALYSES, multiAnalysis);
+        if (null != analyses && analyses.isEmpty() == false) {
+            queryArgs.put(KeenQueryConstants.ANALYSES, analyses);
         }
         if (null != funnelSteps && funnelSteps.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.STEPS, funnelSteps);
@@ -152,7 +152,8 @@ public class KeenQueryParams {
             return false;
         }
 
-        if (queryName.contentEquals(KeenQueryConstants.COUNT_RESOURCE) || queryName.contentEquals(KeenQueryConstants.EXTRACTION_RESOURCE)) {
+        if (queryName.contentEquals(KeenQueryConstants.COUNT_RESOURCE) || queryName.contentEquals(KeenQueryConstants.EXTRACTION_RESOURCE)
+                || queryName.contentEquals(KeenQueryConstants.MULTI_ANALYSIS)) {
             if (eventCollection.isEmpty()) {
                 return false;
             }
@@ -163,16 +164,26 @@ public class KeenQueryParams {
                 || queryName.contentEquals(KeenQueryConstants.AVERAGE_RESOURCE) || queryName.contentEquals(KeenQueryConstants.MEDIAN_RESOURCE)
                 || queryName.contentEquals(KeenQueryConstants.PERCENTILE_RESOURCE) || queryName.contentEquals(KeenQueryConstants.SUM_RESOURCE)
                 || queryName.contentEquals(KeenQueryConstants.SELECT_UNIQUE_RESOURCE)) {
-            if (eventCollection.isEmpty()) {
-                return false;
-            }
-            if (targetProperty.isEmpty()) {
+
+            if (eventCollection.isEmpty() || targetProperty.isEmpty()) {
                 return false;
             }
         }
 
         if (queryName.contentEquals(KeenQueryConstants.PERCENTILE_RESOURCE)) {
             if (percentile == null) {
+                return false;
+            }
+        }
+
+        if (queryName.contentEquals(KeenQueryConstants.FUNNEL)) {
+            if (funnelSteps == null || funnelSteps.isEmpty()) {
+                return false;
+            }
+        }
+
+        if (queryName.contentEquals(KeenQueryConstants.MULTI_ANALYSIS)) {
+            if (analyses == null || analyses.isEmpty()) {
                 return false;
             }
         }
@@ -198,7 +209,7 @@ public class KeenQueryParams {
         this.email = builder.email;
         this.absoluteTimeframe = builder.absoluteTimeframe;
         this.funnelSteps = builder.funnelSteps;
-        this.multiAnalysis = builder.multiAnalysis;
+        this.analyses = builder.analyses;
     }
 
     public static class QueryParamBuilder {
@@ -220,13 +231,13 @@ public class KeenQueryParams {
         private Integer latest;
         private String email;
 
-        private Map<String, Object> multiAnalysis;      // required for Multi-Analysis
+        private Map<String, Object> analyses;      // required for Multi-Analysis
         private List<Map<String, Object>> funnelSteps;  // required for funnel
 
-        public Map<String, Object> setMultiAnalysis() {return multiAnalysis;}
-        public void setMultiAnalysis(Map<String, Object> multiAnalysis) {this.multiAnalysis = multiAnalysis;}
-        public QueryParamBuilder withMultiAnalysis(Map<String, Object> multiAnalysis) {
-            setMultiAnalysis(multiAnalysis);
+        public Map<String, Object> getAnalyses() {return analyses;}
+        public void setAnalyses(Map<String, Object> analyses) {this.analyses = analyses;}
+        public QueryParamBuilder withAnalyses(Map<String, Object> analyses) {
+            setAnalyses(analyses);
             return this;
         }
 

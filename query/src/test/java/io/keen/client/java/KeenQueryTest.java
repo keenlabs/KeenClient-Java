@@ -340,7 +340,6 @@ public class KeenQueryTest {
     }
 
     // TEST OPTIONAL PARAMETERS
-    // TODO: much more work
     @Test
     public void testFilterValid()  throws Exception {
         setMockResponse(200, "{\"result\": 6}");

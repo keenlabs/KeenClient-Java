@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.List;
 
-import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
 import io.keen.client.java.exceptions.ServerException;
@@ -105,16 +104,12 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Integer count(String eventCollection) throws IOException, KeenQueryClientException {
+    public Integer count(String eventCollection) throws IOException {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .build();
         Object result = count(queryParams);
-        if (result instanceof Integer) {
-            return (Integer)result;
-        } else {
-            throw new KeenQueryClientException("Count Query Error: expected Integer response type.");
-        }
+        return objectToInteger(result);
     }
 
     /**
@@ -126,7 +121,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object count(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object count(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.COUNT_RESOURCE, queryParams);
         return result;
     }
@@ -141,17 +136,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Integer countUnique(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
+    public Integer countUnique(String eventCollection, String targetProperty) throws IOException {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
         Object result = countUnique(queryParams);
-        if (result instanceof Integer) {
-            return (Integer)result;
-        } else {
-            throw new KeenQueryClientException("Count Unique Query Error: expected Integer response type.");
-        }
+        return objectToInteger(result);
     }
 
     /**
@@ -163,7 +154,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object countUnique(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object countUnique(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.COUNT_UNIQUE, queryParams);
         return result;
     }
@@ -178,19 +169,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double minimum(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
+    public Double minimum(String eventCollection, String targetProperty) throws IOException {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
         Object result =  minimum(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Minimum Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -202,7 +187,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object minimum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object minimum(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.MINIMUM_RESOURCE, queryParams);
         return result;
     }
@@ -223,13 +208,7 @@ public class KeenQueryClient {
                 .withTargetProperty(targetProperty)
                 .build();
         Object result = maximum(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Maximum Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -241,7 +220,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object maximum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object maximum(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.MAXIMUM_RESOURCE, queryParams);
         return result;
     }
@@ -262,13 +241,7 @@ public class KeenQueryClient {
                 .withTargetProperty(targetProperty)
                 .build();
         Object result = average(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Average Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -280,7 +253,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object average(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object average(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.AVERAGE_RESOURCE, queryParams);
         return result;
     }
@@ -301,13 +274,7 @@ public class KeenQueryClient {
                 .withTargetProperty(targetProperty)
                 .build();
         Object result =  median(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Median Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -319,7 +286,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object median(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object median(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.MEDIAN_RESOURCE, queryParams);
         return result;
     }
@@ -342,13 +309,7 @@ public class KeenQueryClient {
                 .withPercentile(percentile)
                 .build();
         Object result =  percentile(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Percentile Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -360,7 +321,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object percentile(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object percentile(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.PERCENTILE_RESOURCE, queryParams);
         return result;
     }
@@ -381,13 +342,7 @@ public class KeenQueryClient {
                 .withTargetProperty(targetProperty)
                 .build();
         Object result =  sum(queryParams);
-        if (result instanceof Double) {
-            return (Double)result;
-        } else if (result instanceof Integer) {
-            return ((Integer)result).doubleValue();
-        } else {
-            throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
-        }
+        return objectToDouble(result);
     }
 
     /**
@@ -399,7 +354,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object sum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+    public Object sum(KeenQueryParams queryParams) throws IOException {
         Object result = runQuery(KeenQueryConstants.SUM_RESOURCE, queryParams);
         return result;
     }
@@ -510,9 +465,6 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Object funnel(List<Map<String, Object>> steps) throws IOException {
-        if ( steps == null || steps.isEmpty()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Funnel Query requires \"steps\" argument to be non-empty.");
-        }
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -542,13 +494,13 @@ public class KeenQueryClient {
         return result;
     }
 
-    // TODO: it would be nice to add a addAnalysisParameter() method to make adding analyses more user-friendly.
+    // TODO: it would be nice to add an addAnalysisParameter() method to make adding analyses more user-friendly.
     /**
      * Multi-analysis query with all required steps.
      * Query API info here: https://keen.io/docs/data-analysis/multi-analysis/
      *
      * @param eventCollection     The event collection.
-     * @param analysis     The analysis, in the following JSON form:
+     * @param analyses     The analysis, in the following JSON form:
      *  {@code
      *      { "<label>" : {
      *                  "analysis_type":"<analysis_name>",
@@ -561,10 +513,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object multiAnalysis(String eventCollection, Map<String, Object> analysis) throws IOException {
-        if ( analysis == null || analysis.isEmpty()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Multi-analysis Query requires \"analysis\" argument to be non-empty.");
-        }
+    public Object multiAnalysis(String eventCollection, Map<String, Object> analyses) throws IOException {
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -576,7 +525,7 @@ public class KeenQueryClient {
         // JSON arg with multi-analysis
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
-                .withMultiAnalysis(analysis)
+                .withAnalyses(analyses)
                 .build();
         Map<String, Object> analysisArg = new HashMap<String, Object>();
 
@@ -705,6 +654,24 @@ public class KeenQueryClient {
 
 
         return result;
+    }
+
+    private Integer objectToInteger(Object object) throws KeenQueryClientException {
+        if (object instanceof Integer) {
+            return (Integer)object;
+        } else {
+            throw new KeenQueryClientException("Count Query Error: expected Integer response type.");
+        }
+    }
+
+    private Double objectToDouble(Object object) throws KeenQueryClientException {
+        if (object instanceof Double) {
+            return (Double)object;
+        } else if (object instanceof Integer) {
+            return ((Integer)object).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
+        }
     }
 
     /**
