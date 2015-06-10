@@ -66,20 +66,20 @@ Object result = queryClient.funnel(listSteps);
 Multi-Analysis:
 ```java
 // create analyses object
-Map<String, Object> analysis = new HashMap<String, Object>();
+Map<String, Object> analyses = new HashMap<String, Object>();
 
 // add a first set for Count Query.
 Map<String, String> firstSet = new HashMap<String, String>();
 firstSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.COUNT_RESOURCE);
-analysis.put("count set", firstSet);
+analyses.put("count set", firstSet);
 
 // add a second set for Sum Resource Query.
 Map<String, String> secondSet = new HashMap<String, String>();
 secondSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.SUM_RESOURCE);
 secondSet.put(KeenQueryConstants.TARGET_PROPERTY, "click-count");
-analysis.put("sum set", secondSet);
+analyses.put("sum set", secondSet);
 
-Object result = queryClient.multiAnalysis("<event collection>", analysis);
+Object result = queryClient.multiAnalysis("<event collection>", analyses);
 
 ```
 
