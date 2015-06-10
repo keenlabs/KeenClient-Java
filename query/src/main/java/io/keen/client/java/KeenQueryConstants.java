@@ -17,6 +17,7 @@ public class KeenQueryConstants {
     static final String SELECT_UNIQUE_RESOURCE = "select_unique";
     static final String EXTRACTION_RESOURCE = "extraction";
     static final String FUNNEL = "funnel";
+    static final String MULTI_ANALYSIS = "multi_analysis";
 
     // TODO: funnel, multi-analysis, wardrobe
 
@@ -30,7 +31,7 @@ public class KeenQueryConstants {
     static final String GROUP_BY = "group_by";
     static final String MAX_AGE = "max_age";
     static final String PERCENTILE = "percentile";
-    static final String ANALYSIS = "analysis";
+    static final String ANALYSES = "analyses";
     static final String EMAIL = "email";
     static final String LATEST = "latest";
 
@@ -41,7 +42,7 @@ public class KeenQueryConstants {
 
     // filter operators
     static final String EQUAL_TO = "eq";
-    static final String NOT_EQUSL = "ne";
+    static final String NOT_EQUAL = "ne";
     static final String LESS_THAN = "lt";
     static final String LESS_THAN_EQUAL = "lte";
     static final String GREATER_THAN = "gt";
@@ -60,5 +61,13 @@ public class KeenQueryConstants {
     static final String RESULT = "result";
     static final String ERROR_CODE = "error_code";
     static final String MESSAGE = "message";
+
+    // absolute timeframe
+    static final String START = "start";
+    static final String END = "end";
+
+    // multi-analysis
+    static final String ANALYSIS_TYPE = "analysis_type";
+
 
 }

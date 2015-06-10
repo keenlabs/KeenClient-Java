@@ -1,6 +1,5 @@
 package io.keen.client.java;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -15,11 +14,13 @@ import java.util.List;
 import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
+import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
+
 
 public class KeenQueryClient {
 
@@ -27,24 +28,7 @@ public class KeenQueryClient {
     private KeenJsonHandler jsonHandler;
     private String baseUrl;
     private KeenProject project;
-//    private KeenQueryParams queryParams;
     private HttpHandler httpHandler;
-
-    // Constructors are replaced with Builder.
-//    public KeenQueryClient() {
-//
-//        // we make an executive decision to use Jackson
-//        this(new JacksonJsonHandler());
-//    }
-//
-//    public KeenQueryClient(KeenJsonHandler jsonHandler) {
-//        this.jsonHandler = jsonHandler;
-//        baseUrl = KeenConstants.SERVER_ADDRESS;
-//        queryParams = new KeenQueryParams();
-//        project = null;
-//        httpHandler = new UrlConnectionHttpHandler();
-//        // how about project/read/write keys?
-//    }
 
 
     // TODO: talk to Kevin about allowing this option:
@@ -73,6 +57,7 @@ public class KeenQueryClient {
     /**
      * Gets the default project that this {@link KeenClient} should use if no project is specified.
      *
+     * @return The {@link KeenProject}.
      */
     public KeenProject getProject() {
         return this.project;
@@ -112,187 +97,518 @@ public class KeenQueryClient {
     }
 
     /**
-     * Sets optional  {@link KeenQueryParams} to use for query.
+     * Count Resource query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#count-resource
      *
-     * @param params The {@link KeenQueryParams} to use for query.
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
      */
-//    public void setQueryParams(KeenQueryParams params) {
-//        this.queryParams = params;
-//    }
-
+    public Integer count(String eventCollection) throws IOException, KeenQueryClientException {
+        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+                .withEventCollection(eventCollection)
+                .build();
+        Object result = count(queryParams);
+        if (result instanceof Integer) {
+            return (Integer)result;
+        } else {
+            throw new KeenQueryClientException("Count Query Error: expected Integer response type.");
+        }
+    }
 
     /**
-     * Gets the optional  {@link KeenQueryParams} to use for query.
+     * Count Unique query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#count-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
      */
-//    public KeenQueryParams getQueryParams() {
-//        return this.queryParams;
-//    }
+    public Object count(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.COUNT_RESOURCE, queryParams);
+        return result;
+    }
 
     /**
-     * Clears the optional  {@link KeenQueryParams} to use for query.
+     * Count Unique query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#count-unique-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
      */
-//    public void clearQueryParams() {
-//        this.queryParams = new KeenQueryParams();
-//    }
-
-    public Map<String, Object> count(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.COUNT_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> count(String eventCollection) throws IOException, KeenQueryClientException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
-                .withEventCollection(eventCollection)
-                .build();
-        Map<String, Object> result = count(queryParams);
-        return result;
-    }
-
-    public Map<String, Object> countUnique(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
+    public Integer countUnique(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result = countUnique(queryParams);
+        Object result = countUnique(queryParams);
+        if (result instanceof Integer) {
+            return (Integer)result;
+        } else {
+            throw new KeenQueryClientException("Count Unique Query Error: expected Integer response type.");
+        }
+    }
+
+    /**
+     * Count Unique query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#count-unique-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object countUnique(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.COUNT_UNIQUE, queryParams);
         return result;
     }
 
-    public Map<String, Object> countUnique(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.COUNT_UNIQUE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> minimum(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
+    /**
+     * Minimum query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#minimum-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double minimum(String eventCollection, String targetProperty) throws IOException, KeenQueryClientException {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result =  minimum(queryParams);
+        Object result =  minimum(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Minimum Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Minimum query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#minimum-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object minimum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.MINIMUM_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> minimum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.MINIMUM_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> maximum(String eventCollection, String targetProperty) throws IOException  {
+    /**
+     * Maximum query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#maximum-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double maximum(String eventCollection, String targetProperty) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result = maximum(queryParams);
+        Object result = maximum(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Maximum Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Maximum query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#maximum-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object maximum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.MAXIMUM_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> maximum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.MAXIMUM_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> average(String eventCollection, String targetProperty) throws IOException  {
+    /**
+     * Average query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#average-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double average(String eventCollection, String targetProperty) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result = average(queryParams);
+        Object result = average(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Average Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Average query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#average-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object average(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.AVERAGE_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> average(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.AVERAGE_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> median(String eventCollection, String targetProperty) throws IOException  {
+    /**
+     * Median query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#median-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double median(String eventCollection, String targetProperty) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result =  median(queryParams);
+        Object result =  median(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Median Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Median query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#median-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object median(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.MEDIAN_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> median(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.MEDIAN_RESOURCE, queryParams);
-        return result;
-    }
-
-    // TODO: change to double
-    public Map<String, Object> percentile(String eventCollection, String targetProperty, String percentile) throws IOException  {
+    /**
+     * Percentile query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#percentile-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @param percentile     The percentile.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double percentile(String eventCollection, String targetProperty, Double percentile) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .withPercentile(percentile)
                 .build();
-        Map<String, Object> result =  percentile(queryParams);
+        Object result =  percentile(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Percentile Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Percentile query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#percentile-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object percentile(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.PERCENTILE_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> percentile(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.PERCENTILE_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> sum(String eventCollection, String targetProperty) throws IOException  {
+    /**
+     * Sum Resource query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#sum-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Double sum(String eventCollection, String targetProperty) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result =  sum(queryParams);
+        Object result =  sum(queryParams);
+        if (result instanceof Double) {
+            return (Double)result;
+        } else if (result instanceof Integer) {
+            return ((Integer)result).doubleValue();
+        } else {
+            throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
+        }
+    }
+
+    /**
+     * Sum Resource query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#sum-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object sum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
+        Object result = runQuery(KeenQueryConstants.SUM_RESOURCE, queryParams);
         return result;
     }
 
-    public Map<String, Object> sum(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.SUM_RESOURCE, queryParams);
-        return result;
-    }
-
-    public Map<String, Object> selectUnique(String eventCollection, String targetProperty) throws IOException  {
+    /**
+     * Select Unique Resource query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#select-unique-resource
+     *
+     * @param eventCollection     The name of the event collection you are analyzing.
+     * @param targetProperty     The name of the property you are analyzing.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object selectUnique(String eventCollection, String targetProperty) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Map<String, Object> result = selectUnique(queryParams);
+        Object result = selectUnique(queryParams);
         return result;
     }
 
-    public Map<String, Object> selectUnique(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.SELECT_UNIQUE_RESOURCE, queryParams);
+    /**
+     * Select Unique Resource query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#select-unique-resource
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object selectUnique(KeenQueryParams queryParams) throws IOException {
+        Object result = runQuery(KeenQueryConstants.SELECT_UNIQUE_RESOURCE, queryParams);
         return result;
     }
 
-    // with email - no return value
-    public void extraction(String eventCollection, String email) throws IOException  {
+    /**
+     * Extraction query with just the required argument - the event collection, and an email address.
+     * Query API info here: https://keen.io/docs/data-analysis/extractions/
+     *
+     * @param eventCollection     The Event Collection.
+     * @param email     The email to send query results to.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */    public void extraction(String eventCollection, String email) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .withEmail(email)
                 .build();
-        Map<String, Object> result = extraction(queryParams);
+        Object result = extraction(queryParams);
         // possibly exception if something went wrong, but no return value because email is sent
     }
 
-    // without email - return value
-    public Map<String, Object> extraction(String eventCollection) throws IOException  {
+    /**
+     * Extraction query with just the required argument - the event collection.
+     * Query API info here: https://keen.io/docs/data-analysis/extractions/
+     *
+     * @param eventCollection     The Event Collection.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object extraction(String eventCollection) throws IOException  {
         KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
                 .withEventCollection(eventCollection)
                 .build();
-        Map<String, Object> result = extraction(queryParams);
+        Object result = extraction(queryParams);
         return result;
     }
 
-    public Map<String, Object> extraction(KeenQueryParams queryParams) throws IOException, KeenQueryClientException {
-        Map<String, Object> result = runQuery(KeenQueryConstants.EXTRACTION_RESOURCE, queryParams);
+    /**
+     * Extraction query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/data-analysis/extractions/
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object extraction(KeenQueryParams queryParams) throws IOException {
+        Object result = runQuery(KeenQueryConstants.EXTRACTION_RESOURCE, queryParams);
         return result;
     }
 
-    // TODO: return result map. If error (aka, no "result" key), throw exception.
-    // TODO: non-200 response code
 
-    public Map<String, Object> runQuery(String queryName, KeenQueryParams params) throws IOException, KeenException {
+    // TODO: would be nice to add a addStepForFunnel() method
+    /**
+     * Funnel query with all required steps.
+     * Query API info here: https://keen.io/docs/api/reference/#funnel-resource
+     *
+     * @param steps     The steps, containing a JSON array of filters specifying
+     *                  keys "property_name", "operator", and "property_value":
+     *                  {@code
+     *                  [
+     *                      {
+     *                       "event_collection":"view_landing_page",
+     *                       "actor_property":"user.id"
+     *                       },
+     *                       {
+     *                       "event_collection":"sign_up",
+     *                       "actor_property":"user.id"
+     *                       }
+     *                  ]
+     *                  }
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object funnel(List<Map<String, Object>> steps) throws IOException {
+        if ( steps == null || steps.isEmpty()) {
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Funnel Query requires \"steps\" argument to be non-empty.");
+        }
+
+        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
+                baseUrl,
+                KeenConstants.API_VERSION,
+                project.getProjectId(),
+                KeenQueryConstants.FUNNEL       // query name
+        );
+        // funnel args
+        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+                .withFunnelSteps(steps)
+                .build();
+
+        return funnel(queryParams);
+    }
+
+    /**
+     * Funnel query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/data-analysis/funnels/
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object funnel(KeenQueryParams queryParams) throws IOException {
+        Object result = runQuery(KeenQueryConstants.FUNNEL, queryParams);
+        return result;
+    }
+
+    // TODO: it would be nice to add a addAnalysisParameter() method to make adding analyses more user-friendly.
+    /**
+     * Multi-analysis query with all required steps.
+     * Query API info here: https://keen.io/docs/data-analysis/multi-analysis/
+     *
+     * @param eventCollection     The event collection.
+     * @param analysis     The analysis, in the following JSON form:
+     *  {@code
+     *      { "<label>" : {
+     *                  "analysis_type":"<analysis_name>",
+     *                  "target_property":"<property_name>"
+     *                  },
+     *      ...
+     *      }
+     *  }
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object multiAnalysis(String eventCollection, Map<String, Object> analysis) throws IOException {
+        if ( analysis == null || analysis.isEmpty()) {
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Multi-analysis Query requires \"analysis\" argument to be non-empty.");
+        }
+
+        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
+                baseUrl,
+                KeenConstants.API_VERSION,
+                project.getProjectId(),
+                KeenQueryConstants.FUNNEL       // query name
+        );
+
+        // JSON arg with multi-analysis
+        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+                .withEventCollection(eventCollection)
+                .withMultiAnalysis(analysis)
+                .build();
+        Map<String, Object> analysisArg = new HashMap<String, Object>();
+
+        return multiAnalysis(queryParams);
+    }
+
+    /**
+     * Multi-Analysis query with all required and optional arguments.
+     * Query API info here: https://keen.io/docs/data-analysis/multi-analysis/
+     *
+     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object multiAnalysis(KeenQueryParams queryParams) throws IOException {
+        Object result = runQuery(KeenQueryConstants.MULTI_ANALYSIS, queryParams);
+        return result;
+    }
+
+    /**
+     * Posts a query to the server.
+     *
+     * @param queryName     The name of the query, as specified by {@link KeenQueryConstants}.
+     * @param params         The {@link KeenQueryParams} with all the required and optional arguments.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
+    public Object runQuery(String queryName, KeenQueryParams params) throws IOException {
         if (false == params.AreParamsValid(queryName)) {
-            // todo: we can throw an IllegalArgumentException for this.
-            throw new KeenQueryClientException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
@@ -305,82 +621,28 @@ public class KeenQueryClient {
         // Query parameter args.
         Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
 
-        String returnVal = "";
-        try {
-            URL url = new URL(urlString);
-            returnVal = publishObject(project, url, allQueryArgs);
-        } catch (IOException e) {
-            // TODO: catch IOException
-        }
+        Object returnVal = "";
+        URL url = new URL(urlString);
+        returnVal = publishObject(project, url, allQueryArgs);
 
-        // Parse the response into a map.
-        StringReader reader = new StringReader(returnVal);
-        Map<String, Object> responseMap;
-        responseMap = this.jsonHandler.readJson(reader);
-
-        return responseMap;
-    }
-
-    // TODO: parse JSON for return value?
-    public Map<String, Object>funnel(List<Map<String, Object>> steps) throws IOException, KeenException {
-        if ( steps == null || steps.isEmpty()) {
-            // TODO: handle validation
-        }
-
-//        KeenProject project = KeenClient.client().getDefaultProject();
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                KeenQueryConstants.FUNNEL       // query name
-        );
-        // funnel args
-        Map<String, Object> jsonFunnelArgs = new HashMap<String, Object>();
-        jsonFunnelArgs.put(KeenQueryConstants.STEPS, steps);
-
-        String returnVal = "";
-        try {
-            URL url = new URL(urlString);
-            returnVal = publishObject(project, url, jsonFunnelArgs);
-        } catch (IOException e) {
-            // TODO: catch IOException
-        }
-
-        // Parse the response into a map.
-        StringReader reader = new StringReader(returnVal);
-        Map<String, Object> responseMap;
-        responseMap = this.jsonHandler.readJson(reader);
-
-        return responseMap;
-    }
-
-    // TODO: parse JSON for return value?
-    public String multiAnalysis(String eventCollection, Map<String, Object> analysis) {
-
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                KeenQueryConstants.FUNNEL       // query name
-        );
-
-        // JSON arg with multi-analysis
-        Map<String, Object> analysisArg = new HashMap<String, Object>();
-        analysisArg.put(KeenQueryConstants.ANALYSIS, analysis);
-        analysisArg.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
-
-        String returnVal = "";
-        try {
-            URL url = new URL(urlString);
-            returnVal = publishObject(project, url, analysisArg);
-        } catch (IOException e) {
-            // TODO: catch IOException
-        }
         return returnVal;
     }
 
-    protected String publishObject(KeenProject project, URL url,
-                                              final Map<String, ?> requestData) throws IOException {
+    /**
+     * Posts a request to the server in the specified project, using the given URL and request data.
+     * The request data will be serialized into JSON using the client's
+     * {@link io.keen.client.java.KeenJsonHandler}.
+     *
+     * @param project     The project in which the event(s) will be published; this is used to
+     *                    determine the read key to use for authentication.
+     * @param url         The URL to which the POST should be sent.
+     * @param requestData The request data, which will be serialized into JSON and sent in the
+     *                    request body.
+     * @return The response from the server in the "result" map.
+     * @throws IOException If there was an error communicating with the server.
+     */
+    protected Object publishObject(KeenProject project, URL url,
+                                   final Map<String, ?> requestData) throws IOException {
 
         // Build an output source which simply writes the serialized JSON to the output.
         OutputSource source = new OutputSource() {
@@ -418,15 +680,37 @@ public class KeenQueryClient {
 //        String resultString = response.body.toString();
 //        String resultString = outputStream.toString(ENCODING);
 
+        if (response.isSuccess() == false) {
+            throw new ServerException(response.body);
+        }
 
-        return response.body;
+        // Parse the response into a map.
+        StringReader reader = new StringReader(response.body);
+        Map<String, Object> responseMap;
+        responseMap = this.jsonHandler.readJson(reader);
+
+        // Get the result object.
+        Object result = responseMap.get(KeenQueryConstants.RESULT);
+        // for successful query, we should get a Result object. But just in case we don't...
+        if (result == null) {
+            String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
+            String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
+
+            String errorMessage = "Error response received from server";
+            if (errorCode != null) {errorMessage += " " + errorCode;}
+            if (message != null) {errorMessage += ": " + message;}
+
+            throw new KeenQueryClientException(errorMessage);
+        }
+
+
+        return result;
     }
-
 
     /**
      * Constructs a Keen Query client using a builder.
      *
-     * @param builder The builder from which to retrieve this client's interfaces and settings.
+     * @param builder The {@link QueryBuilder} from which to retrieve this client's interfaces and settings.
      */
     protected KeenQueryClient(QueryBuilder builder) {
         // Initialize final properties using the builder.
@@ -434,7 +718,6 @@ public class KeenQueryClient {
         this.jsonHandler = builder.jsonHandler;
         this.baseUrl = builder.baseUrl;
         this.project = builder.project;
-//        this.queryParams = builder.keenQueryParams;
     }
 
     public static class QueryBuilder {
@@ -443,8 +726,12 @@ public class KeenQueryClient {
         private KeenJsonHandler jsonHandler;
         private String baseUrl;
         private KeenProject project;
-//        private KeenQueryParams keenQueryParams;
 
+        /**
+         * Builder to create a KeenQueryClient with {@link KeenProject} .
+         *
+         * @param project The {@link KeenProject} to use.
+         */
         public QueryBuilder(KeenProject project) {
             this.project = project;
         }
@@ -536,20 +823,44 @@ public class KeenQueryClient {
             return this;
         }
 
+        /**
+         * Gets the base URL to use for queries.
+         *
+         * @return The base URL to use.
+         */
         public String getBaseURL() {return this.baseUrl;}
-        public void setBaseUrl(String baseUrl) {this.baseUrl = baseUrl;}
-        public QueryBuilder withBaseUrl(String baseUrl) {setBaseUrl(baseUrl); return this;}
-
-        public KeenProject getKeenProject() {return this.project;}
-        public void setKeenProject(KeenProject project) {this.project = project;}
-        public QueryBuilder withKeenProject(KeenProject project) {setKeenProject(project); return this;}
-
-//        public KeenQueryParams getKeenQueryParams() {return this.keenQueryParams;}
-//        public void setKeenQueryParams(KeenQueryParams project) {this.keenQueryParams = keenQueryParams;}
-//        public Builder withKeenQueryParams(KeenQueryParams keenQueryParams) {setKeenQueryParams(keenQueryParams); return this;}
 
         /**
-         * Builds a new Keen client using the interfaces which have been specified explicitly on
+         * Sets the Base URL to use for queries.
+         *
+         * @param baseUrl The base URL to use.
+         */
+        public void setBaseUrl(String baseUrl) {this.baseUrl = baseUrl;}
+
+        /**
+         * Sets the Base URL to use for queries.
+         *
+         * @param baseUrl The base URL to use.
+         * @return This instance (for method chaining).
+         */
+        public QueryBuilder withBaseUrl(String baseUrl) {setBaseUrl(baseUrl); return this;}
+
+        /**
+         * Gets the {@link KeenProject} to use for queries.
+         *
+         * @return The {@link KeenProject}.
+         */
+        public KeenProject getKeenProject() {return this.project;}
+
+        /**
+         * Sets the {@link KeenProject} to use for queries.
+         *
+         * @param project The Keen Project containing Project ID and read/write keys.
+         */
+        public void setKeenProject(KeenProject project) {this.project = project;}
+
+        /**
+         * Builds a new Keen query client using the interfaces which have been specified explicitly on
          * this builder instance via the set* or with* methods, or the default interfaces if none
          * have been specified.
          *
@@ -573,29 +884,11 @@ public class KeenQueryClient {
                 KeenLogging.log("Exception building JSON handler: " + e.getMessage());
             }
 
-            // todo: Project really needs to not be null... Handle differently?
-            try {
-                if (project == null) {
-                    project = new KeenProject("project","<readKey>", "writeKey");
-                }
-            } catch (Exception e) {
-                KeenLogging.log("Exception building Project: " + e.getMessage());
+            if (project == null) {
+                project = new KeenProject("project","<readKey>", "<writeKey>");
             }
-
-//            try {
-//                if (keenQueryParams == null) {
-//                    keenQueryParams = new KeenQueryParams();
-//                }
-//            } catch (Exception e) {
-//                KeenLogging.log("Exception building Keen Query Params: " + e.getMessage());
-//            }
-
-            try {
-                if (baseUrl == null) {
-                    baseUrl = KeenConstants.SERVER_ADDRESS;
-                }
-            } catch (Exception e) {
-                KeenLogging.log("Exception building Base URL: " + e.getMessage());
+            if (baseUrl == null) {
+                baseUrl = KeenConstants.SERVER_ADDRESS;
             }
             return buildInstance();
         }
@@ -613,102 +906,5 @@ public class KeenQueryClient {
 
 
         }
-
-//    private int getIntegerResult(Map<String, Object> jsonMap) throws NumberFormatException, KeenQueryClientException {
-//        int intValue = 0;
-//        Object result = jsonMap.get(KeenQueryConstants.RESULT);
-//        if ( result != null) {
-//            intValue = Integer.parseInt((String)result);
-//        } else {
-//            String errorMessage = getErrorMessage(jsonMap);
-//            if (errorMessage.isEmpty()) {
-//                errorMessage = "Query result not found.";
-//            }
-//            throw new KeenQueryClientException(errorMessage);
-//        }
-//        return intValue;
-//    }
-//
-//
-//    private double getDoubleResult(Map<String, Object> jsonMap) throws NumberFormatException, KeenQueryClientException {
-//        double doubleValue = 0;
-//        Object result = jsonMap.get(KeenQueryConstants.RESULT);
-//        if ( result != null) {
-//            doubleValue = Double.valueOf((String) result);
-//        } else {
-//            String errorMessage = getErrorMessage(jsonMap);
-//            if (errorMessage.isEmpty()) {
-//                errorMessage = "Query result not found.";
-//            }
-//            throw new KeenQueryClientException(errorMessage);
-//        }
-//        return doubleValue;
-//    }
-//
-//    private List<?> getListResult(Map<String, Object> jsonMap) throws KeenQueryClientException {
-//        Object result = jsonMap.get(KeenQueryConstants.RESULT);
-//        if (result != null) {
-//            if (result instanceof List<?>) {
-//                return (List<?>)result;
-//            }
-//        } else {
-//            String errorMessage = getErrorMessage(jsonMap);
-//            if (errorMessage.isEmpty()) {
-//                errorMessage = "Query result not found.";
-//            }
-//            throw new KeenQueryClientException(errorMessage);
-//        }
-//        return null;
-//    }
-//
-//    private Map<?,?> getMapResult(Map<String, Object> jsonMap) throws KeenQueryClientException {
-//        Object result = jsonMap.get(KeenQueryConstants.RESULT);
-//        if (result != null) {
-//            if (result instanceof Map<?,?>) {
-//                return (Map<?,?>)result;
-//            }
-//        } else {
-//            String errorMessage = getErrorMessage(jsonMap);
-//            if (errorMessage.isEmpty()) {
-//                errorMessage = "Query result not found.";
-//            }
-//            throw new KeenQueryClientException(errorMessage);
-//        }
-//        return null;
-//    }
-//
-//    private String getStringResult(Map<String, Object> jsonMap) throws KeenQueryClientException {
-//        Object result = jsonMap.get(KeenQueryConstants.RESULT);
-//        if (result != null) {
-//            if (result instanceof String) {
-//                return (String)result;
-//            }
-//            // todo: else what if not instanceof expected type?
-//        } else {
-//            String errorMessage = getErrorMessage(jsonMap);
-//            if (errorMessage.isEmpty()) {
-//                errorMessage = "Query result not found.";
-//            }
-//            throw new KeenQueryClientException(errorMessage);
-//        }
-//        return null;
-//    }
-//
-//    private String getErrorMessage(Map<String, Object> jsonMap) {
-//        // get as much useful information as possible from error
-//        StringBuffer errorString = new StringBuffer();
-//        Object errorCode = jsonMap.get(KeenQueryConstants.ERROR_CODE);
-//        Object message = jsonMap.get(KeenQueryConstants.MESSAGE);
-//        if (errorCode != null) {
-//            errorString.append((String)errorCode);
-//            if (message != null) {
-//                errorString.append(": " + (String)message);
-//            }
-//
-//            return errorString.toString();
-//        }
-//
-//        return "";
-//    }
 
 }
