@@ -32,11 +32,16 @@ public class KeenQueryParams {
     private Integer latest;     // An integer containing the number of most recent events to extract.
     private String email;
 
-    public void setEventCollectionAndTargetProperty(String eventCollection, String targetProperty) {
-        this.eventCollection = eventCollection;
-        this.targetProperty = targetProperty;
-    }
 
+    private Map<String, Object> multiAnalysis;      // required for Multi-Analysis
+    private List<Map<String, Object>> funnelSteps;  // required for funnel
+
+    /**
+     * Constructs the map to pass to the JSON handler, so that the proper required
+     * and optional Query arguments can be sent out to the server.
+     *
+     * @return The JSON object map.
+     */
     public Map<String, Object> ConstructQueryArgs() {
 
         Map<String, Object> queryArgs = new HashMap<String, Object>();
@@ -87,10 +92,22 @@ public class KeenQueryParams {
         if (null != absoluteTimeframe && absoluteTimeframe.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
         }
-
+        if (null != multiAnalysis && multiAnalysis.isEmpty() == false) {
+            queryArgs.put(KeenQueryConstants.ANALYSES, multiAnalysis);
+        }
+        if (null != funnelSteps && funnelSteps.isEmpty() == false) {
+            queryArgs.put(KeenQueryConstants.STEPS, funnelSteps);
+        }
         return queryArgs;
     }
 
+    /**
+     * Sets the start and end of the absolute time frame.
+     * Refer to https://keen.io/docs/data-analysis/timeframe/#absolute-timeframes
+     *
+     * @param start     The start of the time frame in ISO-8601 Format.
+     * @param end       The end of the time frame in ISO-8601 Format.
+     */
     public void addAbsoluteTimeframe(String start, String end) {
         if (absoluteTimeframe == null) {
             absoluteTimeframe = new HashMap<String, Object>();
@@ -100,6 +117,16 @@ public class KeenQueryParams {
         absoluteTimeframe.put(KeenQueryConstants.END, end);
     }
 
+    /**
+     * Adds a filter as an optional parameter to the query.
+     * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
+     *
+     * @param propertyName     The name of the property.
+     * @param operator          The operator (eg., gt, lt, exists, contains)
+     * @param propertyValue       The property value. Refer to API documentation for info.
+     *                            This can be a string, number, boolean, or geo-coordinates
+     *                            and are based on what the operator is.
+     */
     public void addFilter(String propertyName, String operator, Object propertyValue) {
         Map<String, Object> filter = new HashMap<String, Object>();
         filter.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
@@ -114,6 +141,12 @@ public class KeenQueryParams {
     }
 
     // TODO: maybe we can use a reusable library - this method won't be good in long-term
+    /**
+     * Verifies whether the parameters are valid, based on the input query name.
+     *
+     * @param queryName     The name of the query (in {@link KeenQueryConstants}).
+     * @return boolean      whether the parameters are valid.
+     */
     public boolean AreParamsValid(String queryName) {
         if (queryName.isEmpty()) {
             return false;
@@ -164,6 +197,8 @@ public class KeenQueryParams {
         this.latest = builder.latest;
         this.email = builder.email;
         this.absoluteTimeframe = builder.absoluteTimeframe;
+        this.funnelSteps = builder.funnelSteps;
+        this.multiAnalysis = builder.multiAnalysis;
     }
 
     public static class QueryParamBuilder {
@@ -171,6 +206,8 @@ public class KeenQueryParams {
 
         // mostly required
         private String targetProperty;
+
+        private Double percentile;
 
         // optional
         private List<Map<String, Object>> filters;
@@ -180,9 +217,25 @@ public class KeenQueryParams {
         private String timezone;
         private String groupBy;
         private Integer maxAge;
-        private Double percentile;
         private Integer latest;
         private String email;
+
+        private Map<String, Object> multiAnalysis;      // required for Multi-Analysis
+        private List<Map<String, Object>> funnelSteps;  // required for funnel
+
+        public Map<String, Object> setMultiAnalysis() {return multiAnalysis;}
+        public void setMultiAnalysis(Map<String, Object> multiAnalysis) {this.multiAnalysis = multiAnalysis;}
+        public QueryParamBuilder withMultiAnalysis(Map<String, Object> multiAnalysis) {
+            setMultiAnalysis(multiAnalysis);
+            return this;
+        }
+
+        public List<Map<String, Object>> setFunnelSteps() {return funnelSteps;}
+        public void setFunnelSteps(List<Map<String, Object>> funnelSteps) {this.funnelSteps = funnelSteps;}
+        public QueryParamBuilder withFunnelSteps(List<Map<String, Object>> funnelSteps) {
+            setFunnelSteps(funnelSteps);
+            return this;
+        }
 
         public List<Map<String, Object>> setFilters() {return filters;}
         public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
@@ -243,8 +296,13 @@ public class KeenQueryParams {
 
         public Double getPercentile() {return percentile;}
         public void setPercentile(Double percentile) {this.percentile = percentile;}
+        public void setPercentile(Integer percentile) {this.percentile = percentile.doubleValue();}
         public QueryParamBuilder withPercentile(Double percentile) {
             setPercentile(percentile);
+            return this;
+        }
+        public QueryParamBuilder withPercentile(Integer percentile) {
+            setPercentile(percentile.doubleValue());
             return this;
         }
 

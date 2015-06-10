@@ -21,13 +21,11 @@ import io.keen.client.java.http.Response;
 
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.instanceOf;
 
 import io.keen.client.java.KeenQueryParams.QueryParamBuilder;
 
@@ -81,25 +79,27 @@ public class KeenQueryTest {
 
         KeenQueryClient queryClientTest = new TestKeenQueryClientBuilder(queryProject).build();
 
-        KeenQueryParams queryParams = new QueryParamBuilder()
-                .withEventCollection(TEST_EVENT_COLLECTION)
-                .withMaxAge(300)
-                .build();
+        List<Map<String, Object>> listSteps = new ArrayList<Map<String, Object>>();
 
-//        Object result = queryClientTest.count(queryParams);
+        Map<String, Object> steps = new HashMap<String, Object>();
+        steps.put(KeenQueryConstants.ACTOR_PROPERTY, "click-count");
+        steps.put(KeenQueryConstants.EVENT_COLLECTION, TEST_EVENT_COLLECTION);
+
+        listSteps.add(steps);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+//        Object result = queryClientTest.funnel(listSteps);
 
     }
 
 
-    // TEST BASIC REQUIRED PARAMETERSf
+    // TEST BASIC REQUIRED PARAMETERS
     @Test
     public void testCount()  throws Exception {
         setMockResponse(200, "{\"result\": 21}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.count(TEST_EVENT_COLLECTION);
-
-        assertThat(result, instanceOf(Integer.class));
+        Integer result = queryClient.count(TEST_EVENT_COLLECTION);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -116,7 +116,7 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 9}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Integer result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -132,7 +132,7 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 0}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Double result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -147,7 +147,7 @@ public class KeenQueryTest {
     public void testMaximum()  throws Exception {
         setMockResponse(200, "{\"result\": 8}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Double result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -163,7 +163,7 @@ public class KeenQueryTest {
     public void testAverage()  throws Exception {
         setMockResponse(200, "{\"result\": 3.0952380952380953}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Double result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -180,7 +180,7 @@ public class KeenQueryTest {
     public void testMedian()  throws Exception {
         setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Double result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -196,8 +196,7 @@ public class KeenQueryTest {
     public void testPercentile()  throws Exception {
         setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        // todo: fix this
-        Object result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, 50.0);
+        Double result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, 50.0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -212,7 +211,7 @@ public class KeenQueryTest {
     public void testSum()  throws Exception {
         setMockResponse(200, "{\"result\": 65}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Object result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
+        Double result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -303,6 +302,36 @@ public class KeenQueryTest {
         assertEquals(requestString, "{\""+KeenQueryConstants.STEPS+"\":[{\""+KeenQueryConstants.ACTOR_PROPERTY+"\":\"click-count\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}]}");
     }
 
+    @Test
+    public void testMultiAnalysis() throws Exception {
+        setMockResponse(200, "{\"result\": {\"count set\": 44, \"sum set\": 110}}");
+
+        Map<String, Object> analysis = new HashMap<String, Object>();
+
+        Map<String, String> firstSet = new HashMap<String, String>();
+        firstSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.COUNT_RESOURCE);
+
+        Map<String, String> secondSet = new HashMap<String, String>();
+        secondSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.SUM_RESOURCE);
+        secondSet.put(KeenQueryConstants.TARGET_PROPERTY, TEST_TARGET_PROPERTY);
+
+        analysis.put("count set", firstSet);
+        analysis.put("sum set", secondSet);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        Object result = queryClient.multiAnalysis(TEST_EVENT_COLLECTION, analysis);
+
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        Request request = capturedRequest.getValue();
+        assertTrue(request.url.toString().contains(KeenQueryConstants.MULTI_ANALYSIS));
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        request.body.writeTo(outputStream);
+        String requestString = outputStream.toString(ENCODING);
+
+        assertEquals(requestString, "{\"analyses\":{\"count set\":{\""+KeenQueryConstants.ANALYSIS_TYPE+"\":\"count\"},\"sum set\":{\""+KeenQueryConstants.TARGET_PROPERTY+"\":\"click-number\",\""+KeenQueryConstants.ANALYSIS_TYPE+"\":\"sum\"}},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
+
     // Test Server error
     @Test(expected = ServerException.class)
     public void testAddEventServerFailure() throws Exception {
@@ -355,7 +384,7 @@ public class KeenQueryTest {
     }
 
     @Test
-    public void testAbsoluteTimeframe() throws Exception  {
+    public void testAbsoluteTimeframeManuallyBuilt() throws Exception  {
         setMockResponse(200, "{\"result\": 44}");
 
         String startTime = "2012-08-13T19:00:00.000Z";
@@ -375,6 +404,27 @@ public class KeenQueryTest {
         assertEquals( requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":{\""+KeenQueryConstants.START+"\":\""+startTime+"\",\""+KeenQueryConstants.END+"\":\""+endTime+"\"},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
 
+    @Test
+    public void testAbsoluteTimeframe() throws Exception  {
+        setMockResponse(200, "{\"result\": 44}");
+
+        String startTime = "2012-08-13T19:00:00.000Z";
+        String endTime = "2015-06-07T19:00:00.000Z";
+
+        Map<String, Object> absoluteTimeframe = new HashMap<String, Object>();
+        absoluteTimeframe.put(KeenQueryConstants.START, startTime);
+        absoluteTimeframe.put(KeenQueryConstants.END, endTime);
+
+        KeenQueryParams queryParams = new QueryParamBuilder()
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .build();
+
+        queryParams.addAbsoluteTimeframe(startTime, endTime);
+
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+
+        assertEquals( requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":{\""+KeenQueryConstants.START+"\":\""+startTime+"\",\""+KeenQueryConstants.END+"\":\""+endTime+"\"},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+    }
     @Test
     public void testRelativeTimeframe() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
