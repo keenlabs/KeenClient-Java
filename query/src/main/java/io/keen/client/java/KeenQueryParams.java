@@ -18,11 +18,12 @@ public class KeenQueryParams {
 
     // optional
     private List<Map<String, Object>> filters;
-    private String relativeTimeframe;
-    private Map<String, Object> absoluteTimeframe;  // absolute timeframe with "start" and "end" keys
+//    private String relativeTimeframe;
+//    private Map<String, Object> absoluteTimeframe;  // absolute timeframe with "start" and "end" keys
+    Timeframe timeframe;
     private String interval;    // requires timeframe to be set
     private String timezone;
-    private String groupBy;
+    private ArrayList<String> groupBy;     // TODO: this can be a list...
     private Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
     // required by the Percentile query
@@ -31,7 +32,6 @@ public class KeenQueryParams {
     // optional for the Extraction query
     private Integer latest;     // An integer containing the number of most recent events to extract.
     private String email;
-
 
     private Map<String, Object> analyses;      // required for Multi-Analysis
     private List<Map<String, Object>> funnelSteps;  // required for funnel
@@ -49,10 +49,6 @@ public class KeenQueryParams {
         StringBuffer queryString = new StringBuffer();
         if (null != eventCollection) {
             queryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
-        }
-
-        if (null != relativeTimeframe) {
-            queryArgs.put(KeenQueryConstants.TIMEFRAME, relativeTimeframe);
         }
 
         if (null != interval) {
@@ -89,14 +85,25 @@ public class KeenQueryParams {
         if (null != filters && filters.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.FILTERS, filters);
         }
-        if (null != absoluteTimeframe && absoluteTimeframe.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
-        }
+
         if (null != analyses && analyses.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.ANALYSES, analyses);
         }
         if (null != funnelSteps && funnelSteps.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.STEPS, funnelSteps);
+        }
+
+//        if (null != relativeTimeframe) {
+//            queryArgs.put(KeenQueryConstants.TIMEFRAME, relativeTimeframe);
+//        }
+//
+//        if (null != absoluteTimeframe && absoluteTimeframe.isEmpty() == false) {
+//            queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
+//        }
+
+        if (null != timeframe) {
+            Map<String, Object> timeframeArgs = timeframe.constructTimeframeArgs();
+            queryArgs.putAll(timeframeArgs);
         }
         return queryArgs;
     }
@@ -108,14 +115,12 @@ public class KeenQueryParams {
      * @param start     The start of the time frame in ISO-8601 Format.
      * @param end       The end of the time frame in ISO-8601 Format.
      */
-    public void addAbsoluteTimeframe(String start, String end) {
-        if (absoluteTimeframe == null) {
-            absoluteTimeframe = new HashMap<String, Object>();
-        }
-
-        absoluteTimeframe.put(KeenQueryConstants.START, start);
-        absoluteTimeframe.put(KeenQueryConstants.END, end);
-    }
+//    public void addAbsoluteTimeframe(String start, String end) {
+//        if (timeframe == null) {
+//            timeframe = new Timeframe();
+//        }
+//        timeframe.setTimeframe(start, end);
+//    }
 
     /**
      * Adds a filter as an optional parameter to the query.
@@ -148,13 +153,13 @@ public class KeenQueryParams {
      * @return boolean      whether the parameters are valid.
      */
     public boolean AreParamsValid(String queryName) {
-        if (queryName.isEmpty()) {
+        if (queryName == null || queryName.isEmpty()) {
             return false;
         }
 
         if (queryName.contentEquals(KeenQueryConstants.COUNT_RESOURCE) || queryName.contentEquals(KeenQueryConstants.EXTRACTION_RESOURCE)
                 || queryName.contentEquals(KeenQueryConstants.MULTI_ANALYSIS)) {
-            if (eventCollection.isEmpty()) {
+            if (eventCollection == null || eventCollection.isEmpty()) {
                 return false;
             }
         }
@@ -165,7 +170,7 @@ public class KeenQueryParams {
                 || queryName.contentEquals(KeenQueryConstants.PERCENTILE_RESOURCE) || queryName.contentEquals(KeenQueryConstants.SUM_RESOURCE)
                 || queryName.contentEquals(KeenQueryConstants.SELECT_UNIQUE_RESOURCE)) {
 
-            if (eventCollection.isEmpty() || targetProperty.isEmpty()) {
+            if (eventCollection == null || eventCollection.isEmpty() || targetProperty == null || targetProperty.isEmpty()) {
                 return false;
             }
         }
@@ -199,7 +204,6 @@ public class KeenQueryParams {
     protected KeenQueryParams(QueryParamBuilder builder) {
         this.eventCollection = builder.eventCollection;
         this.targetProperty = builder.targetProperty;
-        this.relativeTimeframe = builder.timeframe;
         this.interval = builder.interval;
         this.timezone = builder.timezone;
         this.groupBy = builder.groupBy;
@@ -207,7 +211,9 @@ public class KeenQueryParams {
         this.percentile = builder.percentile;
         this.latest = builder.latest;
         this.email = builder.email;
-        this.absoluteTimeframe = builder.absoluteTimeframe;
+//        this.relativeTimeframe = builder.timeframe;
+//        this.absoluteTimeframe = builder.absoluteTimeframe;
+        this.timeframe = builder.timeframe;
         this.funnelSteps = builder.funnelSteps;
         this.analyses = builder.analyses;
     }
@@ -222,11 +228,12 @@ public class KeenQueryParams {
 
         // optional
         private List<Map<String, Object>> filters;
-        private String timeframe;
-        private Map<String, Object> absoluteTimeframe;
+//        private String timeframe;
+//        private Map<String, Object> absoluteTimeframe;
+        private Timeframe timeframe;
         private String interval;
         private String timezone;
-        private String groupBy;
+        private ArrayList<String> groupBy;
         private Integer maxAge;
         private Integer latest;
         private String email;
@@ -269,14 +276,6 @@ public class KeenQueryParams {
             return this;
         }
 
-
-        public String getRelativeTimeframe() {return timeframe;}
-        public void setRelativeTimeframe(String timeframe) {this.timeframe = timeframe;}
-        public QueryParamBuilder withRelativeTimeframe(String timeframe) {
-            setRelativeTimeframe(timeframe);
-            return this;
-        }
-
         public String getInterval() {return interval;}
         public void setInterval(String interval) {this.interval = interval;}
         public QueryParamBuilder withInterval(String interval) {
@@ -291,9 +290,17 @@ public class KeenQueryParams {
             return this;
         }
 
-        public String getGroupBy() {return groupBy;}
-        public void setGroupBy(String groupBy) {this.groupBy = groupBy;}
+        public ArrayList<String> getGroupBy() {return groupBy;}
+        public void setGroupBy(ArrayList<String> groupBy) {
+            this.groupBy = groupBy;
+        }
         public QueryParamBuilder withGroupBy(String groupBy) {
+            ArrayList<String> groupByList = new ArrayList<String>();
+            groupByList.add(groupBy);
+            setGroupBy(groupByList);
+            return this;
+        }
+        public QueryParamBuilder withGroupBy(ArrayList<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }
@@ -331,13 +338,44 @@ public class KeenQueryParams {
             return this;
         }
 
-        public Map<String, Object> getAbsoluteTimeframe() {return absoluteTimeframe;}
-        public void setAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {this.absoluteTimeframe = absoluteTimeframe;}
-        public QueryParamBuilder withAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {
-            setAbsoluteTimeframe(absoluteTimeframe);
+//        public Map<String, Object> getAbsoluteTimeframe() {return absoluteTimeframe;}
+//        public void setAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {this.absoluteTimeframe = absoluteTimeframe;}
+//        public QueryParamBuilder withAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {
+//            setAbsoluteTimeframe(absoluteTimeframe);
+//            return this;
+//        }
+
+//        public String getRelativeTimeframe() {return timeframe;}
+//        public void setRelativeTimeframe(String timeframe) {this.timeframe = timeframe;}
+//        public QueryParamBuilder withRelativeTimeframe(String timeframe) {
+//            setRelativeTimeframe(timeframe);
+//            return this;
+//        }
+
+        public void setTimeframe(String relativeTimeframe) {
+            timeframe = new Timeframe(relativeTimeframe);
+        }
+
+        public void setTimeframe(String start, String end) {
+            timeframe = new Timeframe(start, end);
+        }
+
+        public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe;}
+
+        public QueryParamBuilder withTimeframe(String timeframe) {
+            setTimeframe(timeframe);
             return this;
         }
 
+        public QueryParamBuilder withTimeframe(String start, String end) {
+            setTimeframe(start, end);
+            return this;
+        }
+
+        public QueryParamBuilder withTimeframe(Timeframe timeframe) {
+            setTimeframe(timeframe);
+            return this;
+        }
 
         public KeenQueryParams build() {
             // we can do initialization here, but it's ok if everything is null.

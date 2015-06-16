@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -109,6 +110,7 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .build();
         Object result = count(queryParams);
+
         return objectToInteger(result);
     }
 
@@ -546,6 +548,53 @@ public class KeenQueryClient {
         return result;
     }
 
+    public static String getQueryType (QueryType type) throws KeenQueryClientException {
+        QueryType myType = QueryType.COUNT_RESOURCE;
+
+        String queryString = "";
+        switch (type) {
+            case COUNT_RESOURCE:
+                queryString = KeenQueryConstants.COUNT_RESOURCE;
+                break;
+            case COUNT_UNIQUE:
+                queryString = KeenQueryConstants.COUNT_UNIQUE;
+                break;
+            case MINIMUM_RESOURCE:
+                queryString = KeenQueryConstants.MINIMUM_RESOURCE;
+                break;
+            case MAXIMUM_RESOURCE:
+                queryString = KeenQueryConstants.MAXIMUM_RESOURCE;
+                break;
+            case AVERAGE_RESOURCE:
+                queryString = KeenQueryConstants.AVERAGE_RESOURCE;
+                break;
+            case MEDIAN_RESOURCE:
+                queryString = KeenQueryConstants.MEDIAN_RESOURCE;
+                break;
+            case PERCENTILE_RESOURCE:
+                queryString = KeenQueryConstants.PERCENTILE_RESOURCE;
+                break;
+            case SUM_RESOURCE:
+                queryString = KeenQueryConstants.SUM_RESOURCE;
+                break;
+            case SELECT_UNIQUE_RESOURCE:
+                queryString = KeenQueryConstants.SELECT_UNIQUE_RESOURCE;
+                break;
+            case EXTRACTION_RESOURCE:
+                queryString = KeenQueryConstants.EXTRACTION_RESOURCE;
+                break;
+            case FUNNEL:
+                queryString = KeenQueryConstants.FUNNEL;
+                break;
+            case MULTI_ANALYSIS:
+                queryString = KeenQueryConstants.MULTI_ANALYSIS;
+                break;
+            default:
+                throw new KeenQueryClientException("Invalid query type input.");
+        }
+        return queryString;
+    }
+
     /**
      * Posts a query to the server.
      *
@@ -560,12 +609,7 @@ public class KeenQueryClient {
             throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                queryName        // query name
-        );
+        String urlString = formatBaseURL(queryName);
 
         // Query parameter args.
         Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
@@ -654,6 +698,16 @@ public class KeenQueryClient {
 
 
         return result;
+    }
+
+
+    private String formatBaseURL(String queryName) {
+        return String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
+                baseUrl,
+                KeenConstants.API_VERSION,
+                project.getProjectId(),
+                queryName        // query name
+        );
     }
 
     private Integer objectToInteger(Object object) throws KeenQueryClientException {
@@ -873,5 +927,163 @@ public class KeenQueryClient {
 
 
         }
+
+
+
+// TODO: Claire New 06-14-15 code
+
+    public ArrayList<Object> countGroupBy(String eventCollection, ArrayList<String> groupBy, Timeframe timeframe, KeenQueryParams params) throws IOException {
+        KeenQueryParams queryParams = params;
+        if (params == null) {
+            queryParams = new KeenQueryParams.QueryParamBuilder().build();
+        }
+
+        ArrayList<Object> result = runQueryGroupBy(KeenQueryConstants.COUNT_RESOURCE, eventCollection, groupBy, timeframe, queryParams);
+        return result;
+    }
+
+    public ArrayList<Object> countInterval(String eventCollection, String interval, Timeframe timeframe, KeenQueryParams params) throws IOException {
+        KeenQueryParams queryParams = params;
+        if (params == null) {
+            queryParams = new KeenQueryParams.QueryParamBuilder().build();
+        }
+        ArrayList<Object> result = runQueryInterval(KeenQueryConstants.COUNT_RESOURCE, eventCollection, interval, timeframe, queryParams);
+        return result;
+    }
+
+    public ArrayList<Object> countGroupByInterval(String eventCollection, ArrayList<String> groupBy, String interval, Timeframe timeframe, KeenQueryParams params) throws IOException {
+        KeenQueryParams queryParams = params;
+        if (params == null) {
+            queryParams = new KeenQueryParams.QueryParamBuilder().build();
+        }
+        ArrayList<Object> result = runQueryGroupByInterval(KeenQueryConstants.COUNT_RESOURCE, eventCollection, groupBy, interval, timeframe, queryParams);
+        return result;
+    }
+
+    public Integer count(String eventCollection, Timeframe timeframe, KeenQueryParams params) throws IOException {
+        KeenQueryParams queryParams = params;
+        if (params == null) {
+            queryParams = new KeenQueryParams.QueryParamBuilder().build();
+        }
+
+        Object result = runQuery(KeenQueryConstants.COUNT_RESOURCE, eventCollection, timeframe, queryParams);
+
+        return objectToInteger(result);
+    }
+
+    // TODO: if we go with this, then remove timeframe, groupby, and interval as members of KeenQueryParams.
+    public Object runQuery(String queryName, String eventCollection, Timeframe timeframe, KeenQueryParams params) throws IOException  {
+//        if (false == params.AreParamsValid(queryName)) {
+//            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+//        }
+
+        String urlString = formatBaseURL(queryName);
+
+        // Query parameter args.
+        Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
+        allQueryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+        if (timeframe != null) {
+            allQueryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
+
+        Object returnVal = "";
+        URL url = new URL(urlString);
+        returnVal = publishObject(project, url, allQueryArgs);
+
+        return returnVal;
+    }
+
+    // TODO: if we go with this, then remove timeframe, groupby, and interval as members of KeenQueryParams.
+    public ArrayList<Object> runQueryInterval(String queryName, String eventCollection, String interval, Timeframe timeframe, KeenQueryParams params) throws IOException  {
+//        if (false == params.AreParamsValid(queryName)) {
+//            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+//        }
+
+        String urlString = formatBaseURL(queryName);
+
+        // Query parameter args.
+        Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
+        allQueryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+        allQueryArgs.put(KeenQueryConstants.INTERVAL, interval);
+        if (timeframe != null) {
+            allQueryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
+
+        Object returnVal = "";
+        URL url = new URL(urlString);
+        returnVal = publishObject(project, url, allQueryArgs);
+
+        ArrayList<Object> resultInterval = null;
+        if (returnVal instanceof ArrayList) {
+            resultInterval = (ArrayList)returnVal;
+        } else {
+            throw new KeenQueryClientException("Query with Interval parameter expected list return type.");
+        }
+
+        return resultInterval;
+    }
+
+    // TODO: if we go with this, then remove timeframe, groupby, and interval as members of KeenQueryParams.
+    public ArrayList<Object> runQueryGroupByInterval(String queryName, String eventCollection, ArrayList<String> groupBy, String interval, Timeframe timeframe, KeenQueryParams params) throws IOException  {
+//        if (false == params.AreParamsValid(queryName)) {
+//            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+//        }
+
+        String urlString = formatBaseURL(queryName);
+
+        // Query parameter args.
+        Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
+        allQueryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+        allQueryArgs.put(KeenQueryConstants.INTERVAL, interval);
+        allQueryArgs.put(KeenQueryConstants.GROUP_BY, groupBy);
+        if (timeframe != null) {
+            allQueryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
+
+        Object returnVal = "";
+        URL url = new URL(urlString);
+        returnVal = publishObject(project, url, allQueryArgs);
+
+        ArrayList<Object> resultList = null;
+        if (returnVal instanceof ArrayList) {
+            resultList = (ArrayList)returnVal;
+        } else {
+            throw new KeenQueryClientException("Group-by query expected list return type.");
+        }
+        return resultList;
+    }
+
+    // TODO: if we go with this, then remove timeframe, groupby, and interval as members of KeenQueryParams.
+    public ArrayList<Object> runQueryGroupBy(String queryName, String eventCollection, ArrayList<String> groupBy, Timeframe timeframe, KeenQueryParams params) throws IOException {
+
+
+        // TODO: still need to do validation of params here.
+//        if (false == params.AreParamsValid(queryName)) {
+//            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+//        }
+
+        String urlString = formatBaseURL(queryName);
+
+        // Query parameter args.
+        Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
+        allQueryArgs.put(KeenQueryConstants.GROUP_BY, groupBy);
+        allQueryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+        if (timeframe != null) {
+            allQueryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
+
+        Object returnVal = "";
+        URL url = new URL(urlString);
+        returnVal = publishObject(project, url, allQueryArgs);
+
+        ArrayList<Object> resultGroups = null;
+        if (returnVal instanceof ArrayList) {
+            resultGroups = (ArrayList)returnVal;
+        } else {
+            throw new KeenQueryClientException("Group-by query expected list return type.");
+        }
+
+        return resultGroups;
+    }
 
 }

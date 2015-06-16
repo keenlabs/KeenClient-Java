@@ -21,19 +21,114 @@ KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
 	.build();
 ```
 ### Using the KeenQueryClient to send Queries
-Users can use the KeenQueryClient to send queries as follows:
+The most simple way that users can use the KeenQueryClient to send queries is as follows. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
 ```java
-Integer result = queryClient.count("<event_collection>");
+Integer count = queryClient.count("<event_collection>", new Timeframe("this_year"));
+Integer countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double minimum = queryClient.minimum("<event_collection>", "<target_property>", new Timeframe("this_year"));
 ```
-Alternatively, users can use optional parameters via the object KeenQueryParams. However, because the result may be different depending on the optional parameters, the return value is an Object. The user is expected to verify the expected return type for the query, given the parameters entered.
+
+
+Alternatively, users can use optional parameters via the object KeenQueryParams. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
 ```java
-KeenQueryParams queryParams = new QueryParamBuilder()
+Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
-        .withRelativeTimeframe("this_month")
+        .build();
+QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+if (result.isInteger()) {
+	Integer countValue = result.getInteger();
+	// do something with countValue
+}
+```
+Some special cases are when filters "Group By" and "Inteval" are specified, as well as the Select Unique query.
+
+Select Unique:
+``` java
+Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
+        .withEventCollection("<event_collection>")
+        .withTargetProperty("click-number")
+        .build();
+QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+if (result.isList()) {
+	ArrayList<QueryResult> listResults = result.getList();
+	foreach (QueryResult item : listResults) {
+		if (item.isInteger()) {
+			// do something with Integer value
+		}
+	}
+}
+```
+
+
+Group-By:
+``` java
+Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
+        .withEventCollection("<event_collection>")
         .withGroupBy("click-number")
         .build();
-Object result = queryClient.count(queryParams);
+QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+if (result.isList()) {
+	ArrayList<QueryResult> listResults = result.getList();
+	foreach (QueryResult item : listResults) {
+		if (item.isGroupBy()) {
+			GroupBy groupBy = item.getGroupBy();
+			HashMap<String, QueryResult> properties = groupBy.getProperties();
+			QueryResult groupByValue = groupBy.getValue();
+			if (groupByValue.isInteger()) {
+				// do something with integer result.
+			}
+		}
+	}
+}
 ```
+Interval:
+``` java
+Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
+        .withEventCollection("<event_collection>")
+        .withInterval("weekly")
+        .build();
+QueryResult result = queryClient.execute(queryParams, new Timeframe("this_year"));
+if (result.isList()) {
+	ArrayList<QueryResult> listResults = result.getList();
+	foreach (QueryResult item : listResults) {
+		if (item.isInterval()) {
+			Interval interval = item.getInterval();
+			Timeframe itemTimeframe = interval.getTimeframe();
+			QueryResult intervalValue = interval.getValue();
+			if (intervalValue.isInteger()) {
+				// do something with integer result.
+			}
+		}
+	}
+}        
+```
+Group By and Interval:
+``` java
+Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
+        .withEventCollection("<event_collection>")
+        .withInterval("weekly")
+        .withGroupBy("click-number")
+        .build();
+QueryResult result = queryClient.execute(queryParams, new Timeframe("this_year"));
+if (result.isList()) {
+	ArrayList<QueryResult> listResults = result.getList();
+	foreach (QueryResult item : listResults) {
+		Interval interval = item.getInterval();
+		Timeframe itemTimeframe = interval.getTimeframe();
+		QueryResult intervalValue = interval.getValue();
+		if (intervalValue.isGroupBy()) {
+			GroupBy groupBy = intervalValue.getGroupBy();
+			HashMap<String, QueryResult> properties = groupBy.getProperties();
+			QueryResult groupByValue = groupBy.getValue();
+			if (groupByValue.isInteger()) {
+				// do something with integer result.
+			}
+		}
+	}
+}
+```
+
+
 There are also some utility methods to add filters and absolute timeframes to KeenQueryParams:
 ```java
 KeenQueryParams queryParams = new QueryParamBuilder()
