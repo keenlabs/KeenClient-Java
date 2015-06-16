@@ -26,6 +26,22 @@ public class Timeframe {
         this.absoluteTimeframe = absoluteTimeframe;
     }
 
+    boolean isRelativeTimeframe() {
+        return relativeTimeframe != null;
+    }
+
+    boolean isAbsoluteTimeframe() {
+        return absoluteTimeframe != null;
+    }
+
+    String getRelativeTimeframe() {
+        return relativeTimeframe;
+    }
+
+    AbsoluteTimeframe getAbsoluteTimeframe() {
+        return absoluteTimeframe;
+    }
+
     Map<String, Object> constructTimeframeArgs() {
         Map timeframe = new HashMap<String, Object>();
         if (relativeTimeframe != null) {
@@ -48,6 +64,10 @@ public class Timeframe {
             this.start = start;
             this.end = end;
         }
+
+        String getStart() { return start;}
+
+        String getEnd() {return end;}
 
         Map<String, Object> constructAbsoluteTimeframeArgs() {
             Map timeframe = new HashMap<String, Object>();

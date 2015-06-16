@@ -10,6 +10,8 @@ import java.util.ArrayList;
  */
 public class KeenQueryParams {
 
+    private QueryType queryType;
+
     // required for all queries
     private String eventCollection;
 
@@ -20,7 +22,7 @@ public class KeenQueryParams {
     private List<Map<String, Object>> filters;
 //    private String relativeTimeframe;
 //    private Map<String, Object> absoluteTimeframe;  // absolute timeframe with "start" and "end" keys
-    Timeframe timeframe;
+//    Timeframe timeframe;
     private String interval;    // requires timeframe to be set
     private String timezone;
     private ArrayList<String> groupBy;     // TODO: this can be a list...
@@ -101,12 +103,20 @@ public class KeenQueryParams {
 //            queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
 //        }
 
-        if (null != timeframe) {
-            Map<String, Object> timeframeArgs = timeframe.constructTimeframeArgs();
-            queryArgs.putAll(timeframeArgs);
-        }
+//        if (null != timeframe) {
+//            Map<String, Object> timeframeArgs = timeframe.constructTimeframeArgs();
+//            queryArgs.putAll(timeframeArgs);
+//        }
         return queryArgs;
     }
+
+    public QueryType getQueryType() {
+        return this.queryType;
+    }
+
+    public boolean hasGroupBy() {return groupBy != null;}
+
+    public boolean hasInterval() {return interval != null;}
 
     /**
      * Sets the start and end of the absolute time frame.
@@ -149,45 +159,42 @@ public class KeenQueryParams {
     /**
      * Verifies whether the parameters are valid, based on the input query name.
      *
-     * @param queryName     The name of the query (in {@link KeenQueryConstants}).
+     * @param queryType     The type of the query (in {@link QueryType}).
      * @return boolean      whether the parameters are valid.
      */
-    public boolean AreParamsValid(String queryName) {
-        if (queryName == null || queryName.isEmpty()) {
-            return false;
-        }
+    public boolean AreParamsValid(QueryType queryType) {
 
-        if (queryName.contentEquals(KeenQueryConstants.COUNT_RESOURCE) || queryName.contentEquals(KeenQueryConstants.EXTRACTION_RESOURCE)
-                || queryName.contentEquals(KeenQueryConstants.MULTI_ANALYSIS)) {
+        if (queryType == QueryType.COUNT_RESOURCE || queryType == QueryType.EXTRACTION_RESOURCE
+                || queryType == QueryType.MULTI_ANALYSIS) {
             if (eventCollection == null || eventCollection.isEmpty()) {
                 return false;
             }
         }
 
-        if (queryName.contentEquals(KeenQueryConstants.COUNT_UNIQUE)
-                || queryName.contentEquals(KeenQueryConstants.MINIMUM_RESOURCE) || queryName.contentEquals(KeenQueryConstants.MAXIMUM_RESOURCE)
-                || queryName.contentEquals(KeenQueryConstants.AVERAGE_RESOURCE) || queryName.contentEquals(KeenQueryConstants.MEDIAN_RESOURCE)
-                || queryName.contentEquals(KeenQueryConstants.PERCENTILE_RESOURCE) || queryName.contentEquals(KeenQueryConstants.SUM_RESOURCE)
-                || queryName.contentEquals(KeenQueryConstants.SELECT_UNIQUE_RESOURCE)) {
+        if (queryType == QueryType.COUNT_UNIQUE
+                || queryType == QueryType.MINIMUM_RESOURCE || queryType == QueryType.MAXIMUM_RESOURCE
+                || queryType == QueryType.AVERAGE_RESOURCE || queryType == QueryType.MEDIAN_RESOURCE
+                || queryType == QueryType.PERCENTILE_RESOURCE || queryType == QueryType.SUM_RESOURCE
+                || queryType == QueryType.SELECT_UNIQUE_RESOURCE) {
 
             if (eventCollection == null || eventCollection.isEmpty() || targetProperty == null || targetProperty.isEmpty()) {
                 return false;
             }
         }
 
-        if (queryName.contentEquals(KeenQueryConstants.PERCENTILE_RESOURCE)) {
+        if (queryType == QueryType.PERCENTILE_RESOURCE) {
             if (percentile == null) {
                 return false;
             }
         }
 
-        if (queryName.contentEquals(KeenQueryConstants.FUNNEL)) {
+        if (queryType == QueryType.FUNNEL) {
             if (funnelSteps == null || funnelSteps.isEmpty()) {
                 return false;
             }
         }
 
-        if (queryName.contentEquals(KeenQueryConstants.MULTI_ANALYSIS)) {
+        if (queryType == QueryType.MULTI_ANALYSIS) {
             if (analyses == null || analyses.isEmpty()) {
                 return false;
             }
@@ -213,12 +220,15 @@ public class KeenQueryParams {
         this.email = builder.email;
 //        this.relativeTimeframe = builder.timeframe;
 //        this.absoluteTimeframe = builder.absoluteTimeframe;
-        this.timeframe = builder.timeframe;
+//        this.timeframe = builder.timeframe;
         this.funnelSteps = builder.funnelSteps;
         this.analyses = builder.analyses;
+        this.queryType = builder.queryType;
     }
 
     public static class QueryParamBuilder {
+        private QueryType queryType;
+
         private String eventCollection;     // required
 
         // mostly required
@@ -228,9 +238,7 @@ public class KeenQueryParams {
 
         // optional
         private List<Map<String, Object>> filters;
-//        private String timeframe;
-//        private Map<String, Object> absoluteTimeframe;
-        private Timeframe timeframe;
+//        private Timeframe timeframe;
         private String interval;
         private String timezone;
         private ArrayList<String> groupBy;
@@ -240,6 +248,10 @@ public class KeenQueryParams {
 
         private Map<String, Object> analyses;      // required for Multi-Analysis
         private List<Map<String, Object>> funnelSteps;  // required for funnel
+
+        public QueryParamBuilder(QueryType queryType) {
+            this.queryType = queryType;
+        }
 
         public Map<String, Object> getAnalyses() {return analyses;}
         public void setAnalyses(Map<String, Object> analyses) {this.analyses = analyses;}
@@ -352,30 +364,30 @@ public class KeenQueryParams {
 //            return this;
 //        }
 
-        public void setTimeframe(String relativeTimeframe) {
-            timeframe = new Timeframe(relativeTimeframe);
-        }
-
-        public void setTimeframe(String start, String end) {
-            timeframe = new Timeframe(start, end);
-        }
-
-        public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe;}
-
-        public QueryParamBuilder withTimeframe(String timeframe) {
-            setTimeframe(timeframe);
-            return this;
-        }
-
-        public QueryParamBuilder withTimeframe(String start, String end) {
-            setTimeframe(start, end);
-            return this;
-        }
-
-        public QueryParamBuilder withTimeframe(Timeframe timeframe) {
-            setTimeframe(timeframe);
-            return this;
-        }
+//        public void setTimeframe(String relativeTimeframe) {
+//            timeframe = new Timeframe(relativeTimeframe);
+//        }
+//
+//        public void setTimeframe(String start, String end) {
+//            timeframe = new Timeframe(start, end);
+//        }
+//
+//        public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe;}
+//
+//        public QueryParamBuilder withTimeframe(String timeframe) {
+//            setTimeframe(timeframe);
+//            return this;
+//        }
+//
+//        public QueryParamBuilder withTimeframe(String start, String end) {
+//            setTimeframe(start, end);
+//            return this;
+//        }
+//
+//        public QueryParamBuilder withTimeframe(Timeframe timeframe) {
+//            setTimeframe(timeframe);
+//            return this;
+//        }
 
         public KeenQueryParams build() {
             // we can do initialization here, but it's ok if everything is null.

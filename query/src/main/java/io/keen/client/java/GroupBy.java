@@ -7,6 +7,19 @@ import java.util.HashMap;
  */
 public class GroupBy {
 
-    private HashMap<String, Object> properties;
-    private Double groupByValue;
+    private HashMap<String, QueryResult> properties;
+    private QueryResult result;
+
+    GroupBy(HashMap<String, QueryResult> properties, QueryResult groupByResult) {
+        this.properties = properties;
+        this.result = groupByResult;
+    }
+
+    HashMap<String, QueryResult> getProperties() {
+        return this.properties;
+    }
+
+    QueryResult getResult() {
+        return this.result;
+    }
 }
