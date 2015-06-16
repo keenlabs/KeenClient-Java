@@ -28,13 +28,13 @@ Integer countUnique = queryClient.countUnique("<event_collection>", "<target_pro
 Double minimum = queryClient.minimum("<event_collection>", "<target_property>", new Timeframe("this_year"));
 ```
 
-
-Alternatively, users can use optional parameters via the object KeenQueryParams. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
+### Advanced
+Alternatively, users can use optional parameters via the object Query. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
 ```java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
         .build();
-QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isInteger()) {
 	Integer countValue = result.getInteger();
 	// do something with countValue
@@ -48,7 +48,7 @@ Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
         .withEventCollection("<event_collection>")
         .withTargetProperty("click-number")
         .build();
-QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
 	foreach (QueryResult item : listResults) {
@@ -66,7 +66,7 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
         .withGroupBy("click-number")
         .build();
-QueryResult result = queryClient.execute(queryParams, new Timeframe("this_month"));
+QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
 	foreach (QueryResult item : listResults) {
@@ -87,7 +87,7 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
         .withInterval("weekly")
         .build();
-QueryResult result = queryClient.execute(queryParams, new Timeframe("this_year"));
+QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
 	foreach (QueryResult item : listResults) {
@@ -109,7 +109,7 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withInterval("weekly")
         .withGroupBy("click-number")
         .build();
-QueryResult result = queryClient.execute(queryParams, new Timeframe("this_year"));
+QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
 	foreach (QueryResult item : listResults) {
@@ -129,17 +129,17 @@ if (result.isList()) {
 ```
 
 
-There are also some utility methods to add filters and absolute timeframes to KeenQueryParams:
+There are also some utility methods to add filters and absolute timeframes to Query:
 ```java
-KeenQueryParams queryParams = new QueryParamBuilder()
+Query query = new QueryBuilder()
 	            .withEventCollection(TEST_EVENT_COLLECTION)
 	            .build();
 
-queryParams.addFilter("click-count", "lt", 5);
-queryParams.addFilter("click-count", "gt", 1);
-queryParams.addAbsoluteTimeframe("2012-08-13T19:00:00.000Z", "2015-06-07T19:00:00.000Z");
+query.addFilter("click-count", "lt", 5);
+query.addFilter("click-count", "gt", 1);
+query.addAbsoluteTimeframe("2012-08-13T19:00:00.000Z", "2015-06-07T19:00:00.000Z");
 
-Object result = queryClient.count(queryParams);
+Object result = queryClient.count(query);
 Integer queryResult = null;
 if (result instance Integer) {
 	queryResult = (Integer)result;
