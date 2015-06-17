@@ -8,7 +8,7 @@ import java.util.ArrayList;
 /**
  * Created by claireyoung on 5/18/15.
  */
-public class KeenQueryParams {
+public class Query {
 
     private QueryType queryType;
 
@@ -25,7 +25,7 @@ public class KeenQueryParams {
 //    Timeframe timeframe;
     private String interval;    // requires timeframe to be set
     private String timezone;
-    private ArrayList<String> groupBy;     // TODO: this can be a list...
+    private ArrayList<String> groupBy;
     private Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
     // required by the Percentile query
@@ -34,6 +34,9 @@ public class KeenQueryParams {
     // optional for the Extraction query
     private Integer latest;     // An integer containing the number of most recent events to extract.
     private String email;
+    private String contentEncoding; // TODO add these
+    private String contentType;     // TODO add these
+    private List<String> propertyNames; // TODO add these
 
     private Map<String, Object> analyses;      // required for Multi-Analysis
     private List<Map<String, Object>> funnelSteps;  // required for funnel
@@ -208,7 +211,7 @@ public class KeenQueryParams {
      *
      * @param builder The builder from which to retrieve this client's interfaces and settings.
      */
-    protected KeenQueryParams(QueryParamBuilder builder) {
+    protected Query(QueryBuilder builder) {
         this.eventCollection = builder.eventCollection;
         this.targetProperty = builder.targetProperty;
         this.interval = builder.interval;
@@ -226,7 +229,7 @@ public class KeenQueryParams {
         this.queryType = builder.queryType;
     }
 
-    public static class QueryParamBuilder {
+    public static class QueryBuilder {
         private QueryType queryType;
 
         private String eventCollection;     // required
@@ -249,55 +252,55 @@ public class KeenQueryParams {
         private Map<String, Object> analyses;      // required for Multi-Analysis
         private List<Map<String, Object>> funnelSteps;  // required for funnel
 
-        public QueryParamBuilder(QueryType queryType) {
+        public QueryBuilder(QueryType queryType) {
             this.queryType = queryType;
         }
 
         public Map<String, Object> getAnalyses() {return analyses;}
         public void setAnalyses(Map<String, Object> analyses) {this.analyses = analyses;}
-        public QueryParamBuilder withAnalyses(Map<String, Object> analyses) {
+        public QueryBuilder withAnalyses(Map<String, Object> analyses) {
             setAnalyses(analyses);
             return this;
         }
 
         public List<Map<String, Object>> setFunnelSteps() {return funnelSteps;}
         public void setFunnelSteps(List<Map<String, Object>> funnelSteps) {this.funnelSteps = funnelSteps;}
-        public QueryParamBuilder withFunnelSteps(List<Map<String, Object>> funnelSteps) {
+        public QueryBuilder withFunnelSteps(List<Map<String, Object>> funnelSteps) {
             setFunnelSteps(funnelSteps);
             return this;
         }
 
         public List<Map<String, Object>> setFilters() {return filters;}
         public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
-        public QueryParamBuilder withFilters(List<Map<String, Object>> filters) {
+        public QueryBuilder withFilters(List<Map<String, Object>> filters) {
             setFilters(filters);
             return this;
         }
 
         public String getEventCollection() {return eventCollection;}
         public void setEventCollection(String eventCollection) {this.eventCollection = eventCollection;}
-        public QueryParamBuilder withEventCollection(String eventCollection) {
+        public QueryBuilder withEventCollection(String eventCollection) {
             setEventCollection(eventCollection);
             return this;
         }
 
         public String getTargetProperty() {return targetProperty;}
         public void setTargetProperty(String targetProperty) {this.targetProperty = targetProperty;}
-        public QueryParamBuilder withTargetProperty(String targetProperty) {
+        public QueryBuilder withTargetProperty(String targetProperty) {
             setTargetProperty(targetProperty);
             return this;
         }
 
         public String getInterval() {return interval;}
         public void setInterval(String interval) {this.interval = interval;}
-        public QueryParamBuilder withInterval(String interval) {
+        public QueryBuilder withInterval(String interval) {
             setInterval(interval);
             return this;
         }
 
         public String getTimezone() {return timezone;}
         public void setTimezone(String timezone) {this.timezone = timezone;}
-        public QueryParamBuilder withTimezone(String timezone) {
+        public QueryBuilder withTimezone(String timezone) {
             setTimezone(timezone);
             return this;
         }
@@ -306,20 +309,20 @@ public class KeenQueryParams {
         public void setGroupBy(ArrayList<String> groupBy) {
             this.groupBy = groupBy;
         }
-        public QueryParamBuilder withGroupBy(String groupBy) {
+        public QueryBuilder withGroupBy(String groupBy) {
             ArrayList<String> groupByList = new ArrayList<String>();
             groupByList.add(groupBy);
             setGroupBy(groupByList);
             return this;
         }
-        public QueryParamBuilder withGroupBy(ArrayList<String> groupBy) {
+        public QueryBuilder withGroupBy(ArrayList<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }
 
         public Integer getMaxAge() {return maxAge;}
         public void setMaxAge(Integer maxAge) {this.maxAge = maxAge;}
-        public QueryParamBuilder withMaxAge(Integer maxAge) {
+        public QueryBuilder withMaxAge(Integer maxAge) {
             setMaxAge(maxAge);
             return this;
         }
@@ -327,39 +330,39 @@ public class KeenQueryParams {
         public Double getPercentile() {return percentile;}
         public void setPercentile(Double percentile) {this.percentile = percentile;}
         public void setPercentile(Integer percentile) {this.percentile = percentile.doubleValue();}
-        public QueryParamBuilder withPercentile(Double percentile) {
+        public QueryBuilder withPercentile(Double percentile) {
             setPercentile(percentile);
             return this;
         }
-        public QueryParamBuilder withPercentile(Integer percentile) {
+        public QueryBuilder withPercentile(Integer percentile) {
             setPercentile(percentile.doubleValue());
             return this;
         }
 
         public Integer getLatest() {return latest;}
         public void setLatest(Integer latest) {this.latest = latest;}
-        public QueryParamBuilder withLatest(Integer latest) {
+        public QueryBuilder withLatest(Integer latest) {
             setLatest(latest);
             return this;
         }
 
         public String getEmail() {return email;}
         public void setEmail(String email) {this.email = email;}
-        public QueryParamBuilder withEmail(String email) {
+        public QueryBuilder withEmail(String email) {
             setEmail(email);
             return this;
         }
 
 //        public Map<String, Object> getAbsoluteTimeframe() {return absoluteTimeframe;}
 //        public void setAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {this.absoluteTimeframe = absoluteTimeframe;}
-//        public QueryParamBuilder withAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {
+//        public QueryBuilder withAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {
 //            setAbsoluteTimeframe(absoluteTimeframe);
 //            return this;
 //        }
 
 //        public String getRelativeTimeframe() {return timeframe;}
 //        public void setRelativeTimeframe(String timeframe) {this.timeframe = timeframe;}
-//        public QueryParamBuilder withRelativeTimeframe(String timeframe) {
+//        public QueryBuilder withRelativeTimeframe(String timeframe) {
 //            setRelativeTimeframe(timeframe);
 //            return this;
 //        }
@@ -374,28 +377,28 @@ public class KeenQueryParams {
 //
 //        public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe;}
 //
-//        public QueryParamBuilder withTimeframe(String timeframe) {
+//        public QueryBuilder withTimeframe(String timeframe) {
 //            setTimeframe(timeframe);
 //            return this;
 //        }
 //
-//        public QueryParamBuilder withTimeframe(String start, String end) {
+//        public QueryBuilder withTimeframe(String start, String end) {
 //            setTimeframe(start, end);
 //            return this;
 //        }
 //
-//        public QueryParamBuilder withTimeframe(Timeframe timeframe) {
+//        public QueryBuilder withTimeframe(Timeframe timeframe) {
 //            setTimeframe(timeframe);
 //            return this;
 //        }
 
-        public KeenQueryParams build() {
+        public Query build() {
             // we can do initialization here, but it's ok if everything is null.
             return buildInstance();
         }
 
-        protected KeenQueryParams buildInstance() {
-            return new KeenQueryParams(this);
+        protected Query buildInstance() {
+            return new Query(this);
         }
 
     }

@@ -12,7 +12,7 @@ You can build a KeenQueryClient by just providing a KeenProject.
 KeenProject queryProject = new KeenProject("<project id>", "<write key>", "<read key>");
 KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject).build();
 ```
-Optionally, users can also specify a HTTP Handler, base URL, or JSON Handler.:
+Optionally, users can also specify a HTTP Handler, base URL, or JSON Handler:
 ```java
 KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
 	.withHttpHandler(httpHandler)
@@ -21,18 +21,25 @@ KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
 	.build();
 ```
 ### Using the KeenQueryClient to send Queries
-The most simple way that users can use the KeenQueryClient to send queries is as follows. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
+The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific Integer or Double response type. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
 ```java
 Integer count = queryClient.count("<event_collection>", new Timeframe("this_year"));
 Integer countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new Timeframe("this_year"));
 Double minimum = queryClient.minimum("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double maximum = queryClient.maximum("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double average = queryClient.average("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double median = queryClient.median("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double percentile = queryClient.percentile("<event_collection>", "<target_property>", new Timeframe("this_year"));
+Double sum = queryClient.sum("<event_collection>", "<target_property>", new Timeframe("this_year"));
 ```
+The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries which are more a little more complicated and are mentioned below (TODO: Mention below!!!).
 
 ### Advanced
-Alternatively, users can use optional parameters via the object Query. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
+Alternatively, users can use optional parameters to send queries. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
 ```java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
+        .withTimeframe(new Timeframe("<start>", "<end>"))
         .build();
 QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isInteger()) {
@@ -40,9 +47,11 @@ if (result.isInteger()) {
 	// do something with countValue
 }
 ```
+
 Some special cases are when filters "Group By" and "Inteval" are specified, as well as the Select Unique query.
 
-Select Unique:
+For Select Unique queries, the user gets a list of unique values, given the target property. Therefore, the QueryResult will be a list of unique property values. The QueryResult type only supports Integer, Double, String, and ArrayList values; therefore, if the property value is not of the aforementioned types, then it may be of generic Object type.
+
 ``` java
 Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -51,16 +60,21 @@ Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
 QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
-	foreach (QueryResult item : listResults) {
+	for (QueryResult item : listResults) {
 		if (item.isInteger()) {
 			// do something with Integer value
+		}
+		
+		// note that for Select Unique query, QueryResult can also be a generic Object,
+		// depending on the expected type of the Target Property.
+		if (item.isObject()) {
+			// in this case, user is responsible for her own parsing.
 		}
 	}
 }
 ```
 
-
-Group-By:
+Filtering any query via Group-By will cause the query response to consist of an ArrayList of GroupBy objects. Each GroupBy object contains a HashMap<String, Object> of property/values, as well as a QueryResult of the result.
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -69,11 +83,11 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
 QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
-	foreach (QueryResult item : listResults) {
+	for (QueryResult item : listResults) {
 		if (item.isGroupBy()) {
 			GroupBy groupBy = item.getGroupBy();
-			HashMap<String, QueryResult> properties = groupBy.getProperties();
-			QueryResult groupByValue = groupBy.getValue();
+			HashMap<String, Object> properties = groupBy.getProperties();
+			QueryResult groupByValue = groupBy.getResult();
 			if (groupByValue.isInteger()) {
 				// do something with integer result.
 			}
@@ -81,7 +95,7 @@ if (result.isList()) {
 	}
 }
 ```
-Interval:
+Filtering any query via Interval will cause the query response to consist of an ArrayList of Interval objects. Each Interval object contains a Timeframe for the interval, as well as a QueryResult of the value.
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -90,7 +104,7 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
 QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
 	ArrayList<QueryResult> listResults = result.getList();
-	foreach (QueryResult item : listResults) {
+	for (QueryResult item : listResults) {
 		if (item.isInterval()) {
 			Interval interval = item.getInterval();
 			Timeframe itemTimeframe = interval.getTimeframe();
@@ -102,7 +116,8 @@ if (result.isList()) {
 	}
 }        
 ```
-Group By and Interval:
+Filtering via both Group By and Interval will cause the query response to consist of an ArrayList of Interval objects. Each Interval object contains a Timeframe for the interval, as well as a QueryResult of the value. This QueryResult value will be another ArrayList of GroupBy objects, as follows:
+
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -111,27 +126,36 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .build();
 QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
-	ArrayList<QueryResult> listResults = result.getList();
-	foreach (QueryResult item : listResults) {
-		Interval interval = item.getInterval();
-		Timeframe itemTimeframe = interval.getTimeframe();
-		QueryResult intervalValue = interval.getValue();
-		if (intervalValue.isGroupBy()) {
-			GroupBy groupBy = intervalValue.getGroupBy();
-			HashMap<String, QueryResult> properties = groupBy.getProperties();
-			QueryResult groupByValue = groupBy.getValue();
-			if (groupByValue.isInteger()) {
-				// do something with integer result.
-			}
-		}
-	}
+    ArrayList<QueryResult> listResults = result.getList();
+    for (QueryResult item : listResults) {
+        if (item.isInterval()) {
+            Interval interval = item.getInterval();
+            Timeframe itemTimeframe = interval.getTimeframe();
+            QueryResult intervalValue = interval.getValue();
+            if (intervalValue.isList()) {
+                ArrayList<QueryResult> groupBys = intervalValue.getList();
+                for (QueryResult groupByItem : groupBys) {
+                    if (groupByItem.isGroupBy()) {
+                        GroupBy groupBy = groupByItem.getGroupBy();
+                        HashMap<String, Object> properties = groupBy.getProperties();
+                        QueryResult groupByResult = groupBy.getResult();
+                        if (groupByResult.isInteger()) {
+                            Integer val = groupByResult.getInteger();
+                                    // do something with integer result.
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 ```
 
+### Utility Methods
 
-There are also some utility methods to add filters and absolute timeframes to Query:
+There are also some utility methods to add filters and absolute timeframes to a Query:
 ```java
-Query query = new QueryBuilder()
+Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
 	            .withEventCollection(TEST_EVENT_COLLECTION)
 	            .build();
 
@@ -145,6 +169,35 @@ if (result instance Integer) {
 	queryResult = (Integer)result;
 }
 ```
+### Extraction Query
+The [Extraction Resource](https://keen.io/docs/api/reference/#extraction-resource) query has slightly different optional parameters than the other queries (Latest, Email, Content Encoding, Content Type, Property Names), so please refer to the [API documentation](https://keen.io/docs/api/reference/#extraction-resource) on the parameters for this query. Otherwise, users can run the query like any of the other queries.
+```java
+// this has no return value. It will send you an email with the results.
+queryClient.extraction("<event collection>", "your@email", new Timeframe("this_year"));
+
+// this has return value as QueryResult, which should be an ArrayList of QueryResult Objects.
+QueryResult result = queryClient.extraction("<event collection>", new Timeframe("this_year"));
+
+// QueryResult will most likely be of type Object
+Query query = new QueryBuilder(QueryType.EXTRACTION_RESOURCE)
+	            .withEventCollection(TEST_EVENT_COLLECTION)
+	            .build();
+QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
+if (result.isList()) {
+	ArrayList<QueryResult> listResult = (ArrayList<QueryResult>)result;
+	for (QueryResult extractionItem : listResult) {
+		if (extractionItem instanceof Object) {
+			// do something with JSON object.
+		}
+	}
+}
+
+```
+
+### Funnel and Multi-Analysis Queries
+
+TODO: The below is an old rough draft:
+
 Special queries such as Funnel and Multi-analysis are also supported, although the user is responsible of constructing her own JSON map for steps and multi-analysis, respectively:
 Funnel:
 ```java
@@ -156,7 +209,7 @@ steps.put(KeenQueryConstants.EVENT_COLLECTION, "<event collection>");
 listSteps.add(steps);
 
 // run query
-Object result = queryClient.funnel(listSteps);
+QueryResult result = queryClient.funnel(listSteps);
 ```
 Multi-Analysis:
 ```java
@@ -174,7 +227,7 @@ secondSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.SUM_RESOURCE)
 secondSet.put(KeenQueryConstants.TARGET_PROPERTY, "click-count");
 analyses.put("sum set", secondSet);
 
-Object result = queryClient.multiAnalysis("<event collection>", analyses);
+QueryResult result = queryClient.multiAnalysis("<event collection>", analyses);
 
 ```
 

@@ -7,15 +7,15 @@ import java.util.HashMap;
  */
 public class GroupBy {
 
-    private HashMap<String, QueryResult> properties;
+    private HashMap<String, Object> properties;
     private QueryResult result;
 
-    GroupBy(HashMap<String, QueryResult> properties, QueryResult groupByResult) {
+    GroupBy(HashMap<String, Object> properties, QueryResult groupByResult) {
         this.properties = properties;
         this.result = groupByResult;
     }
 
-    HashMap<String, QueryResult> getProperties() {
+    HashMap<String, Object> getProperties() {
         return this.properties;
     }
 

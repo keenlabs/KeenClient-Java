@@ -106,7 +106,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Integer count(String eventCollection, Timeframe timeframe) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
         Object result = execute(queryParams, timeframe);
@@ -125,7 +125,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Integer countUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.COUNT_UNIQUE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_UNIQUE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -144,7 +144,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double minimum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.MINIMUM_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.MINIMUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -163,7 +163,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.MAXIMUM_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.MAXIMUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -182,7 +182,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.AVERAGE_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.AVERAGE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -201,7 +201,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.MEDIAN_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.MEDIAN_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -221,7 +221,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.PERCENTILE_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.PERCENTILE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .withPercentile(percentile)
@@ -241,7 +241,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.SUM_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.SUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -260,7 +260,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Object selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
@@ -277,7 +277,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */    public void extraction(String eventCollection, String email, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.EXTRACTION_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.EXTRACTION_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withEmail(email)
                 .build();
@@ -295,7 +295,7 @@ public class KeenQueryClient {
      * an error message received from the server.
      */
     public Object extraction(String eventCollection, Timeframe timeframe) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.EXTRACTION_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.EXTRACTION_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
         Object result = executeHelper(queryParams, timeframe);
@@ -334,7 +334,7 @@ public class KeenQueryClient {
                 KeenQueryConstants.FUNNEL       // query name
         );
         // funnel args
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.FUNNEL)
+        Query queryParams = new Query.QueryBuilder(QueryType.FUNNEL)
                 .withFunnelSteps(steps)
                 .build();
 
@@ -370,7 +370,7 @@ public class KeenQueryClient {
         );
 
         // JSON arg with multi-analysis
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder(QueryType.MULTI_ANALYSIS)
+        Query queryParams = new Query.QueryBuilder(QueryType.MULTI_ANALYSIS)
                 .withEventCollection(eventCollection)
                 .withAnalyses(analyses)
                 .build();
@@ -427,26 +427,26 @@ public class KeenQueryClient {
         return queryString;
     }
 
-    public QueryResult newExecute(KeenQueryParams params, Timeframe timeframe) throws IOException {
+    public QueryResult newExecute(Query params, Timeframe timeframe) throws IOException {
         Object returnVal = executeHelper(params, timeframe);
         QueryResult result = QueryResult.constructQueryResult(returnVal, params.hasGroupBy(), params.hasInterval());
         return result;
     }
 
 
-    public Object execute(KeenQueryParams params, Timeframe timeframe) throws IOException {
+    public Object execute(Query params, Timeframe timeframe) throws IOException {
         return executeHelper(params, timeframe);
     }
 
     /**
      * Posts a query to the server.
      *
-     * @param params         The {@link KeenQueryParams} with all the required and optional arguments.
+     * @param params         The {@link Query} with all the required and optional arguments.
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    private Object executeHelper(KeenQueryParams params, Timeframe timeframe) throws IOException {
+    private Object executeHelper(Query params, Timeframe timeframe) throws IOException {
         QueryType queryType = params.getQueryType();
 
         if (false == params.AreParamsValid(queryType)) {

@@ -8,7 +8,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.keen.client.java.KeenQueryParams.QueryParamBuilder;
+import io.keen.client.java.Query.QueryBuilder;
 
 /**
  * KeenClientTest
@@ -80,13 +79,13 @@ public class KeenQueryTest {
 
         KeenQueryClient queryClientTest = new TestKeenQueryClientBuilder(queryProject).build();
 
-        ArrayList<String> groupBy = new ArrayList<String>();
-        groupBy.add("click-number");
-        groupBy.add("keen.id");
+        ArrayList<String> groupByParam = new ArrayList<String>();
+        groupByParam.add("click-number");
+        groupByParam.add("keen.id");
 
-        KeenQueryParams params = new KeenQueryParams.QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query params = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
-                .withGroupBy(groupBy)
+                .withGroupBy(groupByParam)
                 .withInterval("weekly")
                 .build();
 
@@ -101,44 +100,33 @@ public class KeenQueryTest {
         // each item has: value - list of HashMaps of keen.id, click-number, result
         //                timeframe - start, end.
 
-        QueryResult myResult = queryClientTest.newExecute(params, new Timeframe("this_year"));
+        QueryResult result = queryClientTest.newExecute(params, new Timeframe("this_year"));
 
-        if (myResult.isInteger()) {
-
+        if (result.isList()) {
+            ArrayList<QueryResult> listResults = result.getList();
+            for (QueryResult item : listResults) {
+                if (item.isInterval()) {
+                    Interval interval = item.getInterval();
+                    Timeframe itemTimeframe = interval.getTimeframe();
+                    QueryResult intervalValue = interval.getValue();
+                    if (intervalValue.isList()) {
+                        ArrayList<QueryResult> groupBys = intervalValue.getList();
+                        for (QueryResult groupByItem : groupBys) {
+                            if (groupByItem.isGroupBy()) {
+                                GroupBy groupBy = groupByItem.getGroupBy();
+                                HashMap<String, Object> properties = groupBy.getProperties();
+                                QueryResult groupByResult = groupBy.getResult();
+                                if (groupByResult.isInteger()) {
+                                    Integer val = groupByResult.getInteger();
+                                            // do something with integer result.
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-//        if (result instanceof ArrayList) {
-//            ArrayList<Object> thisOne = (ArrayList<Object>)result;
-//            for (Object eachObj : thisOne) {
-//                if (eachObj instanceof HashMap) {
-//                    HashMap<String, Object> mapResult = (HashMap<String, Object>)eachObj;
-//                    if (mapResult.containsKey("timeframe")) {
-//                        Object timeframe = mapResult.get("timeframe");
-//                        if (timeframe instanceof HashMap) {
-//                            HashMap<String, String> hashTimeframe = (HashMap<String, String>)timeframe;
-//                            String start = hashTimeframe.get("start");
-//                            String end = hashTimeframe.get("end");
-//                        }
-//                    }
-//                    if (mapResult.containsKey("value")) {
-//                        Object resultValue = mapResult.get("value");
-//                        if (resultValue instanceof ArrayList) {
-//                            ArrayList<Object> arrayOfGroups = (ArrayList<Object>)resultValue;
-//                            for (Object eachItem : arrayOfGroups) {
-//                                if (eachItem instanceof HashMap) {
-//                                    HashMap<String, Object> inResultValue = (HashMap<String, Object>) eachItem;
-//                                    if (inResultValue.containsKey("value")) {
-//                                        Object deepDeepValue = inResultValue.get("value");
-//                                    }
-//                                }
-//                            }
-//                        }
-//
-//                    }
-//
-//                }
-//            }
-//        }
 
 //        Integer result = queryClientTest.count(TEST_EVENT_COLLECTION, new Timeframe("this_year"), null);
 
@@ -399,7 +387,7 @@ public class KeenQueryTest {
     public void testFilterValid()  throws Exception {
         setMockResponse(200, "{\"result\": 6}");
         try {
-            KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+            Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                     .withEventCollection(TEST_EVENT_COLLECTION)
                     .build();
 
@@ -416,7 +404,7 @@ public class KeenQueryTest {
 
         // in reality this would be a 400 error - just testing if no "result" in 200 response.
         setMockResponse(200, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .build();
         queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, 5);
@@ -428,7 +416,7 @@ public class KeenQueryTest {
     @Test(expected=ServerException.class)
     public void testFilterInvalid2() throws Exception {
         setMockResponse(400, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .build();
         queryParams.addFilter(TEST_TARGET_PROPERTY, KeenQueryConstants.LESS_THAN, 5);
@@ -448,7 +436,7 @@ public class KeenQueryTest {
 ////        absoluteTimeframe.put(KeenQueryConstants.START, startTime);
 ////        absoluteTimeframe.put(KeenQueryConstants.END, endTime);
 //
-//        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+//        Query queryParams = new QueryBuilder(QueryType.COUNT_RESOURCE)
 //                .withEventCollection(TEST_EVENT_COLLECTION)
 //                .build();
 //
@@ -468,7 +456,7 @@ public class KeenQueryTest {
 //        absoluteTimeframe.put(KeenQueryConstants.START, startTime);
 //        absoluteTimeframe.put(KeenQueryConstants.END, endTime);
 //
-//        KeenQueryParams queryParams = new QueryParamBuilder()
+//        Query queryParams = new QueryBuilder()
 //                .withEventCollection(TEST_EVENT_COLLECTION)
 //                .withTimeframe(startTime, endTime)
 //                .build();
@@ -483,7 +471,7 @@ public class KeenQueryTest {
 //    public void testRelativeTimeframe() throws Exception {
 //        setMockResponse(200, "{\"result\": 2}");
 //
-//        KeenQueryParams queryParams = new QueryParamBuilder()
+//        Query queryParams = new QueryBuilder()
 //                .withEventCollection(TEST_EVENT_COLLECTION)
 //                .withTimeframe("this_month")
 //                .build();
@@ -497,7 +485,7 @@ public class KeenQueryTest {
     public void testInterval() throws Exception {
         setMockResponse(200, "{\"result\": [{\"value\": 2, \"timeframe\": {\"start\": \"2015-06-01T00:00:00.000Z\", \"end\": \"2015-06-07T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-07T00:00:00.000Z\", \"end\": \"2015-06-14T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-14T00:00:00.000Z\", \"end\": \"2015-06-21T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-21T00:00:00.000Z\", \"end\": \"2015-06-28T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-28T00:00:00.000Z\", \"end\": \"2015-07-01T00:00:00.000Z\"}}]}");
 
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withInterval("weekly")
                 .build();
@@ -510,7 +498,7 @@ public class KeenQueryTest {
     @Test
     public void testTimezone() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimezone("UTC")
                 .build();
@@ -524,7 +512,7 @@ public class KeenQueryTest {
     public void testGroupBy() throws Exception {
         setMockResponse(200, "{\"result\": [{\"result\": 10, \"click-number\": 0}, {\"result\": 7, \"click-number\": 1}, {\"result\": 6, \"click-number\": 2}, {\"result\": 5, \"click-number\": 3}, {\"result\": 4, \"click-number\": 4}, {\"result\": 4, \"click-number\": 5}, {\"result\": 3, \"click-number\": 6}, {\"result\": 2, \"click-number\": 7}, {\"result\": 1, \"click-number\": 8}, {\"result\": 2, \"click-number\": null}]}");
 
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withGroupBy("click-number")
                 .build();
@@ -538,7 +526,7 @@ public class KeenQueryTest {
     public void testMaxAge() throws Exception {
         setMockResponse(200, "{\"result\": 44}");
 
-        KeenQueryParams queryParams = new QueryParamBuilder(QueryType.COUNT_RESOURCE)
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withMaxAge(300)
                 .build();
@@ -547,7 +535,7 @@ public class KeenQueryTest {
         assertEquals( requestString, "{\"max_age\":300,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
 
-    private String mockCaptureCountQueryRequest(KeenQueryParams inputParams) throws Exception {
+    private String mockCaptureCountQueryRequest(Query inputParams) throws Exception {
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         Object result = queryClient.execute(inputParams, null);
 
