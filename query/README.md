@@ -39,7 +39,6 @@ Alternatively, users can use optional parameters to send queries. However, becau
 ```java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
-        .withTimeframe(new Timeframe("<start>", "<end>"))
         .build();
 QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isInteger()) {
@@ -50,7 +49,7 @@ if (result.isInteger()) {
 
 Some special cases are when filters "Group By" and "Inteval" are specified, as well as the Select Unique query.
 
-For Select Unique queries, the user gets a list of unique values, given the target property. Therefore, the QueryResult will be a list of unique property values. The QueryResult type only supports Integer, Double, String, and ArrayList values; therefore, if the property value is not of the aforementioned types, then it may be of generic Object type.
+For Select Unique queries, the user gets a list of unique values, given the target property. Therefore, the QueryResult will be a list of unique property values. The QueryResult type only supports Integer, Double, String, and ArrayList values; therefore, if the property value is not one of the aforementioned types, then it may be of generic Object type.
 
 ``` java
 Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
@@ -66,15 +65,15 @@ if (result.isList()) {
 		}
 		
 		// note that for Select Unique query, QueryResult can also be a generic Object,
-		// depending on the expected type of the Target Property.
+		// depending on the type of the Target Property.
 		if (item.isObject()) {
-			// in this case, user is responsible for her own parsing.
+			// in this case, user is responsible for her own parsing of Object.
 		}
 	}
 }
 ```
 
-Filtering any query via Group-By will cause the query response to consist of an ArrayList of GroupBy objects. Each GroupBy object contains a HashMap<String, Object> of property/values, as well as a QueryResult of the result.
+Filtering any query via Group-By will cause the query response to consist of an ArrayList of GroupByResult objects. A GroupByResult is a type of QueryResult that also contains a HashMap<String, Object> of property/values.
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -82,20 +81,19 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .build();
 QueryResult result = queryClient.execute(query, new Timeframe("this_month"));
 if (result.isList()) {
-	ArrayList<QueryResult> listResults = result.getList();
-	for (QueryResult item : listResults) {
-		if (item.isGroupBy()) {
-			GroupBy groupBy = item.getGroupBy();
-			HashMap<String, Object> properties = groupBy.getProperties();
-			QueryResult groupByValue = groupBy.getResult();
-			if (groupByValue.isInteger()) {
-				// do something with integer result.
-			}
-		}
-	}
+    ArrayList<QueryResult> listResults = result.getList();
+    for (QueryResult item : listResults) {
+        if (item instanceof GroupByResult) {
+            GroupByResult groupBy = (GroupByResult)item;
+            HashMap<String, Object> properties = groupBy.getProperties();
+            if (groupBy.isInteger()) {
+                // do something with integer result.
+            }
+        }
+    }
 }
 ```
-Filtering any query via Interval will cause the query response to consist of an ArrayList of Interval objects. Each Interval object contains a Timeframe for the interval, as well as a QueryResult of the value.
+Filtering any query via Interval will cause the query response to consist of an ArrayList of IntervalResult objects. An IntervalResult is a type of QueryResult that also contains a Timeframe for the interval.
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -103,20 +101,19 @@ Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .build();
 QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
-	ArrayList<QueryResult> listResults = result.getList();
-	for (QueryResult item : listResults) {
-		if (item.isInterval()) {
-			Interval interval = item.getInterval();
-			Timeframe itemTimeframe = interval.getTimeframe();
-			QueryResult intervalValue = interval.getValue();
-			if (intervalValue.isInteger()) {
-				// do something with integer result.
-			}
-		}
-	}
-}        
+    ArrayList<QueryResult> listResults = result.getList();
+    for (QueryResult item : listResults) {
+        if (item instanceof IntervalResult) {
+            IntervalResult interval = (IntervalResult)item;
+            Timeframe itemTimeframe = interval.getTimeframe();
+            if (interval.isInteger()) {
+                // do something with integer result.
+            }
+        }
+    }
+}      
 ```
-Filtering via both Group By and Interval will cause the query response to consist of an ArrayList of Interval objects. Each Interval object contains a Timeframe for the interval, as well as a QueryResult of the value. This QueryResult value will be another ArrayList of GroupBy objects, as follows:
+Filtering via both Group By and Interval will cause the query response to consist of an ArrayList of IntervalResult objects. Each IntervalResult object contains an ArrayList of GroupBy objects, as follows:
 
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
@@ -128,20 +125,18 @@ QueryResult result = queryClient.execute(query, new Timeframe("this_year"));
 if (result.isList()) {
     ArrayList<QueryResult> listResults = result.getList();
     for (QueryResult item : listResults) {
-        if (item.isInterval()) {
-            Interval interval = item.getInterval();
+        if (item instanceof IntervalResult) {
+            IntervalResult interval = (IntervalResult)item;
             Timeframe itemTimeframe = interval.getTimeframe();
-            QueryResult intervalValue = interval.getValue();
-            if (intervalValue.isList()) {
-                ArrayList<QueryResult> groupBys = intervalValue.getList();
+            if (interval.isList()) {
+                ArrayList<QueryResult> groupBys = interval.getList();
                 for (QueryResult groupByItem : groupBys) {
-                    if (groupByItem.isGroupBy()) {
-                        GroupBy groupBy = groupByItem.getGroupBy();
+                    if (groupByItem instanceof GroupByResult) {
+                        GroupByResult groupBy = (GroupByResult)groupByItem;
                         HashMap<String, Object> properties = groupBy.getProperties();
-                        QueryResult groupByResult = groupBy.getResult();
-                        if (groupByResult.isInteger()) {
-                            Integer val = groupByResult.getInteger();
-                                    // do something with integer result.
+                        if (groupBy.isInteger()) {
+                            Integer val = groupBy.getInteger();
+                            // do something with integer result.
                         }
                     }
                 }
@@ -196,7 +191,7 @@ if (result.isList()) {
 
 ### Funnel and Multi-Analysis Queries
 
-TODO: The below is an old rough draft:
+TODO: The below is an old rough draft. TODO: Rewrite!!!
 
 Special queries such as Funnel and Multi-analysis are also supported, although the user is responsible of constructing her own JSON map for steps and multi-analysis, respectively:
 Funnel:

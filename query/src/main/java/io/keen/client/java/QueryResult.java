@@ -1,12 +1,8 @@
 package io.keen.client.java;
 
 
-import java.lang.reflect.Array;
-import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import javax.management.Query;
 
 /**
  * Created by claireyoung on 6/16/15.
@@ -15,33 +11,32 @@ public class QueryResult {
     private Integer integer;
     private Double doubleValue;
     private String str;
-    private GroupBy groupBy;
-    private Interval interval;
-    private ArrayList<QueryResult> list;    // TODO: Will this ever be a List but NOT an ArrayList?
+    private ArrayList<QueryResult> list;
     private Object object;  // to be used carefully!!!
 
 
-    // Constructors - they are all Private!
+    // Constructors
+    protected QueryResult(QueryResult queryResult) {
+        this.integer = queryResult.integer;
+        this.doubleValue = queryResult.doubleValue;
+        this.str = queryResult.str;
+        this.list = queryResult.list;
+        this.object = queryResult.object;
+    }
+
     private QueryResult(Integer integer) { this.integer = integer; }
 
     private QueryResult(Double doubleVal) { this.doubleValue = doubleVal; }
 
-    private QueryResult(GroupBy groupBy) { this.groupBy = groupBy; }
-
     private QueryResult(String str) { this.str = str; }
 
-    private QueryResult(Interval interval) { this.interval = interval; }
-
-    private QueryResult(ArrayList<QueryResult> list) {
-        this.list = list;
-    }
+    private QueryResult(ArrayList<QueryResult> list) { this.list = list; }
 
     private QueryResult(Object object) {
         this.object = object;
     }
 
     // validation methods
-
     public boolean isInteger() {
         return integer != null;
     }
@@ -50,30 +45,20 @@ public class QueryResult {
         return doubleValue != null;
     }
 
-    public boolean isGroupBy() { return groupBy != null; }
-
-    public boolean isInterval() { return interval != null; }
-
     public boolean isList() { return list != null; }
 
     public boolean isString() { return str != null; }
+
+    public boolean isObject() {return object != null; }
 
     // getters
     public Integer getInteger() {
         return integer;
     }
 
-    public Double getDouble() {
-        return doubleValue;
-    }
-
-    public GroupBy getGroupBy() {
-        return groupBy;
-    }
+    public Double getDouble() { return doubleValue; }
 
     public String getString() {return str;}
-
-    public Interval getInterval() { return interval; }
 
     public Object getObject() { return object; }
 
@@ -106,7 +91,7 @@ public class QueryResult {
 
                 // if there is an interval or groupBy, we expect to process them at
                 // the top level. When we recurse, we want to just make sure that
-                // we don't have any nested Intervals or GroupBy's by explicitly setting
+                // we don't have any nested Intervals or GroupByResult's by explicitly setting
                 // them to false.
                 if (isInterval) {
 
@@ -125,24 +110,24 @@ public class QueryResult {
 
                         Object value = inputMap.get(KeenQueryConstants.VALUE);
                         QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
-                        thisObject = new QueryResult(new Interval(timeframeOutput, queryResultValue));
+                        thisObject = new IntervalResult(timeframeOutput, queryResultValue);
                     }
                 } else if (isGroupBy) {
 
-                    // If this is a GroupBy, it should have key "result", along with properties to group by.
+                    // If this is a GroupByResult, it should have key "result", along with properties to group by.
                     if (inputMap.containsKey(KeenQueryConstants.RESULT)) {
                         QueryResult result = null;
                         HashMap<String, Object> properties = new HashMap<String, Object>();
                         for (String key : inputMap.keySet()) {
                             if (key.equals(KeenQueryConstants.RESULT)) {
-                                // there should not be intervals nested inside GroupBy's; only
+                                // there should not be intervals nested inside GroupByResult's; only
                                 // the other way around.
                                 result = constructQueryResult(inputMap.get(key), false, false);
                             } else {
                                 properties.put(key, inputMap.get(key));
                             }
                         }
-                        thisObject = new QueryResult(new GroupBy(properties, result));
+                        thisObject = new GroupByResult(properties, result);
                     }
                 }
             }
@@ -152,7 +137,6 @@ public class QueryResult {
         if (thisObject == null) {
             thisObject = new QueryResult(input);
         }
-
         return thisObject;
     }
 

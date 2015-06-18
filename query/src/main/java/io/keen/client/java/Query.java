@@ -135,28 +135,6 @@ public class Query {
 //        timeframe.setTimeframe(start, end);
 //    }
 
-    /**
-     * Adds a filter as an optional parameter to the query.
-     * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
-     *
-     * @param propertyName     The name of the property.
-     * @param operator          The operator (eg., gt, lt, exists, contains)
-     * @param propertyValue       The property value. Refer to API documentation for info.
-     *                            This can be a string, number, boolean, or geo-coordinates
-     *                            and are based on what the operator is.
-     */
-    public void addFilter(String propertyName, String operator, Object propertyValue) {
-        Map<String, Object> filter = new HashMap<String, Object>();
-        filter.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
-        filter.put(KeenQueryConstants.OPERATOR, operator);
-        filter.put(KeenQueryConstants.PROPERTY_VALUE, propertyValue);
-
-        if (filters == null) {
-            filters = new ArrayList<Map<String, Object>>();
-        }
-
-        filters.add(filter);
-    }
 
     // TODO: maybe we can use a reusable library - this method won't be good in long-term
     /**
@@ -227,6 +205,10 @@ public class Query {
         this.funnelSteps = builder.funnelSteps;
         this.analyses = builder.analyses;
         this.queryType = builder.queryType;
+
+        this.contentEncoding = builder.contentEncoding;
+        this.contentType = builder.contentType;
+        this.propertyNames = builder.propertyNames;
     }
 
     public static class QueryBuilder {
@@ -241,7 +223,6 @@ public class Query {
 
         // optional
         private List<Map<String, Object>> filters;
-//        private Timeframe timeframe;
         private String interval;
         private String timezone;
         private ArrayList<String> groupBy;
@@ -252,9 +233,14 @@ public class Query {
         private Map<String, Object> analyses;      // required for Multi-Analysis
         private List<Map<String, Object>> funnelSteps;  // required for funnel
 
+        private String contentEncoding;
+        private String contentType;
+        private List<String> propertyNames;
+
         public QueryBuilder(QueryType queryType) {
             this.queryType = queryType;
         }
+
 
         public Map<String, Object> getAnalyses() {return analyses;}
         public void setAnalyses(Map<String, Object> analyses) {this.analyses = analyses;}
@@ -274,6 +260,29 @@ public class Query {
         public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
         public QueryBuilder withFilters(List<Map<String, Object>> filters) {
             setFilters(filters);
+            return this;
+        }
+        /**
+         * Adds a filter as an optional parameter to the query.
+         * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
+         *
+         * @param propertyName     The name of the property.
+         * @param operator          The operator (eg., gt, lt, exists, contains)
+         * @param propertyValue       The property value. Refer to API documentation for info.
+         *                            This can be a string, number, boolean, or geo-coordinates
+         *                            and are based on what the operator is.
+         */
+        public QueryBuilder withFilter(String propertyName, String operator, Object propertyValue) {
+            Map<String, Object> filter = new HashMap<String, Object>();
+            filter.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
+            filter.put(KeenQueryConstants.OPERATOR, operator);
+            filter.put(KeenQueryConstants.PROPERTY_VALUE, propertyValue);
+
+            if (filters == null) {
+                filters = new ArrayList<Map<String, Object>>();
+            }
+
+            filters.add(filter);
             return this;
         }
 
@@ -310,9 +319,10 @@ public class Query {
             this.groupBy = groupBy;
         }
         public QueryBuilder withGroupBy(String groupBy) {
-            ArrayList<String> groupByList = new ArrayList<String>();
-            groupByList.add(groupBy);
-            setGroupBy(groupByList);
+            if (this.groupBy == null) {
+                this.groupBy = new ArrayList<String>();
+            }
+            this.groupBy.add(groupBy);
             return this;
         }
         public QueryBuilder withGroupBy(ArrayList<String> groupBy) {
@@ -353,44 +363,33 @@ public class Query {
             return this;
         }
 
-//        public Map<String, Object> getAbsoluteTimeframe() {return absoluteTimeframe;}
-//        public void setAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {this.absoluteTimeframe = absoluteTimeframe;}
-//        public QueryBuilder withAbsoluteTimeframe(Map<String, Object> absoluteTimeframe) {
-//            setAbsoluteTimeframe(absoluteTimeframe);
-//            return this;
-//        }
+        public String getContentEncoding() {return contentEncoding;}
+        public void setContentEncoding(String contentEncoding) {this.contentEncoding = contentEncoding;}
+        public QueryBuilder withContentEncoding(String contentEncoding) {
+            setContentEncoding(contentEncoding);
+            return this;
+        }
 
-//        public String getRelativeTimeframe() {return timeframe;}
-//        public void setRelativeTimeframe(String timeframe) {this.timeframe = timeframe;}
-//        public QueryBuilder withRelativeTimeframe(String timeframe) {
-//            setRelativeTimeframe(timeframe);
-//            return this;
-//        }
+        public String getContentType() {return contentType;}
+        public void setContentType(String contentType) {this.contentType = contentType;}
+        public QueryBuilder withContentType(String contentType) {
+            setContentEncoding(contentType);
+            return this;
+        }
 
-//        public void setTimeframe(String relativeTimeframe) {
-//            timeframe = new Timeframe(relativeTimeframe);
-//        }
-//
-//        public void setTimeframe(String start, String end) {
-//            timeframe = new Timeframe(start, end);
-//        }
-//
-//        public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe;}
-//
-//        public QueryBuilder withTimeframe(String timeframe) {
-//            setTimeframe(timeframe);
-//            return this;
-//        }
-//
-//        public QueryBuilder withTimeframe(String start, String end) {
-//            setTimeframe(start, end);
-//            return this;
-//        }
-//
-//        public QueryBuilder withTimeframe(Timeframe timeframe) {
-//            setTimeframe(timeframe);
-//            return this;
-//        }
+        public List<String> getPropertyNames() {return propertyNames;}
+        public void setPropertyNames(List<String> propertyNames) {this.propertyNames = propertyNames;}
+        public QueryBuilder withPropertyNames(List<String> propertyNames) {
+            setPropertyNames(propertyNames);
+            return this;
+        }
+        public QueryBuilder withPropertyName(String propertyName) {
+            if (this.propertyNames == null) {
+                this.propertyNames = new ArrayList<String>();
+            }
+            this.propertyNames.add(propertyName);
+            return this;
+        }
 
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.

@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
@@ -98,7 +99,7 @@ public class KeenQueryClient {
 
     /**
      * Count Resource query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-resource
+     * Query API info here: https://keen.io/docs/api/#count
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @return The response from the server in the "result" map.
@@ -109,14 +110,14 @@ public class KeenQueryClient {
         Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
-        Object result = execute(queryParams, timeframe);
+        QueryResult result = execute(queryParams, timeframe);
 
-        return objectToInteger(result);
+        return queryResultToInteger(result);
     }
 
     /**
      * Count Unique query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-unique-resource
+     * Query API info here: https://keen.io/docs/api/#count-unique
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -129,8 +130,9 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = execute(queryParams, timeframe);
-        return objectToInteger(result);
+        QueryResult result = execute(queryParams, timeframe);
+
+        return queryResultToInteger(result);
     }
 
     /**
@@ -148,8 +150,8 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -167,8 +169,8 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -186,8 +188,8 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -205,8 +207,8 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -226,8 +228,8 @@ public class KeenQueryClient {
                 .withTargetProperty(targetProperty)
                 .withPercentile(percentile)
                 .build();
-        Object result = execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -245,8 +247,8 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  execute(queryParams, timeframe);
-        return objectToDouble(result);
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -259,12 +261,12 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public QueryResult selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = execute(queryParams, timeframe);
+        QueryResult result = execute(queryParams, timeframe);
         return result;
     }
 
@@ -281,7 +283,7 @@ public class KeenQueryClient {
                 .withEventCollection(eventCollection)
                 .withEmail(email)
                 .build();
-        Object result = executeHelper(queryParams, timeframe);
+        QueryResult result = execute(queryParams, timeframe);
         // possibly exception if something went wrong, but no return value because email is sent
     }
 
@@ -294,11 +296,11 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object extraction(String eventCollection, Timeframe timeframe) throws IOException  {
+    public QueryResult extraction(String eventCollection, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.QueryBuilder(QueryType.EXTRACTION_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
-        Object result = executeHelper(queryParams, timeframe);
+        QueryResult result = execute(queryParams, timeframe);
         return result;
     }
 
@@ -325,7 +327,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object funnel(List<Map<String, Object>> steps, Timeframe timeframe) throws IOException {
+    public QueryResult funnel(List<Map<String, Object>> steps, Timeframe timeframe) throws IOException {
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -338,7 +340,7 @@ public class KeenQueryClient {
                 .withFunnelSteps(steps)
                 .build();
 
-        return executeHelper(queryParams, timeframe);
+        return execute(queryParams, timeframe);
     }
 
     // TODO: it would be nice to add an addAnalysisParameter() method to make adding analyses more user-friendly.
@@ -360,7 +362,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object multiAnalysis(String eventCollection, Map<String, Object> analyses, Timeframe timeframe) throws IOException {
+    public QueryResult multiAnalysis(String eventCollection, Map<String, Object> analyses, Timeframe timeframe) throws IOException {
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -376,7 +378,7 @@ public class KeenQueryClient {
                 .build();
         Map<String, Object> analysisArg = new HashMap<String, Object>();
 
-        return executeHelper(queryParams, timeframe);
+        return execute(queryParams, timeframe);
     }
 
 
@@ -427,15 +429,10 @@ public class KeenQueryClient {
         return queryString;
     }
 
-    public QueryResult newExecute(Query params, Timeframe timeframe) throws IOException {
+    public QueryResult execute(Query params, Timeframe timeframe) throws IOException {
         Object returnVal = executeHelper(params, timeframe);
         QueryResult result = QueryResult.constructQueryResult(returnVal, params.hasGroupBy(), params.hasInterval());
         return result;
-    }
-
-
-    public Object execute(Query params, Timeframe timeframe) throws IOException {
-        return executeHelper(params, timeframe);
     }
 
     /**
@@ -464,15 +461,6 @@ public class KeenQueryClient {
         Object returnVal = "";
         URL url = new URL(urlString);
         returnVal = publishObject(project, url, allQueryArgs);
-
-        // TODO: analyze result.
-
-        // case 1 - select unique
-        if (queryType == QueryType.SELECT_UNIQUE_RESOURCE) {
-            if (returnVal instanceof ArrayList) {
-                ArrayList<Object> objectArrayList = (ArrayList<Object>)returnVal;
-            }
-        }
 
         return returnVal;
     }
@@ -567,19 +555,19 @@ public class KeenQueryClient {
         );
     }
 
-    private Integer objectToInteger(Object object) throws KeenQueryClientException {
-        if (object instanceof Integer) {
-            return (Integer)object;
+    private Integer queryResultToInteger(QueryResult result) throws KeenQueryClientException {
+        if (result.isInteger()) {
+            return result.getInteger();
         } else {
             throw new KeenQueryClientException("Count Query Error: expected Integer response type.");
         }
     }
 
-    private Double objectToDouble(Object object) throws KeenQueryClientException {
-        if (object instanceof Double) {
-            return (Double)object;
-        } else if (object instanceof Integer) {
-            return ((Integer)object).doubleValue();
+    private Double queryResultToDouble(QueryResult result) throws KeenQueryClientException {
+        if (result.isDouble()) {
+            return result.getDouble();
+        } else if (result.isInteger()) {
+            return (result.getInteger()).doubleValue();
         } else {
             throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
         }
