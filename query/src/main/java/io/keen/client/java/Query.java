@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * Created by claireyoung on 5/18/15.
@@ -20,9 +21,6 @@ public class Query {
 
     // optional
     private List<Map<String, Object>> filters;
-//    private String relativeTimeframe;
-//    private Map<String, Object> absoluteTimeframe;  // absolute timeframe with "start" and "end" keys
-//    Timeframe timeframe;
     private String interval;    // requires timeframe to be set
     private String timezone;
     private ArrayList<String> groupBy;
@@ -34,12 +32,13 @@ public class Query {
     // optional for the Extraction query
     private Integer latest;     // An integer containing the number of most recent events to extract.
     private String email;
-    private String contentEncoding; // TODO add these
-    private String contentType;     // TODO add these
     private List<String> propertyNames; // TODO add these
 
     private Map<String, Object> analyses;      // required for Multi-Analysis
+
+
     private List<Map<String, Object>> funnelSteps;  // required for funnel
+
 
     /**
      * Constructs the map to pass to the JSON handler, so that the proper required
@@ -97,19 +96,10 @@ public class Query {
         if (null != funnelSteps && funnelSteps.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.STEPS, funnelSteps);
         }
+        if (null != propertyNames && propertyNames.isEmpty() == false) {
+            queryArgs.put(KeenQueryConstants.PROPERTY_NAMES, propertyNames);
+        }
 
-//        if (null != relativeTimeframe) {
-//            queryArgs.put(KeenQueryConstants.TIMEFRAME, relativeTimeframe);
-//        }
-//
-//        if (null != absoluteTimeframe && absoluteTimeframe.isEmpty() == false) {
-//            queryArgs.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
-//        }
-
-//        if (null != timeframe) {
-//            Map<String, Object> timeframeArgs = timeframe.constructTimeframeArgs();
-//            queryArgs.putAll(timeframeArgs);
-//        }
         return queryArgs;
     }
 
@@ -120,6 +110,14 @@ public class Query {
     public boolean hasGroupBy() {return groupBy != null;}
 
     public boolean hasInterval() {return interval != null;}
+
+    public Set<String> getMultiAnalysisKeys() {
+        if (this.queryType != QueryType.MULTI_ANALYSIS || this.analyses == null) {
+            return null;
+        }
+
+        return this.analyses.keySet();
+    }
 
     /**
      * Sets the start and end of the absolute time frame.
@@ -184,6 +182,9 @@ public class Query {
         return true;
     }
 
+
+
+
     /**
      * Constructs a Keen Query Params using a builder.
      *
@@ -206,8 +207,6 @@ public class Query {
         this.analyses = builder.analyses;
         this.queryType = builder.queryType;
 
-        this.contentEncoding = builder.contentEncoding;
-        this.contentType = builder.contentType;
         this.propertyNames = builder.propertyNames;
     }
 
@@ -233,8 +232,6 @@ public class Query {
         private Map<String, Object> analyses;      // required for Multi-Analysis
         private List<Map<String, Object>> funnelSteps;  // required for funnel
 
-        private String contentEncoding;
-        private String contentType;
         private List<String> propertyNames;
 
         public QueryBuilder(QueryType queryType) {
@@ -248,6 +245,39 @@ public class Query {
             setAnalyses(analyses);
             return this;
         }
+
+        public QueryBuilder withAnalysis(String analysisIdentifier, QueryType queryType) {
+            return withAnalysis(analysisIdentifier, queryType, null);
+        }
+
+        public QueryBuilder withAnalysis(String analysisIdentifier, QueryType queryType, String targetProperty) {
+            Map<String, Object> queryArgs = new HashMap<String, Object>();
+            queryArgs.put(KeenQueryConstants.ANALYSIS_TYPE, QueryType.getQueryType(queryType));
+
+            if (targetProperty != null) {
+                queryArgs.put(KeenQueryConstants.TARGET_PROPERTY, targetProperty);
+            }
+
+            if (this.analyses == null) {
+                this.analyses = new HashMap<String, Object>();
+            }
+
+            this.analyses.put(analysisIdentifier, queryArgs);
+
+            return this;
+        }
+
+//        public QueryBuilder withAnalysis(String uniqueName, String analysisType) {
+//            if (analyses == null) {
+//                analyses = new HashMap<String, Object>();
+//            }
+//
+//            Map<String, String> newAnalysis = new HashMap<String, String>();
+//            newAnalysis.put(KeenQueryConstants.ANALYSIS_TYPE, analysisType);
+//            analyses.put(uniqueName, newAnalysis);
+//
+//            return this;
+//        }
 
         public List<Map<String, Object>> setFunnelSteps() {return funnelSteps;}
         public void setFunnelSteps(List<Map<String, Object>> funnelSteps) {this.funnelSteps = funnelSteps;}
@@ -363,20 +393,6 @@ public class Query {
             return this;
         }
 
-        public String getContentEncoding() {return contentEncoding;}
-        public void setContentEncoding(String contentEncoding) {this.contentEncoding = contentEncoding;}
-        public QueryBuilder withContentEncoding(String contentEncoding) {
-            setContentEncoding(contentEncoding);
-            return this;
-        }
-
-        public String getContentType() {return contentType;}
-        public void setContentType(String contentType) {this.contentType = contentType;}
-        public QueryBuilder withContentType(String contentType) {
-            setContentEncoding(contentType);
-            return this;
-        }
-
         public List<String> getPropertyNames() {return propertyNames;}
         public void setPropertyNames(List<String> propertyNames) {this.propertyNames = propertyNames;}
         public QueryBuilder withPropertyNames(List<String> propertyNames) {
@@ -390,6 +406,23 @@ public class Query {
             this.propertyNames.add(propertyName);
             return this;
         }
+
+        public List<Map<String, Object>> getSteps() {return funnelSteps;}
+        public QueryBuilder withFunnelStep(Map<String, Object> step) {
+            if (funnelSteps == null) {
+                funnelSteps = new ArrayList<Map<String, Object>>();
+            }
+            funnelSteps.add(step);
+            return this;
+        }
+        public QueryBuilder withFunnelStep(String eventCollection, String actorProperty) {
+            Map<String, Object> step = new HashMap<String, Object>();
+            step.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+            step.put(KeenQueryConstants.ACTOR_PROPERTY, actorProperty);
+
+            return withFunnelStep(step);
+        }
+
 
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.

@@ -70,5 +70,7 @@ public class KeenQueryConstants {
     // multi-analysis
     static final String ANALYSIS_TYPE = "analysis_type";
 
+    // extraction
+    static final String PROPERTY_NAMES = "property_names";
 
 }

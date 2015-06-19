@@ -12,6 +12,7 @@ import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
@@ -382,56 +383,20 @@ public class KeenQueryClient {
     }
 
 
-    public static String getQueryType (QueryType type) throws KeenQueryClientException {
-        QueryType myType = QueryType.COUNT_RESOURCE;
-
-        String queryString = "";
-        switch (type) {
-            case COUNT_RESOURCE:
-                queryString = KeenQueryConstants.COUNT_RESOURCE;
-                break;
-            case COUNT_UNIQUE:
-                queryString = KeenQueryConstants.COUNT_UNIQUE;
-                break;
-            case MINIMUM_RESOURCE:
-                queryString = KeenQueryConstants.MINIMUM_RESOURCE;
-                break;
-            case MAXIMUM_RESOURCE:
-                queryString = KeenQueryConstants.MAXIMUM_RESOURCE;
-                break;
-            case AVERAGE_RESOURCE:
-                queryString = KeenQueryConstants.AVERAGE_RESOURCE;
-                break;
-            case MEDIAN_RESOURCE:
-                queryString = KeenQueryConstants.MEDIAN_RESOURCE;
-                break;
-            case PERCENTILE_RESOURCE:
-                queryString = KeenQueryConstants.PERCENTILE_RESOURCE;
-                break;
-            case SUM_RESOURCE:
-                queryString = KeenQueryConstants.SUM_RESOURCE;
-                break;
-            case SELECT_UNIQUE_RESOURCE:
-                queryString = KeenQueryConstants.SELECT_UNIQUE_RESOURCE;
-                break;
-            case EXTRACTION_RESOURCE:
-                queryString = KeenQueryConstants.EXTRACTION_RESOURCE;
-                break;
-            case FUNNEL:
-                queryString = KeenQueryConstants.FUNNEL;
-                break;
-            case MULTI_ANALYSIS:
-                queryString = KeenQueryConstants.MULTI_ANALYSIS;
-                break;
-            default:
-                throw new KeenQueryClientException("Invalid query type input.");
-        }
-        return queryString;
-    }
 
     public QueryResult execute(Query params, Timeframe timeframe) throws IOException {
         Object returnVal = executeHelper(params, timeframe);
-        QueryResult result = QueryResult.constructQueryResult(returnVal, params.hasGroupBy(), params.hasInterval());
+
+        // for special case multi-analysis queries, we need to get the analysis keys to
+        // be able to distinguish a Multi-analysis result object.
+        QueryType queryType = params.getQueryType();
+        Set<String> analysesKeys = null;
+        if (queryType == QueryType.MULTI_ANALYSIS) {
+            // then we need ot get the multi-analysis keys to distinguish the multi-analysis result
+            analysesKeys = params.getMultiAnalysisKeys();
+        }
+
+        QueryResult result = QueryResult.constructQueryResult(returnVal, params.hasGroupBy(), params.hasInterval(), analysesKeys);
         return result;
     }
 
@@ -450,7 +415,7 @@ public class KeenQueryClient {
             throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
-        String urlString = formatBaseURL(getQueryType(queryType));
+        String urlString = formatBaseURL(QueryType.getQueryType(queryType));
 
         // Query parameter args.
         Map<String, Object> allQueryArgs = params.ConstructQueryArgs();

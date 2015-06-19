@@ -150,15 +150,15 @@ if (result.isList()) {
 
 There are also some utility methods to add filters and absolute timeframes to a Query:
 ```java
+
+// notice this will add two filter parameters, with 1 < click-count < 5
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
-	            .withEventCollection(TEST_EVENT_COLLECTION)
+	            .withEventCollection("<event_collection>")
+	            .withFilter("click-count", "lt", 5)
+	            .withFilter("click-count", "gt", 1)
 	            .build();
 
-query.addFilter("click-count", "lt", 5);
-query.addFilter("click-count", "gt", 1);
-query.addAbsoluteTimeframe("2012-08-13T19:00:00.000Z", "2015-06-07T19:00:00.000Z");
-
-Object result = queryClient.count(query);
+Object result = queryClient.count(query, new Timeframe("<start>", "<end>"));
 Integer queryResult = null;
 if (result instance Integer) {
 	queryResult = (Integer)result;
@@ -170,10 +170,10 @@ The [Extraction Resource](https://keen.io/docs/api/reference/#extraction-resourc
 // this has no return value. It will send you an email with the results.
 queryClient.extraction("<event collection>", "your@email", new Timeframe("this_year"));
 
-// this has return value as QueryResult, which should be an ArrayList of QueryResult Objects.
+// return value QueryResult should be an ArrayList of QueryResult Objects.
 QueryResult result = queryClient.extraction("<event collection>", new Timeframe("this_year"));
 
-// QueryResult will most likely be of type Object
+// with any optional parameters
 Query query = new QueryBuilder(QueryType.EXTRACTION_RESOURCE)
 	            .withEventCollection(TEST_EVENT_COLLECTION)
 	            .build();
@@ -206,7 +206,7 @@ listSteps.add(steps);
 // run query
 QueryResult result = queryClient.funnel(listSteps);
 ```
-Multi-Analysis:
+Multi-Analysis queries require an event collection and an "analyses" object as a parameter. Because the analyses can be complex, the user is responsible for constructing her own analyses object.
 ```java
 // create analyses object
 Map<String, Object> analyses = new HashMap<String, Object>();
@@ -216,7 +216,7 @@ Map<String, String> firstSet = new HashMap<String, String>();
 firstSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.COUNT_RESOURCE);
 analyses.put("count set", firstSet);
 
-// add a second set for Sum Resource Query.
+// add a second set for Sum Resource Query, with a target property.
 Map<String, String> secondSet = new HashMap<String, String>();
 secondSet.put(KeenQueryConstants.ANALYSIS_TYPE, KeenQueryConstants.SUM_RESOURCE);
 secondSet.put(KeenQueryConstants.TARGET_PROPERTY, "click-count");
@@ -225,7 +225,41 @@ analyses.put("sum set", secondSet);
 QueryResult result = queryClient.multiAnalysis("<event collection>", analyses);
 
 ```
+For Multi-Analysis queries with GroupBy and Interval, please make sure that each analysis key is unique (eg. "count set", "sum set" in the example code), and particularly that they are NOT named "result", "value", or any property names (especially the GroupBy properties).
+```java
+Query queryParams = new QueryBuilder(QueryType.MULTI_ANALYSIS)
+                .withEventCollection("<event_collection>")
+                .withAnalyses(analysis)
+                .withGroupBy("click-number")
+                .withGroupBy("keen.id")
+                .withInterval("weekly")
+                .build();
 
+QueryResult result = queryClientTest.execute(queryParams, new Timeframe("this_year"));
+
+if (result.isList()) {
+    ArrayList<QueryResult> listResults = result.getList();
+    for (QueryResult item : listResults) {
+        if (item instanceof IntervalResult) {
+            IntervalResult interval = (IntervalResult)item;
+            Timeframe itemTimeframe = interval.getTimeframe();
+            if (interval.isList()) {
+                ArrayList<QueryResult> groupBys = interval.getList();
+                for (QueryResult groupByItem : groupBys) {
+                    if (groupByItem instanceof GroupByResult) {
+                        GroupByResult groupBy = (GroupByResult)groupByItem;
+                        HashMap<String, Object> properties = groupBy.getProperties();
+                        if (groupBy.isMultiAnalysis()) {
+                            HashMap<String, QueryResult> multiAnalysisResult = groupBy.getMultiAnalysis();
+                            // do something with multi-analysis result.
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
 
 ## Changelog
 

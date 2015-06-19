@@ -3,6 +3,7 @@ package io.keen.client.java;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Created by claireyoung on 6/16/15.
@@ -13,6 +14,7 @@ public class QueryResult {
     private String str;
     private ArrayList<QueryResult> list;
     private Object object;  // to be used carefully!!!
+    private HashMap<String, QueryResult> multiAnalysisResult;
 
 
     // Constructors
@@ -22,6 +24,7 @@ public class QueryResult {
         this.str = queryResult.str;
         this.list = queryResult.list;
         this.object = queryResult.object;
+        this.multiAnalysisResult = queryResult.multiAnalysisResult;
     }
 
     private QueryResult(Integer integer) { this.integer = integer; }
@@ -32,8 +35,10 @@ public class QueryResult {
 
     private QueryResult(ArrayList<QueryResult> list) { this.list = list; }
 
-    private QueryResult(Object object) {
-        this.object = object;
+    private QueryResult(Object object) { this.object = object; }
+
+    private QueryResult(HashMap<String, QueryResult> multiAnalysisResult) {
+        this.multiAnalysisResult = multiAnalysisResult;
     }
 
     // validation methods
@@ -51,6 +56,8 @@ public class QueryResult {
 
     public boolean isObject() {return object != null; }
 
+    public boolean isMultiAnalysis() {return multiAnalysisResult != null; }
+
     // getters
     public Integer getInteger() {
         return integer;
@@ -60,15 +67,40 @@ public class QueryResult {
 
     public String getString() {return str;}
 
-    public Object getObject() { return object; }
+    public HashMap<String, QueryResult> getMultiAnalysis() { return multiAnalysisResult; }
 
     public ArrayList<QueryResult> getList() {
         return list;
     }
 
+    public Object getObject() { return object; }
+
     // Construct Query Result
-    public static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
+    public static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval, Set<String> multiAnalysisKeys) {
         QueryResult thisObject = null;
+
+        boolean isMultiAnalysisResult = false;
+        QueryResult multiAnalysisResult = null;
+        if (input instanceof HashMap && multiAnalysisKeys != null && multiAnalysisKeys.isEmpty() == false) {
+            isMultiAnalysisResult = true;
+            // if all keys are in this HashMap, then we have a multiAnalysisResult.
+            HashMap<String, Object> inputHash = (HashMap<String, Object>)input;
+            for (String key : multiAnalysisKeys) {
+                if (inputHash.containsKey(key) == false) {
+                    isMultiAnalysisResult = false;
+                }
+            }
+
+            // construct the MultiAnalysisResult.
+            if (isMultiAnalysisResult) {
+                HashMap<String, QueryResult> outputResult = new HashMap<String, QueryResult>();
+                for (String key : multiAnalysisKeys) {
+                    outputResult.put(key, constructQueryResult(inputHash.get(key), isGroupBy, isInterval, multiAnalysisKeys));
+                }
+                multiAnalysisResult = new QueryResult(outputResult);
+            }
+        }
+
         if (input instanceof Integer) {
             thisObject = new QueryResult((Integer)input);
         } else if (input instanceof Double) {
@@ -81,7 +113,7 @@ public class QueryResult {
             ArrayList<QueryResult> listOutput = new ArrayList<QueryResult>();
             ArrayList<Object> listInput = (ArrayList<Object>)input;
             for (Object child : listInput) {
-                QueryResult resultItem = constructQueryResult(child, isGroupBy, isInterval);
+                QueryResult resultItem = constructQueryResult(child, isGroupBy, isInterval, multiAnalysisKeys);
                 listOutput.add(resultItem);
             }
             thisObject = new QueryResult(listOutput);
@@ -96,7 +128,7 @@ public class QueryResult {
                 if (isInterval) {
 
                     // If this is an interval, it should have keys "timeframe" and "value"
-                    if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && inputMap.containsKey(KeenQueryConstants.VALUE)) {
+                    if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && (inputMap.containsKey(KeenQueryConstants.VALUE) || isMultiAnalysisResult)) {
                         Timeframe timeframeOutput = null;
                         Object timeframe = inputMap.get(KeenQueryConstants.TIMEFRAME);
                         if (timeframe instanceof HashMap) {
@@ -108,27 +140,40 @@ public class QueryResult {
                             timeframeOutput = new Timeframe((String) timeframe);
                         }
 
-                        Object value = inputMap.get(KeenQueryConstants.VALUE);
-                        QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
-                        thisObject = new IntervalResult(timeframeOutput, queryResultValue);
+                        if (isMultiAnalysisResult == false) {
+                            Object value = inputMap.get(KeenQueryConstants.VALUE);
+                            QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false, multiAnalysisKeys);
+                            thisObject = new IntervalResult(timeframeOutput, queryResultValue);
+                        } else {
+                            thisObject = new IntervalResult(timeframeOutput, multiAnalysisResult);
+                        }
                     }
                 } else if (isGroupBy) {
 
                     // If this is a GroupByResult, it should have key "result", along with properties to group by.
-                    if (inputMap.containsKey(KeenQueryConstants.RESULT)) {
+                    if (inputMap.containsKey(KeenQueryConstants.RESULT) || isMultiAnalysisResult) {
                         QueryResult result = null;
                         HashMap<String, Object> properties = new HashMap<String, Object>();
                         for (String key : inputMap.keySet()) {
-                            if (key.equals(KeenQueryConstants.RESULT)) {
+                            if (isMultiAnalysisResult && multiAnalysisKeys.contains(key)) {
+                                // do nothing.
+                            } else if (key.equals(KeenQueryConstants.RESULT)) {
                                 // there should not be intervals nested inside GroupByResult's; only
                                 // the other way around.
-                                result = constructQueryResult(inputMap.get(key), false, false);
+                                result = constructQueryResult(inputMap.get(key), false, false, multiAnalysisKeys);
                             } else {
                                 properties.put(key, inputMap.get(key));
                             }
                         }
+
+                        if (isMultiAnalysisResult) {
+                            result = multiAnalysisResult;
+                        }
                         thisObject = new GroupByResult(properties, result);
                     }
+                } else if (isMultiAnalysisResult) {
+                    // multiAnalysisResult that is NOT in a group-by or Interval.
+                    thisObject = multiAnalysisResult;
                 }
             }
         }
