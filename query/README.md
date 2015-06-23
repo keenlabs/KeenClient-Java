@@ -15,10 +15,10 @@ KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject).build
 Optionally, users can also specify a HTTP Handler, base URL, or JSON Handler:
 ```java
 KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
-	.withHttpHandler(httpHandler)
-	.withJsonHandler(jsonHandler)
-	.withBaseUrl(baseURL)
-	.build();
+		.withHttpHandler(httpHandler)
+		.withJsonHandler(jsonHandler)
+		.withBaseUrl(baseURL)
+		.build();
 ```
 ### Using the KeenQueryClient to send Queries
 The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific Integer or Double response type. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
@@ -189,12 +189,9 @@ if (result.isList()) {
 
 ```
 
-### Funnel and Multi-Analysis Queries
+### Funnel Query
 
-TODO: The below is an old rough draft. TODO: Rewrite!!!
-
-Special queries such as Funnel and Multi-analysis are also supported, although the user is responsible of constructing her own JSON map for steps and multi-analysis, respectively:
-Funnel:
+For the Funnel query,  the user is responsible of constructing her own JSON map for steps.
 ```java
 // construct the list of steps
 List<Map<String, Object>> listSteps = new ArrayList<Map<String, Object>>();
@@ -206,9 +203,11 @@ listSteps.add(steps);
 // run query
 QueryResult result = queryClient.funnel(listSteps);
 ```
-Multi-Analysis queries require an event collection and an "analyses" object as a parameter. Because the analyses can be complex, the user is responsible for constructing her own analyses object.
+### Multi-Analysis Query
+
+Multi-Analysis queries require an event collection and an "analyses" object as a parameter. The user can construct her own analyses argument as shown below, or the user can use the QueryBuilder to add analysis arguments.
 ```java
-// create analyses object
+// manually create analyses object
 Map<String, Object> analyses = new HashMap<String, Object>();
 
 // add a first set for Count Query.
@@ -229,7 +228,8 @@ For Multi-Analysis queries with GroupBy and Interval, please make sure that each
 ```java
 Query queryParams = new QueryBuilder(QueryType.MULTI_ANALYSIS)
                 .withEventCollection("<event_collection>")
-                .withAnalyses(analysis)
+                .withAnalysis("count set", QueryType.COUNT_RESOURCE)
+                .withAnalysis("sum set", QueryType.SUM_RESOURCE, TEST_TARGET_PROPERTY)
                 .withGroupBy("click-number")
                 .withGroupBy("keen.id")
                 .withInterval("weekly")

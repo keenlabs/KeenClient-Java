@@ -127,7 +127,6 @@ public class KeenQueryTest {
         assertEquals(requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_year\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
 
-    // TODO
     @Test
     public void testCountExecute() throws Exception {
         setMockResponse(200, "{\"result\": 21}");
@@ -306,7 +305,6 @@ public class KeenQueryTest {
         assertTrue(result.getList().get(0).getObject() instanceof HashMap);
 
     }
-    // todo: test the side effect of this.
     @Test
     public void testExtractionEmail()  throws Exception {
 
@@ -549,7 +547,6 @@ public class KeenQueryTest {
         assertTrue (groupBy.isInteger()) ;
     }
 
-
     // Test Server error
     @Test(expected = ServerException.class)
     public void testAddEventServerFailure() throws Exception {
@@ -557,7 +554,10 @@ public class KeenQueryTest {
         queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
     }
 
+    //
     // TEST OPTIONAL PARAMETERS
+    //
+
     @Test
     public void testFilterValid()  throws Exception {
         setMockResponse(200, "{\"result\": 6}");
@@ -645,8 +645,6 @@ public class KeenQueryTest {
 
         String requestString = mockCaptureCountQueryRequest(queryParams, new Timeframe("this_month"));
         assertEquals( requestString, "{\""+KeenQueryConstants.INTERVAL+"\":\"weekly\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
-        // TODO: verify response.
     }
 
     @Test
@@ -676,10 +674,7 @@ public class KeenQueryTest {
                 .build();
 
         String requestString = mockCaptureCountQueryRequest(queryParams, null);
-        // todo: redo this, since group-by can be a list.
         assertEquals( requestString, "{\"group_by\":[\"click-number\",\"keen.id\"],\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
-        // TODO: verify response.
     }
 
     @Test
