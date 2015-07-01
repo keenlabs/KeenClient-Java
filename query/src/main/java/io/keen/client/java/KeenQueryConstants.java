@@ -61,6 +61,7 @@ public class KeenQueryConstants {
     static final String RESULT = "result";
     static final String ERROR_CODE = "error_code";
     static final String MESSAGE = "message";
+    static final String VALUE = "value";
 
     // absolute timeframe
     static final String START = "start";
@@ -69,5 +70,7 @@ public class KeenQueryConstants {
     // multi-analysis
     static final String ANALYSIS_TYPE = "analysis_type";
 
+    // extraction
+    static final String PROPERTY_NAMES = "property_names";
 
 }

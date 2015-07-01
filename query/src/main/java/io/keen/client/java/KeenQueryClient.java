@@ -6,10 +6,13 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
@@ -97,38 +100,25 @@ public class KeenQueryClient {
 
     /**
      * Count Resource query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-resource
+     * Query API info here: https://keen.io/docs/api/#count
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Integer count(String eventCollection) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Integer count(String eventCollection, Timeframe timeframe) throws IOException {
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
-        Object result = count(queryParams);
-        return objectToInteger(result);
-    }
+        QueryResult result = execute(queryParams, timeframe);
 
-    /**
-     * Count Unique query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object count(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.COUNT_RESOURCE, queryParams);
-        return result;
+        return queryResultToInteger(result);
     }
 
     /**
      * Count Unique query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-unique-resource
+     * Query API info here: https://keen.io/docs/api/#count-unique
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -136,27 +126,14 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Integer countUnique(String eventCollection, String targetProperty) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Integer countUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+        Query queryParams = new Query.QueryBuilder(QueryType.COUNT_UNIQUE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = countUnique(queryParams);
-        return objectToInteger(result);
-    }
+        QueryResult result = execute(queryParams, timeframe);
 
-    /**
-     * Count Unique query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#count-unique-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object countUnique(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.COUNT_UNIQUE, queryParams);
-        return result;
+        return queryResultToInteger(result);
     }
 
     /**
@@ -169,27 +146,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double minimum(String eventCollection, String targetProperty) throws IOException {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double minimum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+        Query queryParams = new Query.QueryBuilder(QueryType.MINIMUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  minimum(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Minimum query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#minimum-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object minimum(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.MINIMUM_RESOURCE, queryParams);
-        return result;
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -202,27 +165,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double maximum(String eventCollection, String targetProperty) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.MAXIMUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = maximum(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Maximum query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#maximum-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object maximum(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.MAXIMUM_RESOURCE, queryParams);
-        return result;
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -235,27 +184,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double average(String eventCollection, String targetProperty) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.AVERAGE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = average(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Average query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#average-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object average(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.AVERAGE_RESOURCE, queryParams);
-        return result;
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -268,27 +203,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double median(String eventCollection, String targetProperty) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.MEDIAN_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  median(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Median query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#median-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object median(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.MEDIAN_RESOURCE, queryParams);
-        return result;
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -302,28 +223,14 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double percentile(String eventCollection, String targetProperty, Double percentile) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.PERCENTILE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .withPercentile(percentile)
                 .build();
-        Object result =  percentile(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Percentile query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#percentile-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object percentile(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.PERCENTILE_RESOURCE, queryParams);
-        return result;
+        QueryResult result = execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -336,27 +243,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double sum(String eventCollection, String targetProperty) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public Double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.SUM_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result =  sum(queryParams);
-        return objectToDouble(result);
-    }
-
-    /**
-     * Sum Resource query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#sum-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object sum(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.SUM_RESOURCE, queryParams);
-        return result;
+        QueryResult result =  execute(queryParams, timeframe);
+        return queryResultToDouble(result);
     }
 
     /**
@@ -369,26 +262,12 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object selectUnique(String eventCollection, String targetProperty) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public QueryResult selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
                 .build();
-        Object result = selectUnique(queryParams);
-        return result;
-    }
-
-    /**
-     * Select Unique Resource query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#select-unique-resource
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object selectUnique(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.SELECT_UNIQUE_RESOURCE, queryParams);
+        QueryResult result = execute(queryParams, timeframe);
         return result;
     }
 
@@ -400,12 +279,12 @@ public class KeenQueryClient {
      * @param email     The email to send query results to.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
-     */    public void extraction(String eventCollection, String email) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+     */    public void extraction(String eventCollection, String email, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.EXTRACTION_RESOURCE)
                 .withEventCollection(eventCollection)
                 .withEmail(email)
                 .build();
-        Object result = extraction(queryParams);
+        QueryResult result = execute(queryParams, timeframe);
         // possibly exception if something went wrong, but no return value because email is sent
     }
 
@@ -418,28 +297,13 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object extraction(String eventCollection) throws IOException  {
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+    public QueryResult extraction(String eventCollection, Timeframe timeframe) throws IOException  {
+        Query queryParams = new Query.QueryBuilder(QueryType.EXTRACTION_RESOURCE)
                 .withEventCollection(eventCollection)
                 .build();
-        Object result = extraction(queryParams);
+        QueryResult result = execute(queryParams, timeframe);
         return result;
     }
-
-    /**
-     * Extraction query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/data-analysis/extractions/
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object extraction(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.EXTRACTION_RESOURCE, queryParams);
-        return result;
-    }
-
 
     // TODO: would be nice to add a addStepForFunnel() method
     /**
@@ -464,7 +328,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object funnel(List<Map<String, Object>> steps) throws IOException {
+    public QueryResult funnel(List<Map<String, Object>> steps, Timeframe timeframe) throws IOException {
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -473,25 +337,11 @@ public class KeenQueryClient {
                 KeenQueryConstants.FUNNEL       // query name
         );
         // funnel args
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+        Query queryParams = new Query.QueryBuilder(QueryType.FUNNEL)
                 .withFunnelSteps(steps)
                 .build();
 
-        return funnel(queryParams);
-    }
-
-    /**
-     * Funnel query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/data-analysis/funnels/
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object funnel(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.FUNNEL, queryParams);
-        return result;
+        return execute(queryParams, timeframe);
     }
 
     // TODO: it would be nice to add an addAnalysisParameter() method to make adding analyses more user-friendly.
@@ -513,7 +363,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object multiAnalysis(String eventCollection, Map<String, Object> analyses) throws IOException {
+    public QueryResult multiAnalysis(String eventCollection, Map<String, Object> analyses, Timeframe timeframe) throws IOException {
 
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
                 baseUrl,
@@ -523,52 +373,55 @@ public class KeenQueryClient {
         );
 
         // JSON arg with multi-analysis
-        KeenQueryParams queryParams = new KeenQueryParams.QueryParamBuilder()
+        Query queryParams = new Query.QueryBuilder(QueryType.MULTI_ANALYSIS)
                 .withEventCollection(eventCollection)
                 .withAnalyses(analyses)
                 .build();
         Map<String, Object> analysisArg = new HashMap<String, Object>();
 
-        return multiAnalysis(queryParams);
+        return execute(queryParams, timeframe);
     }
 
-    /**
-     * Multi-Analysis query with all required and optional arguments.
-     * Query API info here: https://keen.io/docs/data-analysis/multi-analysis/
-     *
-     * @param queryParams     The {@link KeenQueryParams} with all the required and optional arguments.
-     * @return The response from the server in the "result" map.
-     * @throws IOException If there was an error communicating with the server or
-     * an error message received from the server.
-     */
-    public Object multiAnalysis(KeenQueryParams queryParams) throws IOException {
-        Object result = runQuery(KeenQueryConstants.MULTI_ANALYSIS, queryParams);
+
+
+    public QueryResult execute(Query params, Timeframe timeframe) throws IOException {
+        Object returnVal = executeHelper(params, timeframe);
+
+        // for special case multi-analysis queries, we need to get the analysis keys to
+        // be able to distinguish a Multi-analysis result object.
+        QueryType queryType = params.getQueryType();
+        Set<String> analysesKeys = null;
+        if (queryType == QueryType.MULTI_ANALYSIS) {
+            // then we need ot get the multi-analysis keys to distinguish the multi-analysis result
+            analysesKeys = params.getMultiAnalysisKeys();
+        }
+
+        QueryResult result = QueryResult.constructQueryResult(returnVal, params.hasGroupBy(), params.hasInterval(), analysesKeys);
         return result;
     }
 
     /**
      * Posts a query to the server.
      *
-     * @param queryName     The name of the query, as specified by {@link KeenQueryConstants}.
-     * @param params         The {@link KeenQueryParams} with all the required and optional arguments.
+     * @param params         The {@link Query} with all the required and optional arguments.
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Object runQuery(String queryName, KeenQueryParams params) throws IOException {
-        if (false == params.AreParamsValid(queryName)) {
+    private Object executeHelper(Query params, Timeframe timeframe) throws IOException {
+        QueryType queryType = params.getQueryType();
+
+        if (false == params.AreParamsValid(queryType)) {
             throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                queryName        // query name
-        );
+        String urlString = formatBaseURL(QueryType.getQueryType(queryType));
 
         // Query parameter args.
         Map<String, Object> allQueryArgs = params.ConstructQueryArgs();
+        if (timeframe != null) {
+            allQueryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
 
         Object returnVal = "";
         URL url = new URL(urlString);
@@ -576,6 +429,7 @@ public class KeenQueryClient {
 
         return returnVal;
     }
+
 
     /**
      * Posts a request to the server in the specified project, using the given URL and request data.
@@ -656,19 +510,29 @@ public class KeenQueryClient {
         return result;
     }
 
-    private Integer objectToInteger(Object object) throws KeenQueryClientException {
-        if (object instanceof Integer) {
-            return (Integer)object;
+
+    private String formatBaseURL(String queryName) {
+        return String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
+                baseUrl,
+                KeenConstants.API_VERSION,
+                project.getProjectId(),
+                queryName        // query name
+        );
+    }
+
+    private Integer queryResultToInteger(QueryResult result) throws KeenQueryClientException {
+        if (result.isInteger()) {
+            return result.getInteger();
         } else {
             throw new KeenQueryClientException("Count Query Error: expected Integer response type.");
         }
     }
 
-    private Double objectToDouble(Object object) throws KeenQueryClientException {
-        if (object instanceof Double) {
-            return (Double)object;
-        } else if (object instanceof Integer) {
-            return ((Integer)object).doubleValue();
+    private Double queryResultToDouble(QueryResult result) throws KeenQueryClientException {
+        if (result.isDouble()) {
+            return result.getDouble();
+        } else if (result.isInteger()) {
+            return (result.getInteger()).doubleValue();
         } else {
             throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
         }
@@ -873,5 +737,4 @@ public class KeenQueryClient {
 
 
         }
-
 }
