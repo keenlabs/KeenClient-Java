@@ -21,7 +21,11 @@ public class Group {
     }
 
     public Object getGroupValue(String propertyName) {
-        // TODO: Validate that propertyName is present here, to avoid NPE's up the stack.
+
+        if (properties.containsKey(propertyName) == false) {
+            throw new IllegalStateException("GroupBy does not contain expected property " + propertyName);
+        }
+
         return properties.get(propertyName);
     }
 }

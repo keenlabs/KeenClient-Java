@@ -12,10 +12,7 @@ public enum QueryType {
     MEDIAN_RESOURCE,
     PERCENTILE_RESOURCE,
     SUM_RESOURCE,
-    SELECT_UNIQUE_RESOURCE,
-    EXTRACTION_RESOURCE,
-    FUNNEL,
-    MULTI_ANALYSIS;
+    SELECT_UNIQUE_RESOURCE;
 
     public static final String getQueryType (QueryType type) {
         QueryType myType = QueryType.COUNT_RESOURCE;
@@ -49,16 +46,8 @@ public enum QueryType {
             case SELECT_UNIQUE_RESOURCE:
                 queryString = KeenQueryConstants.SELECT_UNIQUE_RESOURCE;
                 break;
-            case EXTRACTION_RESOURCE:
-                queryString = KeenQueryConstants.EXTRACTION_RESOURCE;
-                break;
-            case FUNNEL:
-                queryString = KeenQueryConstants.FUNNEL;
-                break;
-            case MULTI_ANALYSIS:
-                queryString = KeenQueryConstants.MULTI_ANALYSIS;
-                break;
             default:
+                // TODO: throw exception or allow to be null?
                 return queryString = null;
 //                throw new KeenQueryClientException("Invalid query type input.");
         }
