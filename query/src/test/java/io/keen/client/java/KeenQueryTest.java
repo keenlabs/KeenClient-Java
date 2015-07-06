@@ -30,13 +30,12 @@ import io.keen.client.java.Query.QueryBuilder;
 import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
-import io.keen.client.java.result.Interval;
 import io.keen.client.java.result.IntervalResult;
 
 /**
- * KeenClientTest
+ * KeenQueryTest
  *
- * @author dkador
+ * @author claireyoung
  * @since 1.0.0
  */
 public class KeenQueryTest {

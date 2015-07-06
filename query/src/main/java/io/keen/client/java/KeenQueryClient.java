@@ -21,7 +21,6 @@ import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
 
 import io.keen.client.java.result.Group;
-import io.keen.client.java.result.Interval;
 import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.DoubleResult;
 import io.keen.client.java.result.LongResult;
@@ -340,7 +339,11 @@ public class KeenQueryClient {
                     QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
 
                     intervalResult.put(absoluteTimeframe, queryResultValue);
+                } else {
+                    throw new IllegalStateException();
                 }
+            } else {
+                throw new IllegalStateException();
             }
         }
 
@@ -370,7 +373,11 @@ public class KeenQueryClient {
 
                     Group groupBy = new Group(properties);
                     groupByResult.put(groupBy, result);
+                } else {
+                    throw new IllegalStateException();
                 }
+            } else {
+                throw new IllegalStateException();
             }
         }
 
