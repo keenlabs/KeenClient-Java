@@ -75,21 +75,29 @@ public class Query {
         return queryArgs;
     }
 
+    /**
+     * @return the query type
+     */
     public QueryType getQueryType() {
         return this.queryType;
     }
 
+    /**
+     * @return whether this query has a GroupBy specified.
+     */
     public boolean hasGroupBy() {return groupBy != null;}
 
+    /**
+     * @return whether this query has an Interval specified.
+     */
     public boolean hasInterval() {return interval != null;}
 
 
-    // TODO: maybe we can use a reusable library - this method won't be good in long-term
     /**
      * Verifies whether the parameters are valid, based on the input query name.
      *
      * @param queryType     The type of the query (in {@link QueryType}).
-     * @return boolean      whether the parameters are valid.
+     * @return       whether the parameters are valid.
      */
     public boolean AreParamsValid(QueryType queryType) {
 
@@ -138,6 +146,11 @@ public class Query {
         this.queryType = builder.queryType;
     }
 
+    /**
+     * Builder to construct a query with required and optional arguments.
+     * Note that the only required argument in this builder is QueryType, although
+     * individual queries may require additional arguments.
+     */
     public static class QueryBuilder {
         private QueryType queryType;
 
@@ -155,16 +168,21 @@ public class Query {
         private ArrayList<String> groupBy;
         private Integer maxAge;
         private Integer latest;
-        private String email;
-
-        private List<String> propertyNames;
 
         public QueryBuilder(QueryType queryType) {
             this.queryType = queryType;
         }
 
+        /**
+         * get filters
+         * @return a list of filters.
+         */
+        public List<Map<String, Object>> getFilters() {return filters;}
 
-        public List<Map<String, Object>> setFilters() {return filters;}
+        /**
+         * set filters
+         * @param filters  the filter arguments.
+         */
         public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
         public QueryBuilder withFilters(List<Map<String, Object>> filters) {
             setFilters(filters);
@@ -194,38 +212,110 @@ public class Query {
             return this;
         }
 
+        /**
+         * get event collection
+         * @return the event collection.
+         */
         public String getEventCollection() {return eventCollection;}
+
+        /**
+         * Set event collection
+         * @param eventCollection the event collection.
+         */
         public void setEventCollection(String eventCollection) {this.eventCollection = eventCollection;}
+        /**
+         * Set event collection
+         *
+         * @param eventCollection the event collection.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withEventCollection(String eventCollection) {
             setEventCollection(eventCollection);
             return this;
         }
 
+        /**
+         * get target property
+         * @return the target property.
+         */
         public String getTargetProperty() {return targetProperty;}
+
+        /**
+         * Set target property
+         * @param targetProperty the target property.
+         */
         public void setTargetProperty(String targetProperty) {this.targetProperty = targetProperty;}
+
+        /**
+         * Set target property
+         * @param targetProperty the target property.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withTargetProperty(String targetProperty) {
             setTargetProperty(targetProperty);
             return this;
         }
 
+        /**
+         * get Interval
+         * @return the interval.
+         */
         public String getInterval() {return interval;}
+
+        /**
+         * Set interval
+         * @param interval the interval.
+         */
         public void setInterval(String interval) {this.interval = interval;}
+        /**
+         * Set interval
+         * @param interval the interval.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withInterval(String interval) {
             setInterval(interval);
             return this;
         }
 
+        /**
+         * get timezone
+         * @return the timezone.
+         */
         public String getTimezone() {return timezone;}
+        /**
+         * Set timezone
+         * @param timezone the timezone.
+         */
         public void setTimezone(String timezone) {this.timezone = timezone;}
+        /**
+         * Set timezone
+         * @param timezone the timezone.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withTimezone(String timezone) {
             setTimezone(timezone);
             return this;
         }
 
+        /**
+         * get the list of properties to group by.
+         * @return the list of properties to group by.
+         */
         public ArrayList<String> getGroupBy() {return groupBy;}
+        /**
+         * Set group by
+         * @param groupBy the group by argument.
+         */
         public void setGroupBy(ArrayList<String> groupBy) {
             this.groupBy = groupBy;
         }
+        /**
+         * Set GroupBy. This adds an additional GroupBy argument, and when called
+         * multiple times during method chaining, it can set a list of GroupBy's.
+         *
+         * @param groupBy the group by String.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withGroupBy(String groupBy) {
             if (this.groupBy == null) {
                 this.groupBy = new ArrayList<String>();
@@ -233,66 +323,91 @@ public class Query {
             this.groupBy.add(groupBy);
             return this;
         }
+        /**
+         * Set the GroupBy
+         * @param groupBy the ArrayList of properties to group by.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withGroupBy(ArrayList<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }
 
+        /**
+         * get max age
+         * @return the max age.
+         */
         public Integer getMaxAge() {return maxAge;}
+        /**
+         * Set max age
+         * @param maxAge the max age.
+         */
         public void setMaxAge(Integer maxAge) {this.maxAge = maxAge;}
+        /**
+         * Set max age
+         * @param maxAge the max age.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withMaxAge(Integer maxAge) {
             setMaxAge(maxAge);
             return this;
         }
 
+        /**
+         * get the percentile
+         * @return the percentile.
+         */
         public Double getPercentile() {return percentile;}
+        /**
+         * Set percentile
+         * @param percentile the percentile.
+         */
         public void setPercentile(Double percentile) {this.percentile = percentile;}
         public void setPercentile(Integer percentile) {this.percentile = percentile.doubleValue();}
+        /**
+         * Set percentile
+         * @param percentile the percentile (type Double).
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withPercentile(Double percentile) {
             setPercentile(percentile);
             return this;
         }
+        /**
+         * Set percentile
+         * @param percentile the percentile (type Integer).
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withPercentile(Integer percentile) {
             setPercentile(percentile.doubleValue());
             return this;
         }
 
+        /**
+         * get latest
+         * @return the latest.
+         */
         public Integer getLatest() {return latest;}
+        /**
+         * Set latest
+         * @param latest the latest.
+         */
         public void setLatest(Integer latest) {this.latest = latest;}
+        /**
+         * Set latest
+         * @param latest the latest.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withLatest(Integer latest) {
             setLatest(latest);
             return this;
         }
 
-        public String getEmail() {return email;}
-        public void setEmail(String email) {this.email = email;}
-        public QueryBuilder withEmail(String email) {
-            setEmail(email);
-            return this;
-        }
-
-        public List<String> getPropertyNames() {return propertyNames;}
-        public void setPropertyNames(List<String> propertyNames) {this.propertyNames = propertyNames;}
-        public QueryBuilder withPropertyNames(List<String> propertyNames) {
-            setPropertyNames(propertyNames);
-            return this;
-        }
-        public QueryBuilder withPropertyName(String propertyName) {
-            if (this.propertyNames == null) {
-                this.propertyNames = new ArrayList<String>();
-            }
-            this.propertyNames.add(propertyName);
-            return this;
-        }
-
-
-
+        /**
+         * Build the Query after the method chaining arguments.
+         * */
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.
-            return buildInstance();
-        }
-
-        protected Query buildInstance() {
             return new Query(this);
         }
 

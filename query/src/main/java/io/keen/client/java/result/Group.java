@@ -8,6 +8,9 @@ public class Group {
 
     private final Map<String, Object> properties;
 
+    /**
+     * @param properties The map of properties to property values.
+     */
     public Group(Map<String, Object> properties) {
         this.properties = Collections.unmodifiableMap(properties);
     }
