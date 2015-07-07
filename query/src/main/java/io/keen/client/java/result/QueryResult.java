@@ -3,6 +3,8 @@ package io.keen.client.java.result;
 import java.util.List;
 import java.util.Map;
 
+import io.keen.client.java.AbsoluteTimeframe;
+
 public abstract class QueryResult {
 
     public boolean isDouble() {
@@ -45,12 +47,8 @@ public abstract class QueryResult {
         throw new IllegalStateException();
     }
 
-    public Map<AbsoluteTimeframe, QueryResult> getIntervalResults() {
-        throw new IllegalStateException();
-    }
+    public Map<AbsoluteTimeframe, QueryResult> getIntervalResults() { throw new IllegalStateException(); }
 
-    public Map<Group, QueryResult> getGroupResults() {
-        throw new IllegalStateException();
-    }
+    public Map<Group, QueryResult> getGroupResults() { throw new IllegalStateException(); }
 
 }
