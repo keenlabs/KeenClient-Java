@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Set;
 
 /**
  * Created by claireyoung on 5/18/15.
@@ -28,16 +27,6 @@ public class Query {
 
     // required by the Percentile query
     private Double percentile;  // 0-100 with two decimal places of precision for example, 99.99
-
-    // optional for the Extraction query
-    private Integer latest;     // An integer containing the number of most recent events to extract.
-    private String email;
-    private List<String> propertyNames; // TODO add these
-
-    private Map<String, Object> analyses;      // required for Multi-Analysis
-
-
-    private List<Map<String, Object>> funnelSteps;  // required for funnel
 
 
     /**
@@ -79,72 +68,40 @@ public class Query {
             queryArgs.put(KeenQueryConstants.PERCENTILE, percentile);
         }
 
-        if (null != latest) {
-            queryArgs.put(KeenQueryConstants.LATEST, latest);
-        }
-
-        if (null != email) {
-            queryArgs.put(KeenQueryConstants.EMAIL, email);
-        }
         if (null != filters && filters.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.FILTERS, filters);
-        }
-
-        if (null != analyses && analyses.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.ANALYSES, analyses);
-        }
-        if (null != funnelSteps && funnelSteps.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.STEPS, funnelSteps);
-        }
-        if (null != propertyNames && propertyNames.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.PROPERTY_NAMES, propertyNames);
         }
 
         return queryArgs;
     }
 
+    /**
+     * @return the query type
+     */
     public QueryType getQueryType() {
         return this.queryType;
     }
 
+    /**
+     * @return whether this query has a GroupBy specified.
+     */
     public boolean hasGroupBy() {return groupBy != null;}
 
+    /**
+     * @return whether this query has an Interval specified.
+     */
     public boolean hasInterval() {return interval != null;}
 
-    public Set<String> getMultiAnalysisKeys() {
-        if (this.queryType != QueryType.MULTI_ANALYSIS || this.analyses == null) {
-            return null;
-        }
 
-        return this.analyses.keySet();
-    }
-
-    /**
-     * Sets the start and end of the absolute time frame.
-     * Refer to https://keen.io/docs/data-analysis/timeframe/#absolute-timeframes
-     *
-     * @param start     The start of the time frame in ISO-8601 Format.
-     * @param end       The end of the time frame in ISO-8601 Format.
-     */
-//    public void addAbsoluteTimeframe(String start, String end) {
-//        if (timeframe == null) {
-//            timeframe = new Timeframe();
-//        }
-//        timeframe.setTimeframe(start, end);
-//    }
-
-
-    // TODO: maybe we can use a reusable library - this method won't be good in long-term
     /**
      * Verifies whether the parameters are valid, based on the input query name.
      *
      * @param queryType     The type of the query (in {@link QueryType}).
-     * @return boolean      whether the parameters are valid.
+     * @return       whether the parameters are valid.
      */
     public boolean AreParamsValid(QueryType queryType) {
 
-        if (queryType == QueryType.COUNT_RESOURCE || queryType == QueryType.EXTRACTION_RESOURCE
-                || queryType == QueryType.MULTI_ANALYSIS) {
+        if (queryType == QueryType.COUNT_RESOURCE) {
             if (eventCollection == null || eventCollection.isEmpty()) {
                 return false;
             }
@@ -163,18 +120,6 @@ public class Query {
 
         if (queryType == QueryType.PERCENTILE_RESOURCE) {
             if (percentile == null) {
-                return false;
-            }
-        }
-
-        if (queryType == QueryType.FUNNEL) {
-            if (funnelSteps == null || funnelSteps.isEmpty()) {
-                return false;
-            }
-        }
-
-        if (queryType == QueryType.MULTI_ANALYSIS) {
-            if (analyses == null || analyses.isEmpty()) {
                 return false;
             }
         }
@@ -198,18 +143,14 @@ public class Query {
         this.groupBy = builder.groupBy;
         this.maxAge = builder.maxAge;
         this.percentile = builder.percentile;
-        this.latest = builder.latest;
-        this.email = builder.email;
-//        this.relativeTimeframe = builder.timeframe;
-//        this.absoluteTimeframe = builder.absoluteTimeframe;
-//        this.timeframe = builder.timeframe;
-        this.funnelSteps = builder.funnelSteps;
-        this.analyses = builder.analyses;
         this.queryType = builder.queryType;
-
-        this.propertyNames = builder.propertyNames;
     }
 
+    /**
+     * Builder to construct a query with required and optional arguments.
+     * Note that the only required argument in this builder is QueryType, although
+     * individual queries may require additional arguments.
+     */
     public static class QueryBuilder {
         private QueryType queryType;
 
@@ -227,66 +168,21 @@ public class Query {
         private ArrayList<String> groupBy;
         private Integer maxAge;
         private Integer latest;
-        private String email;
-
-        private Map<String, Object> analyses;      // required for Multi-Analysis
-        private List<Map<String, Object>> funnelSteps;  // required for funnel
-
-        private List<String> propertyNames;
 
         public QueryBuilder(QueryType queryType) {
             this.queryType = queryType;
         }
 
+        /**
+         * get filters
+         * @return a list of filters.
+         */
+        public List<Map<String, Object>> getFilters() {return filters;}
 
-        public Map<String, Object> getAnalyses() {return analyses;}
-        public void setAnalyses(Map<String, Object> analyses) {this.analyses = analyses;}
-        public QueryBuilder withAnalyses(Map<String, Object> analyses) {
-            setAnalyses(analyses);
-            return this;
-        }
-
-        public QueryBuilder withAnalysis(String analysisIdentifier, QueryType queryType) {
-            return withAnalysis(analysisIdentifier, queryType, null);
-        }
-
-        public QueryBuilder withAnalysis(String analysisIdentifier, QueryType queryType, String targetProperty) {
-            Map<String, Object> queryArgs = new HashMap<String, Object>();
-            queryArgs.put(KeenQueryConstants.ANALYSIS_TYPE, QueryType.getQueryType(queryType));
-
-            if (targetProperty != null) {
-                queryArgs.put(KeenQueryConstants.TARGET_PROPERTY, targetProperty);
-            }
-
-            if (this.analyses == null) {
-                this.analyses = new HashMap<String, Object>();
-            }
-
-            this.analyses.put(analysisIdentifier, queryArgs);
-
-            return this;
-        }
-
-//        public QueryBuilder withAnalysis(String uniqueName, String analysisType) {
-//            if (analyses == null) {
-//                analyses = new HashMap<String, Object>();
-//            }
-//
-//            Map<String, String> newAnalysis = new HashMap<String, String>();
-//            newAnalysis.put(KeenQueryConstants.ANALYSIS_TYPE, analysisType);
-//            analyses.put(uniqueName, newAnalysis);
-//
-//            return this;
-//        }
-
-        public List<Map<String, Object>> setFunnelSteps() {return funnelSteps;}
-        public void setFunnelSteps(List<Map<String, Object>> funnelSteps) {this.funnelSteps = funnelSteps;}
-        public QueryBuilder withFunnelSteps(List<Map<String, Object>> funnelSteps) {
-            setFunnelSteps(funnelSteps);
-            return this;
-        }
-
-        public List<Map<String, Object>> setFilters() {return filters;}
+        /**
+         * set filters
+         * @param filters  the filter arguments.
+         */
         public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
         public QueryBuilder withFilters(List<Map<String, Object>> filters) {
             setFilters(filters);
@@ -316,38 +212,110 @@ public class Query {
             return this;
         }
 
+        /**
+         * get event collection
+         * @return the event collection.
+         */
         public String getEventCollection() {return eventCollection;}
+
+        /**
+         * Set event collection
+         * @param eventCollection the event collection.
+         */
         public void setEventCollection(String eventCollection) {this.eventCollection = eventCollection;}
+        /**
+         * Set event collection
+         *
+         * @param eventCollection the event collection.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withEventCollection(String eventCollection) {
             setEventCollection(eventCollection);
             return this;
         }
 
+        /**
+         * get target property
+         * @return the target property.
+         */
         public String getTargetProperty() {return targetProperty;}
+
+        /**
+         * Set target property
+         * @param targetProperty the target property.
+         */
         public void setTargetProperty(String targetProperty) {this.targetProperty = targetProperty;}
+
+        /**
+         * Set target property
+         * @param targetProperty the target property.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withTargetProperty(String targetProperty) {
             setTargetProperty(targetProperty);
             return this;
         }
 
+        /**
+         * get Interval
+         * @return the interval.
+         */
         public String getInterval() {return interval;}
+
+        /**
+         * Set interval
+         * @param interval the interval.
+         */
         public void setInterval(String interval) {this.interval = interval;}
+        /**
+         * Set interval
+         * @param interval the interval.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withInterval(String interval) {
             setInterval(interval);
             return this;
         }
 
+        /**
+         * get timezone
+         * @return the timezone.
+         */
         public String getTimezone() {return timezone;}
+        /**
+         * Set timezone
+         * @param timezone the timezone.
+         */
         public void setTimezone(String timezone) {this.timezone = timezone;}
+        /**
+         * Set timezone
+         * @param timezone the timezone.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withTimezone(String timezone) {
             setTimezone(timezone);
             return this;
         }
 
+        /**
+         * get the list of properties to group by.
+         * @return the list of properties to group by.
+         */
         public ArrayList<String> getGroupBy() {return groupBy;}
+        /**
+         * Set group by
+         * @param groupBy the group by argument.
+         */
         public void setGroupBy(ArrayList<String> groupBy) {
             this.groupBy = groupBy;
         }
+        /**
+         * Set GroupBy. This adds an additional GroupBy argument, and when called
+         * multiple times during method chaining, it can set a list of GroupBy's.
+         *
+         * @param groupBy the group by String.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withGroupBy(String groupBy) {
             if (this.groupBy == null) {
                 this.groupBy = new ArrayList<String>();
@@ -355,81 +323,91 @@ public class Query {
             this.groupBy.add(groupBy);
             return this;
         }
+        /**
+         * Set the GroupBy
+         * @param groupBy the ArrayList of properties to group by.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withGroupBy(ArrayList<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }
 
+        /**
+         * get max age
+         * @return the max age.
+         */
         public Integer getMaxAge() {return maxAge;}
+        /**
+         * Set max age
+         * @param maxAge the max age.
+         */
         public void setMaxAge(Integer maxAge) {this.maxAge = maxAge;}
+        /**
+         * Set max age
+         * @param maxAge the max age.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withMaxAge(Integer maxAge) {
             setMaxAge(maxAge);
             return this;
         }
 
+        /**
+         * get the percentile
+         * @return the percentile.
+         */
         public Double getPercentile() {return percentile;}
+        /**
+         * Set percentile
+         * @param percentile the percentile.
+         */
         public void setPercentile(Double percentile) {this.percentile = percentile;}
         public void setPercentile(Integer percentile) {this.percentile = percentile.doubleValue();}
+        /**
+         * Set percentile
+         * @param percentile the percentile (type Double).
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withPercentile(Double percentile) {
             setPercentile(percentile);
             return this;
         }
+        /**
+         * Set percentile
+         * @param percentile the percentile (type Integer).
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withPercentile(Integer percentile) {
             setPercentile(percentile.doubleValue());
             return this;
         }
 
+        /**
+         * get latest
+         * @return the latest.
+         */
         public Integer getLatest() {return latest;}
+        /**
+         * Set latest
+         * @param latest the latest.
+         */
         public void setLatest(Integer latest) {this.latest = latest;}
+        /**
+         * Set latest
+         * @param latest the latest.
+         * @return This instance (for method chaining).
+         */
         public QueryBuilder withLatest(Integer latest) {
             setLatest(latest);
             return this;
         }
 
-        public String getEmail() {return email;}
-        public void setEmail(String email) {this.email = email;}
-        public QueryBuilder withEmail(String email) {
-            setEmail(email);
-            return this;
-        }
-
-        public List<String> getPropertyNames() {return propertyNames;}
-        public void setPropertyNames(List<String> propertyNames) {this.propertyNames = propertyNames;}
-        public QueryBuilder withPropertyNames(List<String> propertyNames) {
-            setPropertyNames(propertyNames);
-            return this;
-        }
-        public QueryBuilder withPropertyName(String propertyName) {
-            if (this.propertyNames == null) {
-                this.propertyNames = new ArrayList<String>();
-            }
-            this.propertyNames.add(propertyName);
-            return this;
-        }
-
-        public List<Map<String, Object>> getSteps() {return funnelSteps;}
-        public QueryBuilder withFunnelStep(Map<String, Object> step) {
-            if (funnelSteps == null) {
-                funnelSteps = new ArrayList<Map<String, Object>>();
-            }
-            funnelSteps.add(step);
-            return this;
-        }
-        public QueryBuilder withFunnelStep(String eventCollection, String actorProperty) {
-            Map<String, Object> step = new HashMap<String, Object>();
-            step.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
-            step.put(KeenQueryConstants.ACTOR_PROPERTY, actorProperty);
-
-            return withFunnelStep(step);
-        }
-
-
+        /**
+         * Build the Query after the method chaining arguments.
+         * */
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.
-            return buildInstance();
-        }
-
-        protected Query buildInstance() {
             return new Query(this);
         }
 

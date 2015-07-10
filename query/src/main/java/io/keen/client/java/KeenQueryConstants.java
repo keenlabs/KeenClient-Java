@@ -1,6 +1,8 @@
 package io.keen.client.java;
 
 /**
+ * Commonly used constants in the HTTP query request
+ *
  * Created by claireyoung on 5/18/15.
  */
 public class KeenQueryConstants {
@@ -15,11 +17,6 @@ public class KeenQueryConstants {
     static final String PERCENTILE_RESOURCE = "percentile";
     static final String SUM_RESOURCE = "sum";
     static final String SELECT_UNIQUE_RESOURCE = "select_unique";
-    static final String EXTRACTION_RESOURCE = "extraction";
-    static final String FUNNEL = "funnel";
-    static final String MULTI_ANALYSIS = "multi_analysis";
-
-    // TODO: funnel, multi-analysis, wardrobe
 
     // Query parameters
     static final String EVENT_COLLECTION = "event_collection";
@@ -31,9 +28,6 @@ public class KeenQueryConstants {
     static final String GROUP_BY = "group_by";
     static final String MAX_AGE = "max_age";
     static final String PERCENTILE = "percentile";
-    static final String ANALYSES = "analyses";
-    static final String EMAIL = "email";
-    static final String LATEST = "latest";
 
     // filter property names
     static final String PROPERTY_NAME = "property_name";
@@ -53,10 +47,6 @@ public class KeenQueryConstants {
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
 
-    // Funnel property names
-    static final String STEPS = "steps";
-    static final String ACTOR_PROPERTY = "actor_property";
-
     // return
     static final String RESULT = "result";
     static final String ERROR_CODE = "error_code";
@@ -67,10 +57,5 @@ public class KeenQueryConstants {
     static final String START = "start";
     static final String END = "end";
 
-    // multi-analysis
-    static final String ANALYSIS_TYPE = "analysis_type";
-
-    // extraction
-    static final String PROPERTY_NAMES = "property_names";
 
 }
