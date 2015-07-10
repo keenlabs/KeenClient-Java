@@ -1,6 +1,8 @@
 package io.keen.client.java.exceptions;
 
 /**
+ * Exceptions thrown by KeenQueryClient. This includes errors reported by the server.
+ *
  * Created by claireyoung on 5/27/15.
  */
 public class KeenQueryClientException extends KeenException {

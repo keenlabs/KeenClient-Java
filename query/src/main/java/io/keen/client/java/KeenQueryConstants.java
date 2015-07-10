@@ -1,6 +1,8 @@
 package io.keen.client.java;
 
 /**
+ * Commonly used constants in the HTTP query request
+ *
  * Created by claireyoung on 5/18/15.
  */
 public class KeenQueryConstants {

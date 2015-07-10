@@ -10,15 +10,24 @@ public class ListResult extends QueryResult {
 
     private final List<QueryResult> results;
 
+    /**
+     * @param results the result list.
+     */
     public ListResult(List<QueryResult> results) {
         this.results = Collections.unmodifiableList(results);
     }
 
+    /**
+     * @return  {@code true}
+     */
     @Override
     public boolean isListResult() {
         return true;
     }
 
+    /**
+     * @return result list.
+     */
     @Override
     public List<QueryResult> getListResults() {
         return results;

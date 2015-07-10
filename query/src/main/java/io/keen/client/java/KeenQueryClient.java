@@ -29,6 +29,14 @@ import io.keen.client.java.result.ListResult;
 import io.keen.client.java.result.IntervalResult;
 import io.keen.client.java.result.GroupByResult;
 
+/**
+ * <p>
+ * KeenQueryClient provides all of the functionality required to execute the basic queries
+ * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
+ * </p>
+ * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
+ * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.</p>
+ * */
 public class KeenQueryClient {
 
     private static final String ENCODING = "UTF-8";
@@ -37,32 +45,8 @@ public class KeenQueryClient {
     private KeenProject project;
     private HttpHandler httpHandler;
 
-
-    // TODO: talk to Kevin about allowing this option:
-    // I thought it would be nice to have a constructor that takes in a Keen Client,
-    // but then if that client isn't active, then we'd need to throw an exception,
-    // and I'm not sure about throwing exceptions in constructors...
     /**
-     * Initializes the query based on {@link KeenClient} provided. This automatically sets the
-     * default project, Base URL, and the Json handler.
-     *
-     * @param client The {@link KeenClient} provides Json handler, base URL, and default project information .
-     */
-    public void initialize(KeenClient client) throws KeenQueryClientException {
-        if (client.isActive() == false ) {
-            throw new KeenQueryClientException("Keen client is not active. Initialization failed.");
-        }
-
-        this.jsonHandler = client.getJsonHandler();
-        this.baseUrl = client.getBaseUrl();
-        this.project = client.getDefaultProject();
-
-        // should try ot get Keen client's http handler instead, but it's private.
-        this.httpHandler = new UrlConnectionHttpHandler();
-    }
-
-    /**
-     * Gets the default project that this {@link KeenClient} should use if no project is specified.
+     * Gets the default project that this {@link KeenQueryClient} is using.
      *
      * @return The {@link KeenProject}.
      */
@@ -71,44 +55,12 @@ public class KeenQueryClient {
     }
 
     /**
-     * Sets the default project that this {@link KeenClient} should use if no project is specified.
-     *
-     * @param project The project for queries.
-     */
-    public void setProject(KeenProject project) {
-        this.project = project;
-    }
-    /**
-     * Sets the base API URL associated with this instance of the {@link KeenClient}.
-     * <p>
-     * Use this if you want to disable SSL.
-     * </p>
-     * @param baseUrl The new base URL (i.e. 'http://api.keen.io'), or null to reset the base URL to
-     *                the default ('https://api.keen.io').
-     */
-    public void setBaseUrl(String baseUrl) {
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            this.baseUrl = KeenConstants.SERVER_ADDRESS;
-        } else {
-            this.baseUrl = baseUrl;
-        }
-    }
-
-    /**
-     * Sets the {@link KeenJsonHandler} to use for handling JSON operations.
-     *
-     * @param jsonHandler The {@link KeenJsonHandler} to use.
-     */
-    public void setJsonHandler(KeenJsonHandler jsonHandler) {
-        this.jsonHandler = jsonHandler;
-    }
-
-    /**
      * Count Resource query with only the required arguments.
      * Query API info here: https://keen.io/docs/api/#count
      *
      * @param eventCollection     The name of the event collection you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return  the count query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -127,7 +79,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The count unique query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -147,7 +100,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The minimum query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -166,6 +120,7 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
@@ -185,7 +140,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The average query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -204,7 +160,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The median query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -224,7 +181,8 @@ public class KeenQueryClient {
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
      * @param percentile     The percentile.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The percentile query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -244,7 +202,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The sum resource response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -263,7 +222,8 @@ public class KeenQueryClient {
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
-     * @return The response from the server in the "result" map.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The select unique query response.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
@@ -276,6 +236,16 @@ public class KeenQueryClient {
         return result;
     }
 
+    /**
+     * This is the most flexible way to run a query. Use {@link io.keen.client.java.KeenQueryClient.QueryBuilder} to
+     * build all the query arguments to run the query.
+     *
+     * @param params     The {@link Query} information, including {@link QueryType}, required args, and any optional args.
+     * @param timeframe     The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The {@link QueryResult} result.
+     * @throws IOException If there was an error communicating with the server or
+     * an error message received from the server.
+     */
     public QueryResult execute(Query params, Timeframe timeframe) throws IOException {
         Object returnVal = executeHelper(params, timeframe);
 
@@ -283,7 +253,7 @@ public class KeenQueryClient {
         return result;
     }
 
-    // Construct Query Result
+
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
         QueryResult thisObject = null;
 
@@ -302,11 +272,19 @@ public class KeenQueryClient {
             // recursively construct the children of this...
             ArrayList<QueryResult> listOutput = new ArrayList<QueryResult>();
             ArrayList<Object> listInput = (ArrayList<Object>)input;
+
+            // if this is an IntervalResult, construct the IntervalResult object.
             if (isInterval) {
                 thisObject = constructIntervalResult(listInput, isGroupBy);
             } else if (isGroupBy) {
+                // if this is a GroupByResult, construct the GroupByResult object.
+                // Note that if this is both an Interval and GroupBy, the GroupBy
+                // code will be called later from within constructIntervalResult()
                 thisObject = constructGroupByResult(listInput);
             } else {
+
+                // else if this is just a List of QueryResult objects - for example,
+                // Select Unique query returns a list of unique objects.
                 for (Object child : listInput) {
                     QueryResult resultItem = constructQueryResult(child, false, false);
                     listOutput.add(resultItem);
@@ -383,95 +361,6 @@ public class KeenQueryClient {
 
         return new GroupByResult(groupByResult);
     }
-//    // Construct Query Result
-//    private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
-//        QueryResult thisObject = null;
-//
-//        // below code determines what type of object QueryResult holds.
-//        if (input instanceof Integer) {
-//            Integer intValue = (Integer)input;
-//            thisObject = new LongResult(intValue.longValue());
-//        }else if (input instanceof Long) {
-//            thisObject = new LongResult((Long)input);
-//        } else if (input instanceof Double) {
-//            thisObject = new DoubleResult((Double)input);
-//        } else if (input instanceof String) {
-//            thisObject = new StringResult((String)input);
-//        } else if (input instanceof ArrayList) {
-//
-//            // recursively construct the children of this...
-//            ArrayList<QueryResult> listOutput = new ArrayList<QueryResult>();
-//            ArrayList<Object> listInput = (ArrayList<Object>)input;
-//            for (Object child : listInput) {
-//                QueryResult resultItem = constructQueryResult(child, isGroupBy, isInterval);
-//                listOutput.add(resultItem);
-//            }
-//            thisObject = new ListResult(listOutput);
-//        } else {
-//            if (input instanceof HashMap) {
-//
-//                HashMap<String, Object> inputMap = (HashMap<String, Object>) input;
-//
-//                // Next, we try to detect Interval or GroupBy.
-//                // if there is an interval or groupBy, we expect to process them at
-//                // the top level. When we recurse, we want to just make sure that
-//                // we don't have any nested Intervals or GroupByResult's by explicitly setting
-//                // them to false.
-//                if (isInterval) {
-//
-//                    // If this is an interval, it should have keys "timeframe" and "value"
-//                    if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && (inputMap.containsKey(KeenQueryConstants.VALUE))) {
-//                        AbsoluteTimeframe absoluteTimeframe = null;
-//                        Object timeframe = inputMap.get(KeenQueryConstants.TIMEFRAME);
-//                        if (timeframe instanceof HashMap) {
-//                            HashMap<String, String> hashTimeframe = (HashMap<String, String>) timeframe;
-//                            String start = hashTimeframe.get(KeenQueryConstants.START);
-//                            String end = hashTimeframe.get(KeenQueryConstants.END);
-//                            absoluteTimeframe = new AbsoluteTimeframe(start, end);
-//                        }
-//
-//                        Object value = inputMap.get(KeenQueryConstants.VALUE);
-//                        QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
-//
-//                        Map<AbsoluteTimeframe, QueryResult> intervalResult = new HashMap<AbsoluteTimeframe, QueryResult>();
-//                        intervalResult.put(absoluteTimeframe, queryResultValue);
-//
-//                        thisObject = new IntervalResult(intervalResult);
-//                    }
-//                } else if (isGroupBy) {
-//
-//                    // If this is a GroupByResult, it should have key "result", along with properties to group by.
-//                    if (inputMap.containsKey(KeenQueryConstants.RESULT)) {
-//                        QueryResult result = null;
-//                        HashMap<String, Object> properties = new HashMap<String, Object>();
-//                        for (String key : inputMap.keySet()) {
-//                            if (key.equals(KeenQueryConstants.RESULT)) {
-//                                // there should not be intervals nested inside GroupByResult's; only
-//                                // the other way around.
-//                                result = constructQueryResult(inputMap.get(key), false, false);
-//                            } else {
-//                                properties.put(key, inputMap.get(key));
-//                            }
-//                        }
-//
-//                        Group groupBy = new Group(properties);
-//
-//                        HashMap<Group, QueryResult> groupByResult = new HashMap<Group, QueryResult>();
-//                        groupByResult.put(groupBy, result);
-//
-//                        thisObject = new GroupByResult(groupByResult);
-//                    }
-//                }
-//            }
-//        }
-//
-//        // this is a catch-all for Select Unique queries, where the object can be of any type.
-////        if (thisObject == null) {
-////            thisObject = new QueryResult(input);
-////        }
-//        return thisObject;
-//    }
-//
 
     /**
      * Posts a query to the server.
@@ -517,7 +406,7 @@ public class KeenQueryClient {
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server.
      */
-    protected Object publishObject(KeenProject project, URL url,
+    private Object publishObject(KeenProject project, URL url,
                                    final Map<String, ?> requestData) throws IOException {
 
         // Build an output source which simply writes the serialized JSON to the output.
@@ -620,6 +509,17 @@ public class KeenQueryClient {
         this.project = builder.project;
     }
 
+    /**
+     * <p>
+     * Builder class for instantiating Keen Query clients.
+     * </p>
+     * <p> This builder defaults to using HttpURLConnection to handle HTTP requests.</p>
+     * <p> This builder defaults to using JacksonJsonHandler for JSON handler.</p>
+     * <p> This builder defaults to using KeenConstants.SERVER_ADDRESS for base URL.</p>
+     *
+     * @author claireyoung
+     * @since 1.0.0
+     */
     public static class QueryBuilder {
 
         private HttpHandler httpHandler;
@@ -794,16 +694,11 @@ public class KeenQueryClient {
         }
 
         /**
-         * Builds an instance based on this builder. This method is exposed only as a test hook to
-         * allow test classes to modify how the {@link KeenClient} is constructed (i.e. by
-         * providing a mock {@link Environment}.
-         *
-         * @return The new {@link KeenClient}.
+         * Builds an instance based on this builder.
          */
         protected KeenQueryClient buildInstance() {
             return new KeenQueryClient(this);
         }
 
-
-        }
+    }
 }

@@ -1,6 +1,8 @@
 package io.keen.client.java;
 
 /**
+ * QueryType specifies which query to run.
+ *
  * Created by claireyoung on 6/16/15.
  */
 public enum QueryType {
@@ -14,6 +16,13 @@ public enum QueryType {
     SUM_RESOURCE,
     SELECT_UNIQUE_RESOURCE;
 
+    /**
+     * Gets the query type to send in the query HTTP request.
+     *
+     * @param type the QueryType
+     * @return  the query string to specify in the HTTP request.
+     *
+     */
     public static final String getQueryType (QueryType type) {
         QueryType myType = QueryType.COUNT_RESOURCE;
 
