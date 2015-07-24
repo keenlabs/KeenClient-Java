@@ -1,20 +1,19 @@
 Keen Query Clients
 ===================
 
-[![Build Status](https://travis-ci.org/keenlabs/KeenClient-Java.png?branch=master)](https://travis-ci.org/keenlabs/KeenClient-Java)
 
-The query capabilities within the Java Keen client enable you to send POST queries and receive the results of the queries in a JSON object. For query types, refer to API technical reference: https://keen.io/docs/api/reference/.
+The query capabilities within the Java Keen client enable you to send POST queries and receive the results of the queries in a JSON object. For query types, refer to [API technical reference](https://keen.io/docs/api/reference/).
 
 ## Usage
 ### Building a Keen Query Client
-You can build a KeenQueryClient by just providing a KeenProject.
+You can build a KeenQueryClient by just providing a KeenProject. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same KeenProject will be used for publishing events as well.
 ```java
 KeenProject queryProject = new KeenProject("<project id>", "<write key>", "<read key>");
-KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject).build();
+KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject).build();
 ```
 Optionally, users can also specify a HTTP Handler, base URL, or JSON Handler:
 ```java
-KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
+KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
 		.withHttpHandler(httpHandler)
 		.withJsonHandler(jsonHandler)
 		.withBaseUrl(baseURL)
@@ -24,15 +23,15 @@ KeenQueryClient queryClient = new TestKeenQueryClientBuilder(queryProject)
 The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific Integer or Double response type. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
 ```java
 Long count = queryClient.count("<event_collection>", new RelativeTimeframe("this_year"));
-Long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2012-08-13T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
+Long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2015-05-15T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
 Double minimum = queryClient.minimum("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
 Double maximum = queryClient.maximum("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
 Double average = queryClient.average("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
 Double median = queryClient.median("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
 Double percentile = queryClient.percentile("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
-Double sum = queryClient.sum("<event_collection>", "<target_property>", new RelativeTimeframe("this_year"));
+Double sum = queryClient.sum("<event_collection>", "<target_property>", new RelativeTimeframe("this_week"));
 ```
-The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries which are more a little more complicated and are mentioned below (TODO: Mention below!!!).
+The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries. These queries are a little more complicated and are not included in the initial release of the Keen Query Client.
 
 ### Advanced
 Alternatively, users can use optional parameters to send queries. However, because the result may be different depending on the optional parameters, the return value is a QueryResult. The user is expected to verify the expected return type for the query, given the parameters entered.
@@ -47,7 +46,7 @@ if (result.isLong()) {
 }
 ```
 
-Some special cases are when filters "Group By" and "Inteval" are specified, as well as the Select Unique query.
+Some special cases are when "Group By" and "Interval" are specified, as well as the Select Unique query.
 
 For Select Unique queries, the user gets a list of unique values, given the target property. Therefore, the QueryResult will be a list of unique property values. The QueryResult type only supports Integer, Double, String, and List values; therefore, if the property value is not one of the aforementioned types, then you may not be able to access that value.
 
@@ -58,7 +57,7 @@ Query query = new QueryBuilder(QueryType.SELECT_UNIQUE_RESOURCE)
         .build();
 QueryResult result = queryClient.execute(query, new RelativeTimeframe("this_month"));
 if (result.isListResult()) {
-	ArrayList<QueryResult> listResults = result.getListResults();
+	List<QueryResult> listResults = result.getListResults();
 	for (QueryResult item : listResults) {
 		if (item.isLong()) {
 			// do something with long value
@@ -67,7 +66,8 @@ if (result.isListResult()) {
 }
 ```
 
-Filtering any query via Group-By will cause the query response to be a GroupByResult object. This object stores Map<Group, QueryResult> objects, where the Group contains the unique property/value pairs.
+Specifying "Group-By" in the query will cause the query response to be a GroupByResult object. This object stores Map<Group, QueryResult> objects, where the Group contains the unique property/value pairs.
+
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")
@@ -82,7 +82,8 @@ if (result.isGroupResult()) {
 	}
 }
 ```
-Filtering any query via Interval will cause the query response to be an IntervalResult object. An IntervalResult is a type of QueryResult that consist of Map<AbsoluteTimeframe,QueryResult> objects.
+Specifying "Interval" in the query will cause the query response to be an IntervalResult object. An IntervalResult is a type of QueryResult that consist of Map<AbsoluteTimeframe,QueryResult> objects.
+
 ``` java
 Query query = new QueryBuilder(QueryType.COUNT_RESOURCE)
         .withEventCollection("<event_collection>")

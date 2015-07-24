@@ -35,6 +35,7 @@ class RelativeTimeframe implements Timeframe {
      *
      * @return  the Timeframe Json map to send in the query.
      */
+    @Override
     public Map<String, Object> constructTimeframeArgs() {
         Map timeframe = new HashMap<String, Object>();
         if (relativeTimeframe != null) {
