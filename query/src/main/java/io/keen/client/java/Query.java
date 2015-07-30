@@ -1,36 +1,34 @@
 package io.keen.client.java;
 
-import java.sql.Time;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
 
 /**
+ * Query represents all the details of the query to be run, including required
+ * and optional parameters.
+ *
  * Created by claireyoung on 5/18/15.
+ * @author claireyoung
+ * @since 1.0.0
  */
 public class Query {
 
-    private QueryType queryType;
-
-    // required for all queries
-    private String eventCollection;
-
-    // required by most queries
-    private String targetProperty;
+    private final QueryType queryType;
+    private final String eventCollection;
+    private final String targetProperty;
 
     // optional
-    private List<Map<String, Object>> filters;
-    private String interval;    // requires timeframe to be set
-    private String timezone;
-    private List<String> groupBy;
-    private Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
+    private final Timeframe timeframe;
+    private final List<Map<String, Object>> filters;
+    private final String interval;    // requires timeframe to be set
+    private final String timezone;
+    private final List<String> groupBy;
+    private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
     // required by the Percentile query
-    private Double percentile;  // 0-100 with two decimal places of precision for example, 99.99
-
-    private Timeframe timeframe;
-
+    private final Double percentile;  // 0-100 with two decimal places of precision for example, 99.99
 
     /**
      * Constructs the map to pass to the JSON handler, so that the proper required
@@ -42,39 +40,39 @@ public class Query {
 
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
-        if (null != eventCollection) {
+        if (eventCollection != null) {
             queryArgs.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
         }
 
-        if (null != interval) {
+        if (interval != null) {
             queryArgs.put(KeenQueryConstants.INTERVAL, interval);
         }
 
-        if (null != timezone) {
+        if (timezone != null) {
             queryArgs.put(KeenQueryConstants.TIMEZONE, timezone);
         }
 
-        if (null != groupBy) {
+        if (groupBy != null) {
             queryArgs.put(KeenQueryConstants.GROUP_BY, groupBy);
         }
 
-        if (null != maxAge) {
+        if (maxAge != null) {
             queryArgs.put(KeenQueryConstants.MAX_AGE, maxAge);
         }
 
-        if (null != targetProperty) {
+        if (targetProperty != null) {
             queryArgs.put(KeenQueryConstants.TARGET_PROPERTY, targetProperty);
         }
 
-        if (null != percentile) {
+        if (percentile != null) {
             queryArgs.put(KeenQueryConstants.PERCENTILE, percentile);
         }
 
-        if (null != filters && filters.isEmpty() == false) {
+        if (filters != null && filters.isEmpty() == false) {
             queryArgs.put(KeenQueryConstants.FILTERS, filters);
         }
 
-        if (null != timeframe) {
+        if (timeframe != null) {
             queryArgs.putAll(timeframe.constructTimeframeArgs());
         }
 
@@ -84,20 +82,17 @@ public class Query {
     /**
      * @return the query type
      */
-    public QueryType getQueryType() {
-        return queryType;
-    }
+    public QueryType getQueryType() { return queryType; }
 
     /**
      * @return whether this query has a GroupBy specified.
      */
-    public boolean hasGroupBy() {return groupBy != null;}
+    public boolean hasGroupBy() { return groupBy != null; }
 
     /**
      * @return whether this query has an Interval specified.
      */
-    public boolean hasInterval() {return interval != null;}
-
+    public boolean hasInterval() { return interval != null; }
 
     /**
      * Verifies whether the parameters are valid, based on the input query name.
@@ -132,9 +127,6 @@ public class Query {
         return true;
     }
 
-
-
-
     /**
      * Constructs a Keen Query Params using a builder.
      *
@@ -150,6 +142,7 @@ public class Query {
         this.percentile = builder.percentile;
         this.queryType = builder.queryType;
         this.timeframe = builder.timeframe;
+        this.filters = builder.filters;
     }
 
     /**
@@ -159,22 +152,19 @@ public class Query {
      */
     public static class Builder {
         private QueryType queryType;
-
-        private String eventCollection;     // required
-
-        // mostly required
+        private String eventCollection;
         private String targetProperty;
 
-        private Double percentile;
+        // required by the Percentile query
+        private Double percentile;    // 0-100 with two decimal places of precision for example, 99.99
 
         // optional
+        private Timeframe timeframe;
         private List<Map<String, Object>> filters;
         private String interval;
         private String timezone;
         private ArrayList<String> groupBy;
         private Integer maxAge;
-
-        private Timeframe timeframe;
 
         public Builder(QueryType queryType) {
             this.queryType = queryType;
@@ -195,6 +185,7 @@ public class Query {
             setFilters(filters);
             return this;
         }
+
         /**
          * Adds a filter as an optional parameter to the query.
          * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
@@ -230,6 +221,7 @@ public class Query {
          * @param eventCollection the event collection.
          */
         public void setEventCollection(String eventCollection) { this.eventCollection = eventCollection; }
+
         /**
          * Set event collection
          *
@@ -274,6 +266,7 @@ public class Query {
          * @param interval the interval.
          */
         public void setInterval(String interval) { this.interval = interval; }
+
         /**
          * Set interval
          * @param interval the interval.
@@ -289,11 +282,13 @@ public class Query {
          * @return the timezone.
          */
         public String getTimezone() { return timezone; }
+
         /**
          * Set timezone
          * @param timezone the timezone.
          */
         public void setTimezone(String timezone) { this.timezone = timezone; }
+
         /**
          * Set timezone
          * @param timezone the timezone.
@@ -309,6 +304,7 @@ public class Query {
          * @return the list of properties to group by.
          */
         public ArrayList<String> getGroupBy() {return groupBy;}
+
         /**
          * Set group by
          * @param groupBy the group by argument.
@@ -316,6 +312,7 @@ public class Query {
         public void setGroupBy(ArrayList<String> groupBy) {
             this.groupBy = groupBy;
         }
+
         /**
          * Set GroupBy. This adds an additional GroupBy argument, and when called
          * multiple times during method chaining, it can set a list of GroupBy's.
@@ -330,6 +327,7 @@ public class Query {
             this.groupBy.add(groupBy);
             return this;
         }
+
         /**
          * Set the GroupBy
          * @param groupBy the ArrayList of properties to group by.
@@ -345,11 +343,13 @@ public class Query {
          * @return the max age.
          */
         public Integer getMaxAge() { return maxAge; }
+
         /**
          * Set max age
          * @param maxAge the max age.
          */
         public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
+
         /**
          * Set max age
          * @param maxAge the max age.
@@ -365,12 +365,19 @@ public class Query {
          * @return the percentile.
          */
         public Double getPercentile() { return percentile; }
+
         /**
          * Set percentile
          * @param percentile the percentile.
          */
         public void setPercentile(Double percentile) { this.percentile = percentile;  }
+
+        /**
+         * Set percentile
+         * @param percentile the percentile.
+         */
         public void setPercentile(Integer percentile) { this.percentile = percentile.doubleValue(); }
+
         /**
          * Set percentile
          * @param percentile the percentile (type Double).
@@ -380,6 +387,7 @@ public class Query {
             setPercentile(percentile);
             return this;
         }
+
         /**
          * Set percentile
          * @param percentile the percentile (type Integer).
@@ -395,11 +403,13 @@ public class Query {
          * @return the timeframe.
          */
         public Timeframe getTimeframe() { return timeframe; }
+
         /**
          * Set timeframe
          * @param timeframe the timeframe.
          */
         public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe; }
+
         /**
          * Set timeframe
          * @param timeframe the timeframe.
@@ -417,7 +427,5 @@ public class Query {
             // we can do initialization here, but it's ok if everything is null.
             return new Query(this);
         }
-
     }
-
 }

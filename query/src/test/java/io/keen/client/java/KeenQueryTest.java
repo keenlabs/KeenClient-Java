@@ -16,7 +16,6 @@ import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -24,8 +23,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import io.keen.client.java.Query.Builder;
 
 import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.Group;
@@ -42,7 +39,6 @@ public class KeenQueryTest {
 
     private static KeenProject TEST_PROJECT;
     private static final String ENCODING = "UTF-8";
-
     private static final String TEST_EVENT_COLLECTION = "android-sample-button-clicks";
     private static final String TEST_TARGET_PROPERTY = "click-number";
     private static final String TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP = "{\"" + KeenQueryConstants.TARGET_PROPERTY + "\":\"" + TEST_TARGET_PROPERTY + "\",\"" + KeenQueryConstants.EVENT_COLLECTION + "\":\"" + TEST_EVENT_COLLECTION + "\"}";
@@ -67,7 +63,6 @@ public class KeenQueryTest {
                 .withJsonHandler(new TestJsonHandler())
                 .withHttpHandler(mockHttpHandler)
                 .build();
-
     }
 
     @After
@@ -91,10 +86,6 @@ public class KeenQueryTest {
         request.body.writeTo(outputStream);
         String requestString = outputStream.toString(ENCODING);
         assertEquals(requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_year\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
-
-        int [] arr = new int[10];
-
     }
 
     public class Node {
@@ -124,12 +115,10 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 21}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-
-        Query query = new Builder(QueryType.COUNT)
+        Query query = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_year"))
                 .build();
-
         QueryResult result = queryClient.execute(query);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
@@ -161,6 +150,7 @@ public class KeenQueryTest {
         String resultString = outputStream.toString(ENCODING);
         assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
     }
+
     @Test
     public void testMinimum()  throws Exception {
         setMockResponse(200, "{\"result\": 0}");
@@ -177,6 +167,7 @@ public class KeenQueryTest {
         String resultString = outputStream.toString(ENCODING);
         assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
     }
+
     @Test
     public void testMaximum()  throws Exception {
         setMockResponse(200, "{\"result\": 8}");
@@ -241,6 +232,7 @@ public class KeenQueryTest {
         String resultString = outputStream.toString(ENCODING);
         assertEquals(resultString, "{\""+KeenQueryConstants.TARGET_PROPERTY+"\":\""+TEST_TARGET_PROPERTY+"\",\"percentile\":50.0,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
+
     @Test
     public void testSum()  throws Exception {
         setMockResponse(200, "{\"result\": 65}");
@@ -257,6 +249,7 @@ public class KeenQueryTest {
         assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
 
     }
+
     @Test
     public void testSelectUnique()  throws Exception {
         setMockResponse(200, "{\"result\": [0, 1, 2, 3, 4, 5, 6, 7, 8]}");
@@ -280,7 +273,7 @@ public class KeenQueryTest {
     public void testGroupByResponse() throws Exception {
         setMockResponse(200, "{\"result\": [{\"keen.id\": \"555196212fd4b12ed0fe00a6\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"5553c694c2266c32a3bab9ae\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"5553c694c2266c32a3bab9af\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"55542f5ec2266c32526aaf81\", \"click-number\": 0, \"result\": 1}]}");
 
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withGroupBy("click-number")
                 .withGroupBy("keen.id")
@@ -304,20 +297,13 @@ public class KeenQueryTest {
     public void testIntervalResponse() throws Exception {
         setMockResponse(200, "{\"result\": [{\"value\": 0, \"timeframe\": {\"start\": \"2015-01-01T00:00:00.000Z\", \"end\": \"2015-01-04T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-01-04T00:00:00.000Z\", \"end\": \"2015-01-11T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-01-11T00:00:00.000Z\", \"end\": \"2015-01-18T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-01-18T00:00:00.000Z\", \"end\": \"2015-01-25T00:00:00.000Z\"}}]}");
 
-        Query params = new Builder(QueryType.COUNT)
+        Query params = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withInterval("weekly")
                 .withTimeframe(new RelativeTimeframe("this_year"))
                 .build();
 
         QueryResult result = queryClient.execute(params);
-
-
-//        for (Map.Entry<AbsoluteTimeframe, QueryResult> intervalResult : result.getIntervalResults().entrySet()) {
-//            AbsoluteTimeframe timeframe = intervalResult.getKey();
-//            long intervalCount = intervalResult.getValue().longValue();
-//            // ... do something with the absolute timeframe and count result.
-//        }
 
         assertTrue(result.isIntervalResult());
         IntervalResult interval = (IntervalResult)result;
@@ -335,9 +321,8 @@ public class KeenQueryTest {
     public void testGroupByIntervalResponse() throws Exception {
         setMockResponse(200, "{\"result\": [{\"value\": [{\"keen.id\": \"555196212fd4b12ed0fe00a6\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"5553c694c2266c32a3bab9ae\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"5553c694c2266c32a3bab9af\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf81\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"555634672fd4b12ed06db81f\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379a\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379b\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379e\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a4\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a8\", \"click-number\": 0, \"result\": 0}, {\"keen.id\": \"555196212fd4b12ed0fe00a7\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf82\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"555634a12fd4b12ebabfcaf8\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379c\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379f\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a5\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a9\", \"click-number\": 1, \"result\": 0}, {\"keen.id\": \"555196a02fd4b12ee6d51030\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf83\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e379d\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a0\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a6\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37aa\", \"click-number\": 2, \"result\": 0}, {\"keen.id\": \"555196a02fd4b12ee6d51031\", \"click-number\": 3, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf84\", \"click-number\": 3, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a1\", \"click-number\": 3, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a7\", \"click-number\": 3, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37ab\", \"click-number\": 3, \"result\": 0}, {\"keen.id\": \"555196c32fd4b12ec02d3560\", \"click-number\": 4, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf85\", \"click-number\": 4, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a2\", \"click-number\": 4, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37ac\", \"click-number\": 4, \"result\": 0}, {\"keen.id\": \"555196c32fd4b12ec02d3561\", \"click-number\": 5, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf86\", \"click-number\": 5, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37a3\", \"click-number\": 5, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37ad\", \"click-number\": 5, \"result\": 0}, {\"keen.id\": \"555196c32fd4b12ec02d3562\", \"click-number\": 6, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf87\", \"click-number\": 6, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37ae\", \"click-number\": 6, \"result\": 0}, {\"keen.id\": \"555196c32fd4b12ec02d3563\", \"click-number\": 7, \"result\": 0}, {\"keen.id\": \"55542f5ec2266c32526aaf88\", \"click-number\": 7, \"result\": 0}, {\"keen.id\": \"555196c32fd4b12ec02d3564\", \"click-number\": 8, \"result\": 0}, {\"keen.id\": \"556e05ebe085575ca32e37af\", \"click-number\": null, \"result\": 0}, {\"keen.id\": \"556e0683c1e0ab5a1c1a945b\", \"click-number\": null, \"result\": 0}], \"timeframe\": {\"start\": \"2015-01-01T00:00:00.000Z\", \"end\": \"2015-01-04T00:00:00.000Z\"}} ]}");
 
-
         // GROUP BY & INTERVAL
-        Query params = new Builder(QueryType.COUNT)
+        Query params = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withGroupBy("click-number")
                 .withGroupBy("keen.id")
@@ -350,7 +335,6 @@ public class KeenQueryTest {
         assertTrue(result.isIntervalResult());
         IntervalResult interval = (IntervalResult) result;
         Map<AbsoluteTimeframe, QueryResult> resultMap = interval.getIntervalResults();
-
 
         // interval
         AbsoluteTimeframe firstInterval = resultMap.keySet().iterator().next();
@@ -386,24 +370,24 @@ public class KeenQueryTest {
     @Test
     public void testFilterValid()  throws Exception {
         setMockResponse(200, "{\"result\": 6}");
-        try {
-            Query queryParams = new Builder(QueryType.COUNT)
+
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                     .withEventCollection(TEST_EVENT_COLLECTION)
                     .withFilter(TEST_TARGET_PROPERTY, FilterOperator.LESS_THAN, 5)
                     .withFilter(TEST_TARGET_PROPERTY, FilterOperator.GREATER_THAN, 1)
                     .build();
+        String requestString = mockCaptureCountQueryRequest(queryParams);
 
-            QueryResult result = queryClient.execute(queryParams);
-        } catch (IOException e) {
-        }
+        assertEquals(requestString, "{\"filters\":[{\"property_value\":5,\"property_name\":\""+TEST_TARGET_PROPERTY+"\",\"operator\":\"lt\"},{\"property_value\":1,\"property_name\":\""+TEST_TARGET_PROPERTY+"\",\"operator\":\"gt\"}],\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+
     }
 
     @Test(expected=KeenQueryClientException.class)
     public void testFilterInvalid1()  throws Exception {
-
         // in reality this would be a 400 error - just testing if no "result" in 200 response.
         setMockResponse(200, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
-        Query queryParams = new Builder(QueryType.COUNT)
+
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.LESS_THAN, 5)
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.WITHIN, "INVALID")
@@ -415,7 +399,7 @@ public class KeenQueryTest {
     @Test(expected=ServerException.class)
     public void testFilterInvalid2() throws Exception {
         setMockResponse(400, "{\"message\": \"You specified a geo filter on a property other than keen.location.coordinates, which is not allowed. You specified: ''.\", \"error_code\": \"InvalidPropertyNameForGeoFilter\"}");
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.LESS_THAN, 5)
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.WITHIN, "INVALID")
@@ -432,11 +416,10 @@ public class KeenQueryTest {
         String endTime = "2015-06-07T19:00:00.000Z";
         Timeframe timeframe = new AbsoluteTimeframe(startTime, endTime);
 
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(timeframe)
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
 
         assertEquals( requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":{\""+KeenQueryConstants.START+"\":\""+startTime+"\",\""+KeenQueryConstants.END+"\":\""+endTime+"\"},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
@@ -447,11 +430,10 @@ public class KeenQueryTest {
     public void testRelativeTimeframe() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
         Timeframe timeframe = new RelativeTimeframe("this_month");
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(timeframe)
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
         assertEquals( requestString,  "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
 
@@ -462,12 +444,11 @@ public class KeenQueryTest {
     public void testInterval() throws Exception {
         setMockResponse(200, "{\"result\": [{\"value\": 2, \"timeframe\": {\"start\": \"2015-06-01T00:00:00.000Z\", \"end\": \"2015-06-07T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-07T00:00:00.000Z\", \"end\": \"2015-06-14T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-14T00:00:00.000Z\", \"end\": \"2015-06-21T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-21T00:00:00.000Z\", \"end\": \"2015-06-28T00:00:00.000Z\"}}, {\"value\": 0, \"timeframe\": {\"start\": \"2015-06-28T00:00:00.000Z\", \"end\": \"2015-07-01T00:00:00.000Z\"}}]}");
 
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withInterval("weekly")
                 .withTimeframe(new RelativeTimeframe("this_month"))
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
         assertEquals( requestString, "{\""+KeenQueryConstants.INTERVAL+"\":\"weekly\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
@@ -475,12 +456,11 @@ public class KeenQueryTest {
     @Test
     public void testTimezone() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimezone("UTC")
                 .withTimeframe(new RelativeTimeframe("this_month"))
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
         assertEquals( requestString, "{\"timezone\":\"UTC\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
@@ -491,12 +471,11 @@ public class KeenQueryTest {
         // group by click-number and keen.id
         setMockResponse(200, "{\"result\": [{\"keen.id\": \"555196212fd4b12ed0fe00a6\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"5553c694c2266c32a3bab9ae\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"5553c694c2266c32a3bab9af\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"55542f5ec2266c32526aaf81\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"555634672fd4b12ed06db81f\", \"click-number\": 0, \"result\": 1}, {\"keen.id\": \"556e05ebe085575ca32e379a\", \"click-number\": 0, \"result\": 1}]}");
 
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withGroupBy("click-number")
                 .withGroupBy("keen.id")
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
         assertEquals( requestString, "{\"group_by\":[\"click-number\",\"keen.id\"],\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
@@ -505,11 +484,10 @@ public class KeenQueryTest {
     public void testMaxAge() throws Exception {
         setMockResponse(200, "{\"result\": 44}");
 
-        Query queryParams = new Builder(QueryType.COUNT)
+        Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withMaxAge(300)
                 .build();
-
         String requestString = mockCaptureCountQueryRequest(queryParams);
         assertEquals( requestString, "{\"max_age\":300,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
@@ -530,6 +508,4 @@ public class KeenQueryTest {
         Response response = new Response(statusCode, body);
         when(mockHttpHandler.execute(any(Request.class))).thenReturn(response);
     }
-
-
 }

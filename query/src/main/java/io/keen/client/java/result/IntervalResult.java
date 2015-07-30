@@ -13,7 +13,8 @@ import io.keen.client.java.AbsoluteTimeframe;
  * <li>QueryResult, which is the result of the query as grouped by each timeframe</li>
  * </ul>
  *  *
- * Created by claireyoung on 7/6/15.
+ * @author claireyoung
+ * @since 1.0.0, 07/06/15
  */
 public class IntervalResult extends QueryResult {
 

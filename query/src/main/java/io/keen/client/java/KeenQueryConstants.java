@@ -3,7 +3,8 @@ package io.keen.client.java;
 /**
  * Commonly used constants in the HTTP query request
  *
- * Created by claireyoung on 5/18/15.
+ * @author claireyoung
+ * @since 1.0.0, 05/18/15
  */
 public class KeenQueryConstants {
 
@@ -56,6 +57,4 @@ public class KeenQueryConstants {
     // absolute timeframe
     static final String START = "start";
     static final String END = "end";
-
-
 }

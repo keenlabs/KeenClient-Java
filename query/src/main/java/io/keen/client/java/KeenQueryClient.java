@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.List;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
-
 import io.keen.client.java.exceptions.ServerException;
+
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
@@ -37,7 +37,10 @@ import io.keen.client.java.result.GroupByResult;
  * </p>
  * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
  * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.</p>
- * */
+ *
+ * @author claireyoung
+ * @since 1.0.0
+ */
 public class KeenQueryClient {
 
     private static final String ENCODING = "UTF-8";
@@ -65,7 +68,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Long count(String eventCollection, Timeframe timeframe) throws IOException {
+    public long count(String eventCollection, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(eventCollection)
                 .withTimeframe(timeframe)
@@ -85,7 +88,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Long countUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+    public long countUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.COUNT_UNIQUE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -106,7 +109,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double minimum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+    public double minimum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.MINIMUM)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -127,7 +130,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.Builder(QueryType.MAXIMUM)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -148,7 +151,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.Builder(QueryType.AVERAGE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -169,7 +172,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.Builder(QueryType.MEDIAN)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -191,7 +194,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException  {
+    public double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.Builder(QueryType.PERCENTILE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -213,7 +216,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public Double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
         Query queryParams = new Query.Builder(QueryType.SUM)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -271,7 +274,6 @@ public class KeenQueryClient {
         return result;
     }
 
-
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
         QueryResult result = null;
 
@@ -318,7 +320,7 @@ public class KeenQueryClient {
         Map<AbsoluteTimeframe, QueryResult> intervalResult = new HashMap<AbsoluteTimeframe, QueryResult>();
 
         for (Object child : intervals) {
-            if (child instanceof HashMap) {
+            if (child instanceof Map) {
                 Map<String, Object> inputMap = (HashMap<String, Object>) child;
                 // If this is an interval, it should have keys "timeframe" and "value"
                 if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && (inputMap.containsKey(KeenQueryConstants.VALUE))) {
@@ -330,17 +332,17 @@ public class KeenQueryClient {
                         String end = hashTimeframe.get(KeenQueryConstants.END);
                         absoluteTimeframe = new AbsoluteTimeframe(start, end);
                     } else {
-                        throw new IllegalStateException();
+                        throw new IllegalStateException("IntervalResult Timeframe should be instanceof Map. Instead, it is " + timeframe.getClass().getCanonicalName() + ".");
                     }
 
                     Object value = inputMap.get(KeenQueryConstants.VALUE);
                     QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
                     intervalResult.put(absoluteTimeframe, queryResultValue);
                 } else {
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("IntervalResult is missing \"" + KeenQueryConstants.TIMEFRAME + "\" and \"" + KeenQueryConstants.VALUE + "\" keys.");
                 }
             } else {
-                throw new IllegalStateException();
+                throw new IllegalStateException("IntervalResult should be instanceof Map. Instead, it is " + child.getClass().getCanonicalName() + ".");
             }
         }
 
@@ -351,7 +353,7 @@ public class KeenQueryClient {
         Map<Group, QueryResult> groupByResult = new HashMap<Group, QueryResult>();
 
         for (Object child : groups) {
-            if (child instanceof HashMap) {
+            if (child instanceof Map) {
                 Map<String, Object> inputMap = (HashMap<String, Object>) child;
 
                 // If this is a GroupByResult, it should have key "result", along with properties to group by.
@@ -371,10 +373,10 @@ public class KeenQueryClient {
                     Group groupBy = new Group(properties);
                     groupByResult.put(groupBy, result);
                 } else {
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("GroupBy result is missing \"" + KeenQueryConstants.RESULT + "\" key.");
                 }
             } else {
-                throw new IllegalStateException();
+                throw new IllegalStateException("GroupBy result should be instanceof Map. Instead, it is " + child.getClass().getCanonicalName() + ".");
             }
         }
 
@@ -464,21 +466,21 @@ public class KeenQueryClient {
         );
     }
 
-    private Long queryResultToLong(QueryResult result) throws KeenQueryClientException {
+    private long queryResultToLong(QueryResult result) throws KeenQueryClientException {
         if (result.isLong()) {
             return result.longValue();
         } else {
-            throw new KeenQueryClientException("Count Query Error: expected Long response type.");
+            throw new IllegalStateException("Query Error: expected Long response type.");
         }
     }
 
-    private Double queryResultToDouble(QueryResult result) throws KeenQueryClientException {
+    private double queryResultToDouble(QueryResult result) throws KeenQueryClientException {
         if (result.isDouble()) {
             return result.doubleValue();
         } else if (result.isLong()) {
-            return Long.valueOf(result.longValue()).doubleValue();
+            return (double)result.longValue();
         } else {
-            throw new KeenQueryClientException("Sum Query Error: expected Double response type.");
+            throw new IllegalStateException("Query Error: expected Double response type.");
         }
     }
 

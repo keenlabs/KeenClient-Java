@@ -7,6 +7,8 @@ import java.util.Map;
  * Relative Timeframe, as specified by API docs: https://keen.io/docs/api/#relative-timeframes
  *
  * Created by claireyoung on 7/6/15.
+ * @author claireyoung
+ * @since 1.0.0
  */
 class RelativeTimeframe implements Timeframe {
 

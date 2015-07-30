@@ -8,13 +8,15 @@ import java.util.Map;
  * implement constructTimeframeArgs(), which constructs the JSON map to
  * send with the query.
  *
- * Created by claireyoung on 6/12/15.
+ * @author claireyoung
+ * @since 1.0.0
  */
 public interface Timeframe {
 
     /**
      * Subclasses must implement this method to construct
      * the appropriate Timeframe JSON arguments to send for the query.
+     *
      * @return  the Timeframe Json map to send in the query.
      */
     Map<String, Object> constructTimeframeArgs();

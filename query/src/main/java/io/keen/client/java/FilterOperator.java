@@ -1,7 +1,10 @@
 package io.keen.client.java;
 
 /**
- * Created by claireyoung on 7/24/15.
+ * FilterOperator specifies the operator for the query filter.
+ *
+ * @author claireyoung
+ * @since 1.0.0, 07/24/15
  */
 public enum FilterOperator {
 
@@ -23,6 +26,11 @@ public enum FilterOperator {
         this.text = text;
     }
 
+    /**
+     * Get the filter operator in String form.
+     *
+     * @return  filter operator.
+     */
     @Override
     public String toString() {
         return text;

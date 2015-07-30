@@ -4,6 +4,8 @@ package io.keen.client.java;
  * QueryType specifies which query to run.
  *
  * Created by claireyoung on 6/16/15.
+ * @author claireyoung
+ * @since 1.0.0
  */
 public enum QueryType {
     COUNT(KeenQueryConstants.COUNT),
