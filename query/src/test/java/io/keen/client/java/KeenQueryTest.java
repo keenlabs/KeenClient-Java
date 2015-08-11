@@ -88,28 +88,6 @@ public class KeenQueryTest {
         assertEquals(requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_year\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
 
-    public class Node {
-        int value;
-        Node next;
-    }
-
-    public Node removeNode(int nodeValue, Node start) {
-        Node current = start;
-
-        if (current == null) {
-            return null;
-        }
-
-        while (current.next != null) {
-            Node nextNode = current.next;
-            if (nextNode.value == nodeValue) {
-                current.next = nextNode.next;
-            }
-            return nextNode;
-        }
-        return null;
-    }
-
     @Test
     public void testCountExecute() throws Exception {
         setMockResponse(200, "{\"result\": 21}");

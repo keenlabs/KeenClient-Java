@@ -467,20 +467,28 @@ public class KeenQueryClient {
     }
 
     private long queryResultToLong(QueryResult result) throws KeenQueryClientException {
+        if (result == null) {
+            throw new NullPointerException("Query Error: expected long response type but received null.");
+        }
+
         if (result.isLong()) {
             return result.longValue();
         } else {
-            throw new IllegalStateException("Query Error: expected Long response type.");
+            throw new IllegalStateException("Query Error: expected long response type.");
         }
     }
 
     private double queryResultToDouble(QueryResult result) throws KeenQueryClientException {
+        if (result == null) {
+            throw new NullPointerException("Query Error: expected double response type but received null.");
+        }
+
         if (result.isDouble()) {
             return result.doubleValue();
         } else if (result.isLong()) {
             return (double)result.longValue();
         } else {
-            throw new IllegalStateException("Query Error: expected Double response type.");
+            throw new IllegalStateException("Query Error: expected double response type.");
         }
     }
 
