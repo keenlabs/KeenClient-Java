@@ -1,7 +1,10 @@
 package io.keen.client.java.result;
 
 /**
- * Created by claireyoung on 7/6/15.
+ * StringResult is for if the QueryResult object is of type String.
+ *
+ * @author claireyoung
+ * @since 1.0.0, 07/06/15
  */
 public class StringResult extends QueryResult {
     private final String result;

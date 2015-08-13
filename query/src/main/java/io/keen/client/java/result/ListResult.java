@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by claireyoung on 7/6/15.
+ * ListResult is for if the QueryResult object is of type List.
+ *
+ * @author claireyoung
+ * @since 1.0.0, 07/06/15
  */
 public class ListResult extends QueryResult {
 
@@ -32,5 +35,4 @@ public class ListResult extends QueryResult {
     public List<QueryResult> getListResults() {
         return results;
     }
-
 }
