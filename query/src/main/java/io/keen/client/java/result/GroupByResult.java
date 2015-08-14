@@ -4,14 +4,15 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * <p>GroupByResult is for if GroupBy properties were specified in the query.
+ * <p>GroupByResult is for if Group By properties were specified in the query.
  * If so, this object contains a Map that consist of </p>
  * <ul>
  * <li>Group, which contains the unique property/values</li>
  * <li>QueryResult, which is the result of the query as grouped by Group</li>
  * </ul>
  *
- * Created by claireyoung on 7/6/15.
+ * @author claireyoung
+ * @since 1.0.0, 07/06/15
  */
 public class GroupByResult extends QueryResult {
 

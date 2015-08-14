@@ -7,7 +7,9 @@ import java.util.Map;
  * <p>AbsoluteTimeframe allows users to construct a Timeframe with
  * start and end dates and times. Please refer to: https://keen.io/docs/api/#absolute-timeframes</p>
  *
- * Created by claireyoung on 7/6/15.
+ * @author claireyoung
+ * @since 1.0.0
+ *
  */
 public class AbsoluteTimeframe implements Timeframe {
     private final String start;
@@ -28,20 +30,21 @@ public class AbsoluteTimeframe implements Timeframe {
      *
      * @return  the start date/time.
      */
-    public String getStart() { return start;}
+    public String getStart() { return start; }
 
     /**
      * Get the End date/time timeframe.
      *
      * @return  the end date/time.
      */
-    public String getEnd() {return end;}
+    public String getEnd() { return end; }
 
     /**
      * Construct the Timeframe map to send in the query.
      *
      * @return  the Timeframe Json map to send in the query.
      */
+    @Override
     public Map<String, Object> constructTimeframeArgs() {
         Map timeframe = null;
         if (start != null && end != null) {

@@ -12,6 +12,9 @@ import io.keen.client.java.AbsoluteTimeframe;
  *
  * It is the responsibility of subclasses to return true and get the
  * appropriate object.
+ *
+ * @author claireyoung
+ * @since 1.0.0, 07/06/15
  */
 public abstract class QueryResult {
 

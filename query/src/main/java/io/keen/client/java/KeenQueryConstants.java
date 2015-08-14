@@ -3,20 +3,21 @@ package io.keen.client.java;
 /**
  * Commonly used constants in the HTTP query request
  *
- * Created by claireyoung on 5/18/15.
+ * @author claireyoung
+ * @since 1.0.0, 05/18/15
  */
 public class KeenQueryConstants {
 
     // Query names
-    static final String COUNT_RESOURCE = "count";
+    static final String COUNT = "count";
     static final String COUNT_UNIQUE = "count_unique";
-    static final String MINIMUM_RESOURCE = "minimum";
-    static final String MAXIMUM_RESOURCE = "maximum";
-    static final String AVERAGE_RESOURCE = "average";
-    static final String MEDIAN_RESOURCE = "median";
+    static final String MINIMUM = "minimum";
+    static final String MAXIMUM = "maximum";
+    static final String AVERAGE = "average";
+    static final String MEDIAN = "median";
     static final String PERCENTILE_RESOURCE = "percentile";
-    static final String SUM_RESOURCE = "sum";
-    static final String SELECT_UNIQUE_RESOURCE = "select_unique";
+    static final String SUM = "sum";
+    static final String SELECT_UNIQUE = "select_unique";
 
     // Query parameters
     static final String EVENT_COLLECTION = "event_collection";
@@ -56,6 +57,4 @@ public class KeenQueryConstants {
     // absolute timeframe
     static final String START = "start";
     static final String END = "end";
-
-
 }
