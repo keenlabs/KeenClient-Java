@@ -66,7 +66,11 @@ public class KeenLogging {
     private static void setLogLevel(Level newLevel) {
         LOGGER.setLevel(newLevel);
         for (Handler handler : LOGGER.getHandlers()) {
-            handler.setLevel(newLevel);
+            try {
+                handler.setLevel(newLevel);
+            } catch (Throwable t) {
+                // Ignore.
+            }
         }
     }
 }
