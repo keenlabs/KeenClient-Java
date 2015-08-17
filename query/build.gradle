@@ -33,6 +33,6 @@ test {
     include '**/*Test.class'
 }
 
-// archivesBaseName = "keen-client-api-query”
+archivesBaseName = "keen-client-api-query"
 
 apply from: file("${parent.rootDir}/gradle/gradle-mvn-publish-java.gradle")
