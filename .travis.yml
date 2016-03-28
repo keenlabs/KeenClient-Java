@@ -1,4 +1,10 @@
 language: java
+
+sudo: required
+
+addons:
+  hostname: keenclient-java
+
 jdk:
   - oraclejdk7
   - openjdk7

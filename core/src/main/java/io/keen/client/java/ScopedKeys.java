@@ -66,7 +66,7 @@ public class ScopedKeys {
         if (apiKey.length() == 64) {
             return encrypt(KeenClient.client(), apiKey, options);
         } else {
-            return oldEncrypt(KeenClient.client(), apiKey, options);
+            return encrypt32CharacterKey(KeenClient.client(), apiKey, options);
         }
     }
 
@@ -124,7 +124,7 @@ public class ScopedKeys {
      * @return A Keen IO Scoped Key.
      * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
-    public static String oldEncrypt(KeenClient client, String apiKey, Map<String, Object> options)
+    public static String encrypt32CharacterKey(KeenClient client, String apiKey, Map<String, Object> options)
         throws ScopedKeyException {
         try {
             // if the user doesn't give an options, just use an empty one
@@ -173,7 +173,7 @@ public class ScopedKeys {
         if (apiKey.length() == 64) {
             return decrypt(KeenClient.client(), apiKey, scopedKey);
         } else {
-            return oldDecrypt(KeenClient.client(), apiKey, scopedKey);
+            return decrypt32CharacterKey(KeenClient.client(), apiKey, scopedKey);
         }
     }
 
@@ -231,7 +231,7 @@ public class ScopedKeys {
      * @return The decrypted Scoped Key Options.
      * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.
      */
-    public static Map<String, Object> oldDecrypt(KeenClient client, String apiKey, String scopedKey)
+    public static Map<String, Object> decrypt32CharacterKey(KeenClient client, String apiKey, String scopedKey)
         throws ScopedKeyException {
         try {
             // pad the api key

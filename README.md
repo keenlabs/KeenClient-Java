@@ -391,7 +391,7 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
-##### 2.1.3
+##### 2.2.0
 
 + Fix bug with scoped key generation not working with newer Keen projects.
 
