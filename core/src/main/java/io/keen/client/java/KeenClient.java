@@ -1091,24 +1091,44 @@ public class KeenClient {
             keenProperties = new HashMap<String, Object>(keenProperties);
             keenProperties.put("timestamp", timestamp);
         }
-        newEvent.put("keen", keenProperties);
 
         // handle global properties
-        Map<String, Object> globalProperties = getGlobalProperties();
-        if (globalProperties != null) {
-            newEvent.putAll(globalProperties);
+        if (null != globalProperties) {
+            mergeGlobalProperties(getGlobalProperties(), keenProperties, newEvent);
         }
+
         GlobalPropertiesEvaluator globalPropertiesEvaluator = getGlobalPropertiesEvaluator();
         if (globalPropertiesEvaluator != null) {
-            Map<String, Object> props = globalPropertiesEvaluator.getGlobalProperties(eventCollection);
-            if (props != null) {
-                newEvent.putAll(props);
-            }
+            mergeGlobalProperties(globalPropertiesEvaluator.getGlobalProperties(eventCollection), keenProperties,
+                    newEvent);
         }
+
+        newEvent.put("keen", keenProperties);
 
         // now handle user-defined properties
         newEvent.putAll(event);
         return newEvent;
+    }
+
+    /**
+     * Removes the "keen" key from the globalProperties map and, if a map was removed, then all of its pairs are added to the keenProperties map.
+     * Anything left in the globalProperties map is then added to the newEvent map.
+     *
+     * @param globalProperties
+     * @param keenProperties
+     * @param newEvent
+     */
+    private void mergeGlobalProperties(Map<String, Object> globalProperties, Map<String, Object> keenProperties,
+                                       Map<String, Object> newEvent) {
+        if (globalProperties != null) {
+            // Clone globals so we don't modify the original
+            globalProperties = new HashMap<String, Object>(globalProperties);
+            Object keen = globalProperties.remove("keen");
+            if (keen instanceof Map) {
+                keenProperties.putAll((Map)keen);
+            }
+            newEvent.putAll(globalProperties);
+        }
     }
 
     ///// PRIVATE TYPES /////

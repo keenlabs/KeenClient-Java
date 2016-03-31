@@ -581,6 +581,63 @@ public class KeenClientTest {
         assertEquals(3, builtEvent.size());
     }
 
+    @Test
+    public void testGlobalPropertiesTogether_whenContainingKeenProperties() throws Exception {
+        // properties from the evaluator should take precedence over properties from the map
+        // but properties from the event itself should take precedence over all
+        HashMap<String, Object> keenGlobalProperties = new HashMap<String, Object>();
+        Map<String, Object> globalProperties = new HashMap<String, Object>();
+        keenGlobalProperties.put("global", "globalproperty");
+        globalProperties.put("keen", keenGlobalProperties);
+        globalProperties.put("globalnotkeen", "global");
+
+        GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                HashMap<String, Object> keenGlobalEvaluatorProperties = new HashMap<String, Object>();
+                keenGlobalEvaluatorProperties.put("evaluator", "evaluatorproperty");
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("keen", keenGlobalEvaluatorProperties);
+                map.put("evaluatornotkeen", "evaluator");
+                return map;
+            }
+        };
+
+        client.setGlobalProperties(globalProperties);
+        client.setGlobalPropertiesEvaluator(evaluator);
+
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("foo", "bar");
+        Map<String, Object> eventKeenProperties = new HashMap<String, Object>();
+        eventKeenProperties.put("event", "eventproperty");
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "apples", event, eventKeenProperties);
+
+        assertEquals("bar", builtEvent.get("foo"));
+        assertEquals("global", builtEvent.get("globalnotkeen"));
+        assertEquals("evaluator", builtEvent.get("evaluatornotkeen"));
+
+        Map builtKeenProperties = (Map) builtEvent.get("keen");
+        assertEquals("evaluatorproperty", builtKeenProperties.get("evaluator"));
+        assertEquals("globalproperty", builtKeenProperties.get("global"));
+        assertEquals("eventproperty", builtKeenProperties.get("event"));
+
+        // Do it again to make sure the globals are unchanged
+        event = new HashMap<String, Object>();
+        event.put("foo", "bar");
+        eventKeenProperties = new HashMap<String, Object>();
+        eventKeenProperties.put("event", "eventproperty");
+        builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "apples", event, eventKeenProperties);
+
+        assertEquals("bar", builtEvent.get("foo"));
+        assertEquals("global", builtEvent.get("globalnotkeen"));
+        assertEquals("evaluator", builtEvent.get("evaluatornotkeen"));
+
+        builtKeenProperties = (Map) builtEvent.get("keen");
+        assertEquals("evaluatorproperty", builtKeenProperties.get("evaluator"));
+        assertEquals("globalproperty", builtKeenProperties.get("global"));
+        assertEquals("eventproperty", builtKeenProperties.get("event"));
+    }
+
     private void runValidateAndBuildEventTest(Map<String, Object> event, String eventCollection, String msg,
                                               String expectedMessage) {
         try {
