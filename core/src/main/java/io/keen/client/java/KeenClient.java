@@ -1092,18 +1092,20 @@ public class KeenClient {
             keenProperties.put("timestamp", timestamp);
         }
 
+        Map<String, Object> mergedKeenProperties = new HashMap<String, Object>();
         // handle global properties
         if (null != globalProperties) {
-            mergeGlobalProperties(getGlobalProperties(), keenProperties, newEvent);
+            mergeGlobalProperties(getGlobalProperties(), mergedKeenProperties, newEvent);
         }
 
         GlobalPropertiesEvaluator globalPropertiesEvaluator = getGlobalPropertiesEvaluator();
         if (globalPropertiesEvaluator != null) {
-            mergeGlobalProperties(globalPropertiesEvaluator.getGlobalProperties(eventCollection), keenProperties,
+            mergeGlobalProperties(globalPropertiesEvaluator.getGlobalProperties(eventCollection), mergedKeenProperties,
                     newEvent);
         }
 
-        newEvent.put("keen", keenProperties);
+        mergedKeenProperties.putAll(keenProperties);
+        newEvent.put("keen", mergedKeenProperties);
 
         // now handle user-defined properties
         newEvent.putAll(event);
