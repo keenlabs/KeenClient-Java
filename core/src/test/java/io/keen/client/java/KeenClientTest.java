@@ -643,7 +643,7 @@ public class KeenClientTest {
         // This test has three non-keen and three keen properties added by the static global properties
         // The dynamic properties override two keen & two non-keen properties
         // The event overrides one keen & one non-keen property
-        // The resulting merged map checks to make sure properties were overridden or merged correctly
+        // The resulting merged map is checked to make sure properties were overridden or merged correctly
 
         HashMap<String, Object> keenGlobalProperties = new HashMap<String, Object>();
         Map<String, Object> globalProperties = new HashMap<String, Object>();
