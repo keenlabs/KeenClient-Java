@@ -583,11 +583,10 @@ public class KeenClientTest {
 
     @Test
     public void testGlobalPropertiesTogether_whenContainingKeenProperties() throws Exception {
-        // properties from the evaluator should take precedence over properties from the map
-        // but properties from the event itself should take precedence over all
         HashMap<String, Object> keenGlobalProperties = new HashMap<String, Object>();
         Map<String, Object> globalProperties = new HashMap<String, Object>();
         keenGlobalProperties.put("global", "globalproperty");
+        keenGlobalProperties.put("timestamp", "globaltimestamp");
         globalProperties.put("keen", keenGlobalProperties);
         globalProperties.put("globalnotkeen", "global");
 
@@ -619,6 +618,7 @@ public class KeenClientTest {
         Map builtKeenProperties = (Map) builtEvent.get("keen");
         assertEquals("evaluatorproperty", builtKeenProperties.get("evaluator"));
         assertEquals("globalproperty", builtKeenProperties.get("global"));
+        assertEquals("globaltimestamp", builtKeenProperties.get("timestamp"));
         assertEquals("eventproperty", builtKeenProperties.get("event"));
 
         // Do it again to make sure the globals are unchanged
@@ -636,6 +636,57 @@ public class KeenClientTest {
         assertEquals("evaluatorproperty", builtKeenProperties.get("evaluator"));
         assertEquals("globalproperty", builtKeenProperties.get("global"));
         assertEquals("eventproperty", builtKeenProperties.get("event"));
+    }
+
+    @Test
+    public void testPropertyMergeOrder() throws Exception {
+        // This test has three non-keen and three keen properties added by the static global properties
+        // The dynamic properties override two keen & two non-keen properties
+        // The event overrides one keen & one non-keen property
+        // The resulting merged map checks to make sure properties were overridden or merged correctly
+
+        HashMap<String, Object> keenGlobalProperties = new HashMap<String, Object>();
+        Map<String, Object> globalProperties = new HashMap<String, Object>();
+        keenGlobalProperties.put("statickeenglobal", "static");
+        keenGlobalProperties.put("dynamickeenglobal", "static");
+        keenGlobalProperties.put("eventkeen", "static");
+        globalProperties.put("keen", keenGlobalProperties);
+        globalProperties.put("staticglobal", "static");
+        globalProperties.put("dynamicglobal", "static");
+        globalProperties.put("event", "static");
+
+        GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
+            @Override
+            public Map<String, Object> getGlobalProperties(String eventCollection) {
+                HashMap<String, Object> keenGlobalProperties = new HashMap<String, Object>();
+                Map<String, Object> globalProperties = new HashMap<String, Object>();
+                keenGlobalProperties.put("dynamickeenglobal", "dynamic");
+                keenGlobalProperties.put("eventkeen", "dynamic");
+                globalProperties.put("keen", keenGlobalProperties);
+                globalProperties.put("dynamicglobal", "dynamic");
+                globalProperties.put("event", "dynamic");
+                return globalProperties;
+            }
+        };
+
+        client.setGlobalProperties(globalProperties);
+        client.setGlobalPropertiesEvaluator(evaluator);
+
+        Map<String, Object> event = new HashMap<String, Object>();
+        event.put("event", "event");
+        Map<String, Object> eventKeenProperties = new HashMap<String, Object>();
+        eventKeenProperties.put("eventkeen", "event");
+
+        Map<String, Object> builtEvent = client.validateAndBuildEvent(client.getDefaultProject(), "apples", event, eventKeenProperties);
+
+        assertEquals("static", builtEvent.get("staticglobal"));
+        assertEquals("dynamic", builtEvent.get("dynamicglobal"));
+        assertEquals("event", builtEvent.get("event"));
+
+        Map builtKeenProperties = (Map) builtEvent.get("keen");
+        assertEquals("static", builtKeenProperties.get("statickeenglobal"));
+        assertEquals("dynamic", builtKeenProperties.get("dynamickeenglobal"));
+        assertEquals("event", builtKeenProperties.get("eventkeen"));
     }
 
     private void runValidateAndBuildEventTest(Map<String, Object> event, String eventCollection, String msg,

@@ -1077,37 +1077,38 @@ public class KeenClient {
 
         KeenLogging.log(String.format(Locale.US, "Adding event to collection: %s", eventCollection));
 
-        // build the event
+        // Create maps to aggregate keen & non-keen properties
         Map<String, Object> newEvent = new HashMap<String, Object>();
-        // handle keen properties
-        Calendar currentTime = Calendar.getInstance();
-        String timestamp = ISO_8601_FORMAT.format(currentTime.getTime());
-        if (keenProperties == null) {
-            keenProperties = new HashMap<String, Object>();
-            keenProperties.put("timestamp", timestamp);
-        } else if (!keenProperties.containsKey("timestamp")) {
-            // we need to make a copy if we are setting the timestamp since
-            // they might reuse the original keepProperties object.
-            keenProperties = new HashMap<String, Object>(keenProperties);
-            keenProperties.put("timestamp", timestamp);
-        }
-
         Map<String, Object> mergedKeenProperties = new HashMap<String, Object>();
-        // handle global properties
+
+        // separate keen & non-keen properties from static globals and merge them into separate maps
         if (null != globalProperties) {
             mergeGlobalProperties(getGlobalProperties(), mergedKeenProperties, newEvent);
         }
 
+        // separate keen & non-keen properties from dynamic globals and merge them into separate maps
         GlobalPropertiesEvaluator globalPropertiesEvaluator = getGlobalPropertiesEvaluator();
         if (globalPropertiesEvaluator != null) {
             mergeGlobalProperties(globalPropertiesEvaluator.getGlobalProperties(eventCollection), mergedKeenProperties,
                     newEvent);
         }
 
-        mergedKeenProperties.putAll(keenProperties);
+        // merge any per-event keen properties
+        if (keenProperties != null) {
+            mergedKeenProperties.putAll(keenProperties);
+        }
+
+        // if no keen.timestamp was provided by globals or event, add one now
+        if (!mergedKeenProperties.containsKey("timestamp")) {
+            Calendar currentTime = Calendar.getInstance();
+            String timestamp = ISO_8601_FORMAT.format(currentTime.getTime());
+            mergedKeenProperties.put("timestamp", timestamp);
+        }
+
+        // add merged keen properties to event
         newEvent.put("keen", mergedKeenProperties);
 
-        // now handle user-defined properties
+        // merge any per-event non-keen properties
         newEvent.putAll(event);
         return newEvent;
     }
