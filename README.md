@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.1.2'
+    compile 'io.keen:keen-client-api-java:2.2.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.1.2@aar'
+    compile 'io.keen:keen-client-api-android:2.2.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.1.2</version>
+  <version>2.2.0</version>
 </dependency>
 ```
 
