@@ -1,5 +1,9 @@
 package io.keen.client.java;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,6 +46,7 @@ public class KeenQueryTest {
     private static final String TEST_EVENT_COLLECTION = "android-sample-button-clicks";
     private static final String TEST_TARGET_PROPERTY = "click-number";
     private static final String TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP = "{\"" + KeenQueryConstants.TARGET_PROPERTY + "\":\"" + TEST_TARGET_PROPERTY + "\",\"" + KeenQueryConstants.EVENT_COLLECTION + "\":\"" + TEST_EVENT_COLLECTION + "\"}";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private HttpHandler mockHttpHandler;
     private KeenQueryClient queryClient;
@@ -76,7 +81,8 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 21}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Long result = queryClient.count(TEST_EVENT_COLLECTION, new RelativeTimeframe("this_year"));
+        long result = queryClient.count(TEST_EVENT_COLLECTION, new RelativeTimeframe("this_year"));
+        assertEquals(21, result);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -85,7 +91,10 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestString = outputStream.toString(ENCODING);
-        assertEquals(requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_year\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals("this_year", requestNode.get(KeenQueryConstants.TIMEFRAME).asText());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
     }
 
     @Test
@@ -106,9 +115,13 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestString = outputStream.toString(ENCODING);
-        assertEquals(requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_year\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals("this_year", requestNode.get(KeenQueryConstants.TIMEFRAME).asText());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
 
         assertTrue(result.isLong());
+        assertEquals(21, result.longValue());
     }
 
 
@@ -117,7 +130,8 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 9}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Long result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        long result = queryClient.countUnique(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(9, result);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -125,8 +139,11 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
@@ -134,7 +151,8 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 0}");
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        double result = queryClient.minimum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(0, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -142,15 +160,19 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
     public void testMaximum()  throws Exception {
         setMockResponse(200, "{\"result\": 8}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        double result = queryClient.maximum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(8, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -158,15 +180,19 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
     public void testAverage()  throws Exception {
         setMockResponse(200, "{\"result\": 3.0952380952380953}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        double result = queryClient.average(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(3.0952380952380953, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -174,16 +200,19 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
-
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
     public void testMedian()  throws Exception {
         setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        double result = queryClient.median(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(3, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -191,15 +220,19 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
     public void testPercentile()  throws Exception {
         setMockResponse(200, "{\"result\": 3}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, 50.0, null);
+        double result = queryClient.percentile(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, 50.0, null);
+        assertEquals(3, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -207,15 +240,20 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, "{\""+KeenQueryConstants.TARGET_PROPERTY+"\":\""+TEST_TARGET_PROPERTY+"\",\"percentile\":50.0,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(3, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
+        assertEquals(50, requestNode.get("percentile").asDouble(), 0);
     }
 
     @Test
     public void testSum()  throws Exception {
         setMockResponse(200, "{\"result\": 65}");
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        Double result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        double result = queryClient.sum(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY, null);
+        assertEquals(65, result, 0);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -223,9 +261,11 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
-
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
     }
 
     @Test
@@ -240,8 +280,11 @@ public class KeenQueryTest {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
-        String resultString = outputStream.toString(ENCODING);
-        assertEquals(resultString, TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP);
+        String requestString = outputStream.toString(ENCODING);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, requestNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
 
         assertTrue(result.isListResult());
         assertTrue(result.getListResults().get(0).isLong());
@@ -355,9 +398,18 @@ public class KeenQueryTest {
                     .withFilter(TEST_TARGET_PROPERTY, FilterOperator.GREATER_THAN, 1)
                     .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-
-        assertEquals(requestString, "{\"filters\":[{\"property_value\":5,\"property_name\":\""+TEST_TARGET_PROPERTY+"\",\"operator\":\"lt\"},{\"property_value\":1,\"property_name\":\""+TEST_TARGET_PROPERTY+"\",\"operator\":\"gt\"}],\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        ArrayNode filtersNode = (ArrayNode) requestNode.get("filters");
+        ObjectNode filter1Node = (ObjectNode) filtersNode.get(0);
+        ObjectNode filter2Node = (ObjectNode) filtersNode.get(1);
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, filter1Node.get("property_name").asText());
+        assertEquals("lt", filter1Node.get("operator").asText());
+        assertEquals(5, filter1Node.get("property_value").asInt());
+        assertEquals(TEST_TARGET_PROPERTY, filter2Node.get("property_name").asText());
+        assertEquals("gt", filter2Node.get("operator").asText());
+        assertEquals(1, filter2Node.get("property_value").asInt());
     }
 
     @Test(expected=KeenQueryClientException.class)
@@ -428,7 +480,11 @@ public class KeenQueryTest {
                 .withTimeframe(new RelativeTimeframe("this_month"))
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-        assertEquals( requestString, "{\""+KeenQueryConstants.INTERVAL+"\":\"weekly\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(3, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals("weekly", requestNode.get(KeenQueryConstants.INTERVAL).asText());
+        assertEquals("this_month", requestNode.get(KeenQueryConstants.TIMEFRAME).asText());
     }
 
     @Test
@@ -440,7 +496,11 @@ public class KeenQueryTest {
                 .withTimeframe(new RelativeTimeframe("this_month"))
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-        assertEquals( requestString, "{\"timezone\":\"UTC\",\"timeframe\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(3, requestNode.size());
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals("UTC", requestNode.get(KeenQueryConstants.TIMEZONE).asText());
+        assertEquals("this_month", requestNode.get(KeenQueryConstants.TIMEFRAME).asText());
     }
 
     @Test
