@@ -8,35 +8,32 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.List;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.exceptions.ServerException;
-
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
-
-import io.keen.client.java.result.Group;
-import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.DoubleResult;
-import io.keen.client.java.result.LongResult;
-import io.keen.client.java.result.StringResult;
-import io.keen.client.java.result.ListResult;
-import io.keen.client.java.result.IntervalResult;
+import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
+import io.keen.client.java.result.IntervalResult;
+import io.keen.client.java.result.ListResult;
+import io.keen.client.java.result.LongResult;
+import io.keen.client.java.result.QueryResult;
+import io.keen.client.java.result.StringResult;
 
 /**
  * <p>
  * KeenQueryClient provides all of the functionality required to execute the basic queries
  * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
- * </p>
  * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
- * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.</p>
+ * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.
  *
  * @author claireyoung
  * @since 1.0.0
@@ -508,10 +505,10 @@ public class KeenQueryClient {
     /**
      * <p>
      * Builder class for instantiating Keen Query clients.
-     * </p>
-     * <p> This builder defaults to using HttpURLConnection to handle HTTP requests.</p>
-     * <p> This builder defaults to using JacksonJsonHandler for JSON handler.</p>
-     * <p> This builder defaults to using KeenConstants.SERVER_ADDRESS for base URL.</p>
+     *
+     * <p> This builder defaults to using HttpURLConnection to handle HTTP requests.
+     * <p> This builder defaults to using JacksonJsonHandler for JSON handler.
+     * <p> This builder defaults to using KeenConstants.SERVER_ADDRESS for base URL.
      *
      * @author claireyoung
      * @since 1.0.0
@@ -534,10 +531,10 @@ public class KeenQueryClient {
 
         /**
          * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
-         * <p/>
+         *
          * This implementation returns a handler that will use {@link java.net.HttpURLConnection}
          * to make HTTP requests.
-         * <p/>
+         *
          * Subclasses should override this to provide an alternative default {@link HttpHandler}.
          *
          * @return The default {@link HttpHandler}.
@@ -579,7 +576,7 @@ public class KeenQueryClient {
 
         /**
          * Gets the default {@link KeenJsonHandler} to use if none is explicitly set for this builder.
-         * <p/>
+         *
          * Subclasses must override this to provide a default {@link KeenJsonHandler}.
          *
          * @return The default {@link KeenJsonHandler}.

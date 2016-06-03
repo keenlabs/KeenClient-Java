@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:2.1.2'
+    compile 'io.keen:keen-client-api-java:3.0.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:2.1.2@aar'
+    compile 'io.keen:keen-client-api-android:3.0.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>2.1.2</version>
+  <version>3.0.0</version>
 </dependency>
 ```
 
@@ -198,6 +198,18 @@ GlobalPropertiesEvaluator evaluator = new GlobalPropertiesEvaluator() {
 };
 client.setGlobalPropertiesEvaluator(evaluator);
 ```
+
+#### Property Merging
+
+Global properties will be merged with per-event properties.  The merge order is, from lowest to highest priority:
+static globals, dynamic globals, then per-event properties.  Keen properties in globals will be separated from non-keen
+properties and merged with the event keenProperties parameter in the same manner.
+
+Note: this is not a deep merge.  Only the top level key-value pairs will be merged, duplicate keys will replace
+previous ones in order of priority.
+
+See an example of the property merging in action in [KeenClientTest](core/src/test/java/io/keen/client/java/KeenClientTest.java)
+method `testPropertyMergeOrder()`
 
 #### Addons
 
@@ -530,6 +542,14 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 3.0.0
+
++ Merge event properties & keen properties in order of priority.
+
+##### 2.2.0
+
++ Fix bug with scoped key generation not working with newer Keen projects.
 
 ##### 2.1.2
 
