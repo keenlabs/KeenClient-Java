@@ -114,6 +114,23 @@ public class AndroidJsonHandlerTest {
     }
 
     @Test
+    public void writeMapWithArray() throws Exception {
+        // Build a map with a collection.
+        Map<String, Object> map = new HashMap<String, Object>();
+        List<String> list = new ArrayList<String>();
+        list.add("a");
+        list.add("b");
+        list.add("c");
+        map.put("list", list.toArray(new String[list.size()]));
+
+        // Serialize the map.
+        String result = serialize(map);
+
+        // Validate the result.
+        assertEquals("{\"list\":[\"a\",\"b\",\"c\"]}", result);
+    }
+
+    @Test
     public void writeEvillyNestedMapsAndCollections() throws Exception {
         // Build an evil mix of nested maps and collections.
         Map<String, Object> map1 = new HashMap<String, Object>();

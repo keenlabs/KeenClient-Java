@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
      */
     @SuppressWarnings("unchecked")
     private JSONObject convertMapToJSONObject(Map map) throws IOException {
-        Map newMap = null;
+        Map newMap;
 
         // Only perform wrapping if it's enabled and the input map requires it.
         if (isWrapNestedMapsAndCollections && requiresWrap(map)) {
@@ -112,7 +113,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
 
             // Iterate through the elements in the input map.
             for (Object key : map.keySet()) {
-                Object value = (Object) map.get(key);
+                Object value = map.get(key);
                 Object newValue = value;
 
                 // Perform recursive conversions on maps and collections.
@@ -120,6 +121,8 @@ public class AndroidJsonHandler implements KeenJsonHandler {
                     newValue = convertMapToJSONObject((Map) value);
                 } else if (value instanceof Collection) {
                     newValue = convertCollectionToJSONArray((Collection) value);
+                } else if (value instanceof Object[]) {
+                    newValue = convertCollectionToJSONArray(Arrays.asList((Object[]) value));
                 }
 
                 // Add the value to the new map.
@@ -145,7 +148,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
      */
     @SuppressWarnings("unchecked")
     private JSONArray convertCollectionToJSONArray(Collection collection) throws IOException {
-        Collection newCollection = null;
+        Collection newCollection;
 
         // Only perform wrapping if it's enabled and the input collection requires it.
         if (isWrapNestedMapsAndCollections && requiresWrap(collection)) {
@@ -210,7 +213,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
      */
     private static boolean requiresWrap(Map map) {
         for (Object value : map.values()) {
-            if (value instanceof Collection || value instanceof Map) {
+            if (value instanceof Collection || value instanceof Map || value instanceof Object[]) {
                 return true;
             }
         }
