@@ -256,7 +256,7 @@ public class KeenQueryClient {
     public QueryResult execute(Query params) throws IOException {
 
         // check parameters are valid
-        if (false == params.areParamsValid()) {
+        if (!params.areParamsValid()) {
             throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
@@ -267,8 +267,7 @@ public class KeenQueryClient {
 
         // post request and construct QueryResult.
         Object postResult = postRequest(project, url, allQueryArgs);
-        QueryResult result = constructQueryResult(postResult, params.hasGroupBy(), params.hasInterval());
-        return result;
+        return constructQueryResult(postResult, params.hasGroupBy(), params.hasInterval());
     }
 
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
@@ -428,7 +427,7 @@ public class KeenQueryClient {
         Request request = new Request(url, "POST", readkey, source, null);
         Response response = httpHandler.execute(request);
 
-        if (response.isSuccess() == false) {
+        if (!response.isSuccess()) {
             throw new ServerException(response.body);
         }
 
@@ -439,16 +438,22 @@ public class KeenQueryClient {
 
         // Get the result object.
         Object result = responseMap.get(KeenQueryConstants.RESULT);
-        // for successful query, we should get a Result object. But just in case we don't...
         if (result == null) {
-            String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
-            String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
+            // double check if result is null because there's an error (shouldn't happen but let's check)
+            if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
+                String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
+                String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
 
-            String errorMessage = "Error response received from server";
-            if (errorCode != null) {errorMessage += " " + errorCode;}
-            if (message != null) {errorMessage += ": " + message;}
+                String errorMessage = "Error response received from server";
+                if (errorCode != null) {
+                    errorMessage += " " + errorCode;
+                }
+                if (message != null) {
+                    errorMessage += ": " + message;
+                }
 
-            throw new KeenQueryClientException(errorMessage);
+                throw new KeenQueryClientException(errorMessage);
+            }
         }
 
         return result;

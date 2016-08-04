@@ -530,6 +530,16 @@ public class KeenQueryTest {
         assertEquals( requestString, "{\"max_age\":300,\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
     }
 
+    @Test
+    public void testNullResult() throws Exception {
+        setMockResponse(200, "{\"result\": null}");
+
+        Query queryParams = new Query.Builder(QueryType.COUNT)
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .build();
+        mockCaptureCountQueryRequest(queryParams);
+    }
+
     private String mockCaptureCountQueryRequest(Query inputParams) throws Exception {
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(inputParams);
