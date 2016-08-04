@@ -23,6 +23,7 @@ import io.keen.client.java.result.DoubleResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
+import io.keen.client.java.result.IntervalResultValue;
 import io.keen.client.java.result.ListResult;
 import io.keen.client.java.result.LongResult;
 import io.keen.client.java.result.QueryResult;
@@ -313,14 +314,14 @@ public class KeenQueryClient {
     }
 
     private static IntervalResult constructIntervalResult(List<Object> intervals, boolean isGroupBy) {
-        Map<AbsoluteTimeframe, QueryResult> intervalResult = new HashMap<AbsoluteTimeframe, QueryResult>();
+        List<IntervalResultValue> intervalResult = new ArrayList<IntervalResultValue>();
 
         for (Object child : intervals) {
             if (child instanceof Map) {
                 Map<String, Object> inputMap = (HashMap<String, Object>) child;
                 // If this is an interval, it should have keys "timeframe" and "value"
                 if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && (inputMap.containsKey(KeenQueryConstants.VALUE))) {
-                    AbsoluteTimeframe absoluteTimeframe = null;
+                    AbsoluteTimeframe absoluteTimeframe;
                     Object timeframe = inputMap.get(KeenQueryConstants.TIMEFRAME);
                     if (timeframe instanceof Map) {
                         Map<String, String> hashTimeframe = (HashMap<String, String>) timeframe;
@@ -333,7 +334,8 @@ public class KeenQueryClient {
 
                     Object value = inputMap.get(KeenQueryConstants.VALUE);
                     QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
-                    intervalResult.put(absoluteTimeframe, queryResultValue);
+
+                    intervalResult.add(new IntervalResultValue(absoluteTimeframe, queryResultValue));
                 } else {
                     throw new IllegalStateException("IntervalResult is missing \"" + KeenQueryConstants.TIMEFRAME + "\" and \"" + KeenQueryConstants.VALUE + "\" keys.");
                 }

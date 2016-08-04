@@ -10,7 +10,7 @@ import java.util.Map;
  * @author claireyoung
  * @since 1.0.0
  */
-class RelativeTimeframe implements Timeframe {
+public class RelativeTimeframe implements Timeframe {
 
     private final String relativeTimeframe;
 

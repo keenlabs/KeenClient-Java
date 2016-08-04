@@ -1,30 +1,23 @@
 package io.keen.client.java.result;
 
-import java.util.Map;
 import java.util.Collections;
-
-import io.keen.client.java.AbsoluteTimeframe;
+import java.util.List;
 
 /**
  * <p>IntervalResult is for if Interval properties were specified in the query.
- * If so, this object contains a Map that consist of </p>
- * <ul>
- * <li>AbsoluteTimeframe, which contains the timeframe as specified by the Interval</li>
- * <li>QueryResult, which is the result of the query as grouped by each timeframe</li>
- * </ul>
- *  *
+ *
  * @author claireyoung
  * @since 1.0.0, 07/06/15
  */
 public class IntervalResult extends QueryResult {
 
-    private final Map<AbsoluteTimeframe, QueryResult> results;
+    private final List<IntervalResultValue> results;
 
     /**
-     * @param results the result map of AbsoluteTimeframes to the QueryResult.
+     * @param results the result List of IntervalResultValues
      */
-    public IntervalResult(Map<AbsoluteTimeframe, QueryResult> results) {
-        this.results = Collections.unmodifiableMap(results);
+    public IntervalResult(List<IntervalResultValue> results) {
+        this.results = Collections.unmodifiableList(results);
     }
 
     /**
@@ -36,10 +29,10 @@ public class IntervalResult extends QueryResult {
     }
 
     /**
-     * @return map of AbsoluteTimeframe to QueryResult objects
+     * @return list of IntervalResultValues
      */
     @Override
-    public Map<AbsoluteTimeframe, QueryResult> getIntervalResults() {
+    public List<IntervalResultValue> getIntervalResults() {
         return results;
     }
 

@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.Map;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.keen.client.java.result.IntervalResultValue;
 import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
@@ -328,14 +330,15 @@ public class KeenQueryTest {
 
         assertTrue(result.isIntervalResult());
         IntervalResult interval = (IntervalResult)result;
-        Map<AbsoluteTimeframe, QueryResult> resultMap = interval.getIntervalResults();
+        List<IntervalResultValue> resultList = interval.getIntervalResults();
 
-        AbsoluteTimeframe firstInterval = resultMap.keySet().iterator().next();
-        assertNotNull(firstInterval);
-        assertNotNull(firstInterval.getStart());
-        assertNotNull(firstInterval.getEnd());
-
-        assertTrue(resultMap.get(firstInterval).isLong());
+        for (IntervalResultValue intervalResultValue : resultList) {
+            AbsoluteTimeframe firstInterval = intervalResultValue.getTimeframe();
+            assertNotNull(firstInterval);
+            assertNotNull(firstInterval.getStart());
+            assertNotNull(firstInterval.getEnd());
+            assertTrue(intervalResultValue.getResult().isLong());
+        }
     }
 
     @Test
@@ -355,18 +358,18 @@ public class KeenQueryTest {
 
         assertTrue(result.isIntervalResult());
         IntervalResult interval = (IntervalResult) result;
-        Map<AbsoluteTimeframe, QueryResult> resultMap = interval.getIntervalResults();
+        List<IntervalResultValue> resultList = interval.getIntervalResults();
 
         // interval
-        AbsoluteTimeframe firstInterval = resultMap.keySet().iterator().next();
+        AbsoluteTimeframe firstInterval = resultList.get(0).getTimeframe();
         assertNotNull(firstInterval);
         assertNotNull(firstInterval.getStart());
         assertNotNull(firstInterval.getEnd());
 
         // group-by
-        assertTrue(resultMap.get(firstInterval).isGroupResult());
-        QueryResult groupByItem = resultMap.get(firstInterval);
-        GroupByResult groupBy = (GroupByResult) groupByItem;
+        QueryResult queryResult = resultList.get(0).getResult();
+        assertTrue(queryResult.isGroupResult());
+        GroupByResult groupBy = (GroupByResult) queryResult;
         Map<Group, QueryResult> groupByResultMap = groupBy.getGroupResults();
 
         Group firstGroup = groupByResultMap.keySet().iterator().next();
