@@ -546,6 +546,7 @@ client.addEvent("collection-name", event, keenProperties);
 ##### 4.0.0
 
 + Change interface for queries with interval results.
++ Give JacksonJsonHandler public access.
 + Fix incorrect access for RelativeTimeframe class.
 + Fix NPE bug with a valid query result that returns null.
 
