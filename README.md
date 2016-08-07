@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:3.0.0'
+    compile 'io.keen:keen-client-api-java:4.0.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:3.0.0@aar'
+    compile 'io.keen:keen-client-api-android:4.0.0@aar'
 ```
 
 ### Maven
@@ -542,6 +542,13 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 4.0.0
+
++ Change interface for queries with interval results.
++ Give JacksonJsonHandler public access.
++ Fix incorrect access for RelativeTimeframe class.
++ Fix NPE bug with a valid query result that returns null.
 
 ##### 3.0.0
 

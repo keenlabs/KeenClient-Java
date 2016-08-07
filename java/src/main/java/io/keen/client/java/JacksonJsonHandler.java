@@ -16,7 +16,7 @@ import java.util.Map;
  * @author Kevin Litwack (kevin@kevinlitwack.com)
  * @since 2.0.0
  */
-class JacksonJsonHandler implements KeenJsonHandler {
+public class JacksonJsonHandler implements KeenJsonHandler {
 
     ///// KeenJsonHandler METHODS /////
 
@@ -41,7 +41,7 @@ class JacksonJsonHandler implements KeenJsonHandler {
     /**
      * Constructs a new Jackson JSON handler.
      */
-    JacksonJsonHandler() {
+    public JacksonJsonHandler() {
         mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }

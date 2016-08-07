@@ -89,7 +89,7 @@ public abstract class QueryResult {
     /**
      * @return map of AbsoluteTimeframe to QueryResult's, which is IllegalStateException in abstract class.
      */
-    public Map<AbsoluteTimeframe, QueryResult> getIntervalResults() { throw new IllegalStateException(); }
+    public List<IntervalResultValue> getIntervalResults() { throw new IllegalStateException(); }
 
     /**
      * @return map of Group to QueryResult's, which is IllegalStateException in abstract class.
