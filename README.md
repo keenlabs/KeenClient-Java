@@ -254,6 +254,10 @@ By default the library assumes that your events are "fire and forget", that is, 
 
 The query capabilities within the Java Keen client enable you to send POST queries and receive the results of the queries in a JSON object. For query types, refer to [API technical reference](https://keen.io/docs/api/reference/).
 
+#### Add the Keen Query Client Package to your Build
+
+The Query Client is published into a separate artifact, since many applications only need event publishing. If you would like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. The instructions are the same as described above under [Installation](#installation), but with the artifact name `keen-client-api-query` (instead of either `keen-client-api-java` or `keen-client-api-android`).
+
 #### Building a Keen Query Client
 You can build a KeenQueryClient by just providing a KeenProject. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same KeenProject will be used for publishing events as well.
 ```java
