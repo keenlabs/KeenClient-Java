@@ -5,15 +5,11 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.2.3'
-        classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.12.0'
-        classpath 'org.robolectric:robolectric-gradle-plugin:1.1.0'
+        classpath 'com.android.tools.build:gradle:2.1.3'
     }
 }
 
-apply plugin: 'android-sdk-manager'
 apply plugin: 'com.android.library'
-apply plugin: 'org.robolectric'
 
 android {
     compileSdkVersion 19
@@ -39,22 +35,12 @@ tasks.withType(JavaCompile) {
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
 
-    // For each variant add a task to copy the core classes so they are included in the AAR.
-    def copyTask = project.tasks.create(name: "copyCoreToAndroid${name.capitalize()}", type: Copy) {
-        from(project(':core').sourceSets.main.output)
-        into(variant.javaCompile.destinationDir)
-    }
-    copyTask.dependsOn variant.javaCompile
-    variant.outputs.each { output ->
-        output.packageLibrary.dependsOn copyTask
-    }
-
     // Also define a task to create a raw JAR to support non-AAR users.
     def rawJarTask = project.tasks.create(name: "rawAndroidJar${name.capitalize()}", type: Jar) {
         archiveName="keen-client-api-android-${project.version}.jar"
         from(variant.javaCompile.destinationDir)
     }
-    rawJarTask.dependsOn copyTask
+    rawJarTask.dependsOn javaCompile
 }
 
 configurations {

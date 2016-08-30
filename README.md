@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:4.0.0'
+    compile 'io.keen:keen-client-api-java:5.0.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:4.0.0@aar'
+    compile 'io.keen:keen-client-api-android:5.0.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>3.0.0</version>
+  <version>5.0.0</version>
 </dependency>
 ```
 
@@ -51,11 +51,17 @@ For Android, replace the `artifactId` element with these two elements:
 
 ### JAR Download
 
-Drop the appropriate jar into your project and configure the project to use it. We recommend having a "libs" directory to contain external dependencies, but it's up to you.
+**Warning:** This approach is not recommended as it forces you to deal with getting all the 
+right transitive dependencies. We highly encourage you to use a dependency management
+framework such as Maven :)
 
-* ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Note: This client depends on Jackson for JSON handling; you will need to ensure that the jackson-databind jar is on your classpath.
-* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
-* [Core library only](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see `JavaKeenClientBuilder` or `AndroidKeenClientBuilder` for examples.
+To use JARs directly just drop the appropriate JARs into your project and configure the project
+to use it. It is conventional to create a "libs" directory to contain external dependencies, but it's up to you.
+
+* [Core library](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see `JavaKeenClientBuilder` or `AndroidKeenClientBuilder` for examples.
+* ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Dependencies: Core plus the Jackson library for JSON handling.
+* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Dependencies: Core. Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
+* [Query Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-query) - Dependencies: Core, "Plain" Java, and a suitable JSON library.
 
 ### Build From Source
 
@@ -546,6 +552,11 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 5.0.0
+
++ Changed packaging to no longer bundle core classes into client artifacts.
++ Minor changes to accommodate Android unit testing.
 
 ##### 4.0.0
 
