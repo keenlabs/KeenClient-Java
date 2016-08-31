@@ -137,7 +137,9 @@ public class AndroidJsonHandler implements KeenJsonHandler {
      */
     private boolean isWrapNestedMapsAndCollections = (Build.VERSION.SDK_INT < 19);
 
-    /** Stringifier for converting JSONObjects to Strings; used for unit tests. */
+    /**
+     * Manager for creating JSONObjects and converting them to Strings; used for unit tests.
+     */
     private JsonObjectManager jsonObjectManager = null;
 
     ///// PRIVATE METHODS /////

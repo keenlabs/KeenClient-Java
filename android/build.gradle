@@ -40,7 +40,7 @@ android.libraryVariants.all { variant ->
         archiveName="keen-client-api-android-${project.version}.jar"
         from(variant.javaCompile.destinationDir)
     }
-    rawJarTask.dependsOn javaCompile
+    rawJarTask.dependsOn variant.javaCompile
 }
 
 configurations {

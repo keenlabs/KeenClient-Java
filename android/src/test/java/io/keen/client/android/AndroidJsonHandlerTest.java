@@ -67,7 +67,7 @@ public class AndroidJsonHandlerTest {
         map.put("numeric_property", 10);
         map.put("boolean_property", true);
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map);
 
         // Verify the calls.
@@ -89,7 +89,7 @@ public class AndroidJsonHandlerTest {
         nested.put("nested", "value");
         map.put("keen", nested);
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map);
 
         // Verify the calls.
@@ -118,7 +118,7 @@ public class AndroidJsonHandlerTest {
         nested1.put("b", nested2);
         map.put("a", nested1);
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map);
 
         // Verify the calls.
@@ -149,7 +149,7 @@ public class AndroidJsonHandlerTest {
         list.add("c");
         map.put("list", list);
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map);
 
         // Verify the calls.
@@ -178,7 +178,7 @@ public class AndroidJsonHandlerTest {
         list.add("c");
         map.put("list", list.toArray(new String[list.size()]));
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map);
 
         // Verify the calls.
@@ -222,6 +222,9 @@ public class AndroidJsonHandlerTest {
         list1.add(map2);
         map1.put("o", list1);
 
+        // The above sequence of code corresponds to this JSON, provided in case it's helpful for
+        // debugging a failure or modifying the test:
+        //
         // {
         //   "a": "1",
         //   "b": "2",
@@ -247,7 +250,7 @@ public class AndroidJsonHandlerTest {
         //   ]
         // }
 
-        // Serialize the map.
+        // Serialize the map. (Ignore the result since it's garbage anyway due to mocking.)
         serialize(map1);
 
         // Verify the calls.
