@@ -23,10 +23,6 @@ jar {
     manifest {
         attributes("Implementation-Vendor": "Keen.io", "Implementation-Version": version)
     }
-
-    from {
-        project(':core').sourceSets.main.output
-    }
 }
 
 test {

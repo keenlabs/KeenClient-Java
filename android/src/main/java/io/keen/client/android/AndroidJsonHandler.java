@@ -57,7 +57,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         }
 
         JSONObject jsonObject = convertMapToJSONObject(value);
-        writer.write(jsonObject.toString());
+        writer.write(getJsonObjectManager().stringify(jsonObject));
         writer.close();
     }
 
@@ -79,6 +79,50 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         this.isWrapNestedMapsAndCollections = value;
     }
 
+    ///// PROTECTED METHODS /////
+
+    /**
+     * Sets the {@link JsonObjectManager} instance to use. By default this class will simply use
+     * the normal Android JSONObject methods, but this method may be used to provide a different
+     * implementation, such as a stubbed/mocked implementation for unit testing.
+     *
+     * @param jsonObjectManager The {@link JsonObjectManager} instance to use.
+     */
+    protected void setJsonObjectManager(JsonObjectManager jsonObjectManager) {
+        this.jsonObjectManager = jsonObjectManager;
+    }
+
+    ///// PROTECTED INNER CLASSES /////
+
+    /**
+     * Interface wrapping usage of JSONObjects.
+     */
+    protected interface JsonObjectManager {
+        String stringify(JSONObject object);
+        JSONObject newObject(Map<String, ?> map);
+        JSONArray newArray(Collection<?> collection);
+    }
+
+    /**
+     * Default implementation of JsonObjectManager which just uses the JSONObject methods directly.
+     */
+    private static class AndroidJsonObjectManager implements JsonObjectManager {
+        @Override
+        public String stringify(JSONObject object) {
+            return object.toString();
+        }
+
+        @Override
+        public JSONObject newObject(Map<String, ?> map) {
+            return new JSONObject(map);
+        }
+
+        @Override
+        public JSONArray newArray(Collection<?> collection) {
+            return new JSONArray(collection);
+        }
+    }
+
     ///// PRIVATE CONSTANTS /////
 
     /**
@@ -93,7 +137,25 @@ public class AndroidJsonHandler implements KeenJsonHandler {
      */
     private boolean isWrapNestedMapsAndCollections = (Build.VERSION.SDK_INT < 19);
 
+    /**
+     * Manager for creating JSONObjects and converting them to Strings; used for unit tests.
+     */
+    private JsonObjectManager jsonObjectManager = null;
+
     ///// PRIVATE METHODS /////
+
+    /**
+     * Get the default jsonObjectManager, or use one that was explicitly specified.
+     *
+     * @return A default implementation which uses the normal Android library methods, unless a
+     * different implementation has been set explicitly.
+     */
+    private JsonObjectManager getJsonObjectManager() {
+        if (jsonObjectManager == null) {
+            jsonObjectManager = new AndroidJsonObjectManager();
+        }
+        return jsonObjectManager;
+    }
 
     /**
      * Converts an input map to a JSONObject, wrapping any values in the map if wrapping is enabled
@@ -134,7 +196,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         }
 
         // Pass the new map to the JSONObject constructor.
-        return new JSONObject(newMap);
+        return getJsonObjectManager().newObject(newMap);
     }
 
     /**
@@ -174,7 +236,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         }
 
         // Pass the new collection to the JSONArray constructor.
-        return new JSONArray(newCollection);
+        return getJsonObjectManager().newArray(newCollection);
     }
 
     /**
