@@ -1,5 +1,7 @@
 package io.keen.client.java;
 
+import io.keen.client.java.exceptions.KeenQueryClientException;
+import java.net.URL;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ import java.util.ArrayList;
  * @author claireyoung
  * @since 1.0.0
  */
-public class Query {
+public class Query implements KeenRequest {
 
     private final QueryType queryType;
     private final String eventCollection;
@@ -21,7 +23,7 @@ public class Query {
 
     // optional
     private final Timeframe timeframe;
-    private final List<Map<String, Object>> filters;
+    private final RequestParameterList<Filter> filters;
     private final String interval;    // requires timeframe to be set
     private final String timezone;
     private final List<String> groupBy;
@@ -36,7 +38,7 @@ public class Query {
      *
      * @return The JSON object map.
      */
-    public Map<String, Object> constructQueryArgs() {
+    public Map<String, Object> constructRequestArgs() {
 
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
@@ -68,8 +70,8 @@ public class Query {
             queryArgs.put(KeenQueryConstants.PERCENTILE, percentile);
         }
 
-        if (filters != null && filters.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.FILTERS, filters);
+        if (filters != null) {
+            queryArgs.put(KeenQueryConstants.FILTERS, filters.constructParameterRequestArgs());
         }
 
         if (timeframe != null) {
@@ -142,7 +144,31 @@ public class Query {
         this.percentile = builder.percentile;
         this.queryType = builder.queryType;
         this.timeframe = builder.timeframe;
-        this.filters = builder.filters;
+        if (null != builder.filters && !builder.filters.isEmpty())
+        {
+            this.filters = new RequestParameterList<Filter>(builder.filters);
+        }
+        else
+        {
+            this.filters = null;
+        }
+    }
+
+    @Override
+    public URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
+        return urlBuilder.getAnalysisUrl(
+            projectId,
+            this.queryType.toString());
+    }
+
+    @Override
+    public boolean groupedResponseExpected() {
+        return this.hasGroupBy();
+    }
+
+    @Override
+    public boolean intervalResponseExpected() {
+        return this.hasInterval();
     }
 
     /**
@@ -160,7 +186,7 @@ public class Query {
 
         // optional
         private Timeframe timeframe;
-        private List<Map<String, Object>> filters;
+        private List<Filter> filters;
         private String interval;
         private String timezone;
         private ArrayList<String> groupBy;
@@ -174,14 +200,14 @@ public class Query {
          * get filters
          * @return a list of filters.
          */
-        public List<Map<String, Object>> getFilters() { return filters; }
+        public List<Filter> getFilters() { return filters; }
 
         /**
          * set filters
          * @param filters  the filter arguments.
          */
-        public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
-        public Builder withFilters(List<Map<String, Object>> filters) {
+        public void setFilters(List<Filter> filters) { this.filters = filters; }
+        public Builder withFilters(List<Filter> filters) {
             setFilters(filters);
             return this;
         }
@@ -197,13 +223,10 @@ public class Query {
          *                            and are based on what the operator is.
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            Map<String, Object> filter = new HashMap<String, Object>();
-            filter.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
-            filter.put(KeenQueryConstants.OPERATOR, operator.toString());
-            filter.put(KeenQueryConstants.PROPERTY_VALUE, propertyValue);
+            Filter filter = new Filter(propertyName, operator, propertyValue);
 
             if (filters == null) {
-                filters = new ArrayList<Map<String, Object>>();
+                filters = new ArrayList<Filter>();
             }
 
             filters.add(filter);
@@ -422,7 +445,8 @@ public class Query {
 
         /**
          * Build the Query after the method chaining arguments.
-         * */
+         * @return The new Query instance.
+         */
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.
             return new Query(this);

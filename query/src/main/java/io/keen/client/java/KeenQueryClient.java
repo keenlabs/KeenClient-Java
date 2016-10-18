@@ -43,7 +43,7 @@ public class KeenQueryClient {
 
     private static final String ENCODING = "UTF-8";
     private final KeenJsonHandler jsonHandler;
-    private final String baseUrl;
+    private final RequestUrlBuilder requestUrlBuilder;
     private final KeenProject project;
     private final HttpHandler httpHandler;
 
@@ -249,26 +249,21 @@ public class KeenQueryClient {
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *
-     * @param params     The {@link Query} information, including {@link QueryType}, required args, and any optional args.
+     * @param request     The {@link KeenRequest} to be executed.
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
-     */
-    public QueryResult execute(Query params) throws IOException {
-
-        // check parameters are valid
-        if (!params.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
-        }
-
-        // Construct Query parameter args and URL string.
-        Map<String, Object> allQueryArgs = params.constructQueryArgs();
-        String urlString = formatBaseURL(params.getQueryType().toString());
-        URL url = new URL(urlString);
-
-        // post request and construct QueryResult.
-        Object postResult = postRequest(project, url, allQueryArgs);
-        return constructQueryResult(postResult, params.hasGroupBy(), params.hasInterval());
+     */    
+    public QueryResult execute(KeenRequest request) throws IOException {
+        
+        Map<String, Object> queryArgs = request.constructRequestArgs();
+        URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
+        
+        Object postResult = postRequest(project, url, queryArgs);
+        return constructQueryResult(
+            postResult,
+            request.groupedResponseExpected(),
+            request.intervalResponseExpected());
     }
 
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
@@ -461,15 +456,6 @@ public class KeenQueryClient {
         return result;
     }
 
-    private String formatBaseURL(String queryName) {
-        return String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                queryName        // query name
-        );
-    }
-
     private long queryResultToLong(QueryResult result) throws KeenQueryClientException {
         if (result == null) {
             throw new NullPointerException("Query Error: expected long response type but received null.");
@@ -505,7 +491,7 @@ public class KeenQueryClient {
         // Initialize final properties using the builder.
         this.httpHandler = builder.httpHandler;
         this.jsonHandler = builder.jsonHandler;
-        this.baseUrl = builder.baseUrl;
+        this.requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
         this.project = builder.project;
     }
 
@@ -700,6 +686,7 @@ public class KeenQueryClient {
 
         /**
          * Builds an instance based on this builder.
+         * @return The new KeenQueryClient instance.
          */
         protected KeenQueryClient buildInstance() {
             return new KeenQueryClient(this);
