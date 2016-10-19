@@ -34,6 +34,9 @@ import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
+import io.keen.client.java.result.ListResult;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 /**
  * KeenQueryTest
@@ -540,6 +543,97 @@ public class KeenQueryTest {
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .build();
         mockCaptureCountQueryRequest(queryParams);
+    }
+    
+    @Test
+    public void testFunnelWithOnlyRequiredParameters() throws Exception {
+        setMockResponse(200,
+            "{\"result\": [3,1,0],\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
+    
+        Funnel funnel = new Funnel.Builder()
+                .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days")))
+                .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")))
+                .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))
+                .build();
+        
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        QueryResult result = queryClient.execute(funnel);
+
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        Request request = capturedRequest.getValue();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        request.body.writeTo(outputStream);
+        String requestBody = outputStream.toString(ENCODING);
+        assertEquals(
+            "Unexpected request body",
+            "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
+            requestBody);
+        
+        assertTrue("Unexpected QueryResult type.", result instanceof ListResult);
+        ListResult listResult = (ListResult)result;
+        List<QueryResult> funnelResultData = listResult.getListResults();
+        assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
+        assertTrue("Unexpected result value.", 1 == funnelResultData.get(1).longValue());
+        assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
+    }
+    
+    @Test
+    public void testFunnelWithOnlyRootTimeframe() throws Exception {
+        setMockResponse(200,
+            "{\"result\": [3,1,0],\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
+    
+        Funnel funnel = new Funnel.Builder()
+                .withTimeframe(new RelativeTimeframe("this_7_days"))
+                .withStep(new FunnelStep("signed up", "visitor.guid"))
+                .withStep(new FunnelStep("completed profile", "user.guid"))
+                .withStep(new FunnelStep("referred user", "user.guid"))
+                .build();
+        
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        QueryResult result = queryClient.execute(funnel);
+
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        Request request = capturedRequest.getValue();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        request.body.writeTo(outputStream);
+        String requestBody = outputStream.toString(ENCODING);
+        assertEquals(
+            "Unexpected request body",
+            "{\"timeframe\":\"this_7_days\",\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
+            requestBody);
+        
+        assertTrue("Unexpected QueryResult type.", result instanceof ListResult);
+        ListResult listResult = (ListResult)result;
+        List<QueryResult> funnelResultData = listResult.getListResults();
+        assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
+        assertTrue("Unexpected result value.", 1 == funnelResultData.get(1).longValue());
+        assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
+    }
+    
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+    
+    @Test
+    public void testFunnelWithInvalidTimeframeConfiguration() throws Exception {
+        exception.expect(IllegalArgumentException.class);
+        Funnel funnel = new Funnel.Builder()
+                .withStep(new FunnelStep("signed up", "visitor.guid"))
+                .withStep(new FunnelStep("completed profile", "user.guid"))
+                .withStep(new FunnelStep("referred user", "user.guid"))
+                .build();
     }
 
     private String mockCaptureCountQueryRequest(Query inputParams) throws Exception {
