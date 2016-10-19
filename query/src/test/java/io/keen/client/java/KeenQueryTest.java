@@ -495,8 +495,7 @@ public class KeenQueryTest {
         setMockResponse(200, "{\"result\": 2}");
         Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
-                .withTimezone("UTC")
-                .withTimeframe(new RelativeTimeframe("this_month"))
+                .withTimeframe(new RelativeTimeframe("this_month", "UTC"))
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
         ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);

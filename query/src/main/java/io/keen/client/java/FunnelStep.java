@@ -15,28 +15,35 @@ import java.util.List;
 public class FunnelStep implements RequestParameter {
     
     // Required parameters
-    final String eventCollection;
-    final String actorProperty;
-    final Timeframe timeframe;
+    final public String eventCollection;
+    final public String actorProperty;
+    final public Timeframe timeframe;
     
     // Optional parameters
-    final RequestParameterList<Filter> filters;
-    final String timezone;
+    final public RequestParameterList<Filter> filters;
     
+    public FunnelStep(
+        String eventCollection,
+        String actorProperty)
+    {
+        // timeframe can be unspecified for a funnel step, but only if it
+        // has been specified at for the root request
+        this(eventCollection, actorProperty, null, null);
+    }
+        
     public FunnelStep(
         String eventCollection,
         String actorProperty,
         Timeframe timeframe)
     {
-        this(eventCollection, actorProperty, timeframe, null, null);
+        this(eventCollection, actorProperty, timeframe, null);
     }
     
     public FunnelStep(
         String eventCollection,
         String actorProperty,
         Timeframe timeframe,
-        List<Filter> filters,
-        String timezone)
+        List<Filter> filters)
     {
         if (null == eventCollection || eventCollection.isEmpty())
         {
@@ -48,13 +55,10 @@ public class FunnelStep implements RequestParameter {
             throw new IllegalArgumentException("FunnelStep parameter actorProperty must be provided.");
         }
         
-        if (null == timeframe)
-        {
-            throw new IllegalArgumentException("FunnelStep parameter timeframe must be provided.");
-        }
-        
         this.eventCollection = eventCollection;
         this.actorProperty = actorProperty;
+        
+        // Timeframe may be null
         this.timeframe = timeframe;
         
         if (null != filters && !filters.isEmpty())
@@ -64,15 +68,6 @@ public class FunnelStep implements RequestParameter {
         else
         {
             this.filters = null;
-        }
-        
-        if (null != timezone && !timezone.isEmpty())
-        {
-            this.timezone = timezone;
-        }
-        else
-        {
-            this.timezone = null;
         }
     }
 
@@ -87,8 +82,14 @@ public class FunnelStep implements RequestParameter {
         // Add required step parameters
         args.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
         args.put(KeenQueryConstants.ACTOR_PROPERTY, actorProperty);
-        args.put(KeenQueryConstants.TIMEFRAME, timeframe.toString());
         
+        // timeframe is only required if not specified for the funnel itself,
+        // so it may not be set.
+        if (null != this.timeframe)
+        {
+            args.putAll(timeframe.constructTimeframeArgs());
+        }
+
         // Add optional parameters if they've been specified.
         if (null != this.filters)
         {
@@ -96,11 +97,6 @@ public class FunnelStep implements RequestParameter {
                 KeenQueryConstants.FILTERS,
                 this.filters.constructParameterRequestArgs()
             );
-        }
-        
-        if (null != timezone)
-        {
-            args.put(KeenQueryConstants.TIMEZONE, timezone);
         }
         
         return args;

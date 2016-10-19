@@ -20,7 +20,6 @@ public class Funnel implements KeenRequest {
 
     private final RequestParameterList steps;
     private final Timeframe timeframe;
-    private final String timezone;
     
     public Funnel(Builder builder)
     {
@@ -29,9 +28,27 @@ public class Funnel implements KeenRequest {
             throw new IllegalArgumentException("Funnel parameter builder.steps must be provided.");
         }
         
+        if (null != builder.timeframe)
+        {
+            this.timeframe = builder.timeframe;
+        }
+        else
+        {
+            this.timeframe = null;
+            // If no timeframe has been specified for the funnel, 
+            // each step needs to provide one.
+            for (FunnelStep step : builder.steps)
+            {
+                if (null == step.timeframe)
+                {
+                    throw new IllegalArgumentException(
+                        "A funnel step is missing a timeframe but no root "
+                      + "timeframe was provided for the funnel request.");
+                }
+            }
+        }
+                
         this.steps = new RequestParameterList(builder.steps);
-        this.timeframe = builder.timeframe;
-        this.timezone = builder.timezone;
     }
     
     /**
@@ -56,13 +73,9 @@ public class Funnel implements KeenRequest {
         
         args.put(KeenQueryConstants.STEPS, this.steps.constructParameterRequestArgs());
         
-        if (null != this.timezone)
-        {
-            args.put(KeenQueryConstants.TIMEZONE, this.timezone);
-        }
         if (null != this.timeframe)
         {
-            args.put(KeenQueryConstants.TIMEFRAME, timeframe.toString());
+            args.putAll(timeframe.constructTimeframeArgs());
         }
         
         return args;
@@ -85,7 +98,6 @@ public class Funnel implements KeenRequest {
     {
         private List<FunnelStep> steps;
         private Timeframe timeframe;
-        private String timezone;   
             
         public Builder()
         {
@@ -157,29 +169,6 @@ public class Funnel implements KeenRequest {
         public Builder withTimeframe(Timeframe timeframe)
         {
             setTimeframe(timeframe);
-            return this;
-        }
-        
-        /**
-         * get timezone
-         * @return the timezone.
-         */
-        public String getTimezone() { return this.timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         */
-        public void setTimezone(String timezone) { this.timezone = timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         * @return This instance (for method chaining).
-         */
-        public Builder withTimezone(String timezone)
-        {
-            setTimezone(timezone);
             return this;
         }
         

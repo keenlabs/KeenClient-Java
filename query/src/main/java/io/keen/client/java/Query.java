@@ -25,7 +25,6 @@ public class Query implements KeenRequest {
     private final Timeframe timeframe;
     private final RequestParameterList<Filter> filters;
     private final String interval;    // requires timeframe to be set
-    private final String timezone;
     private final List<String> groupBy;
     private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
@@ -48,10 +47,6 @@ public class Query implements KeenRequest {
 
         if (interval != null) {
             queryArgs.put(KeenQueryConstants.INTERVAL, interval);
-        }
-
-        if (timezone != null) {
-            queryArgs.put(KeenQueryConstants.TIMEZONE, timezone);
         }
 
         if (groupBy != null) {
@@ -138,7 +133,6 @@ public class Query implements KeenRequest {
         this.eventCollection = builder.eventCollection;
         this.targetProperty = builder.targetProperty;
         this.interval = builder.interval;
-        this.timezone = builder.timezone;
         this.groupBy = builder.groupBy;
         this.maxAge = builder.maxAge;
         this.percentile = builder.percentile;
@@ -188,7 +182,6 @@ public class Query implements KeenRequest {
         private Timeframe timeframe;
         private List<Filter> filters;
         private String interval;
-        private String timezone;
         private ArrayList<String> groupBy;
         private Integer maxAge;
 
@@ -297,28 +290,6 @@ public class Query implements KeenRequest {
          */
         public Builder withInterval(String interval) {
             setInterval(interval);
-            return this;
-        }
-
-        /**
-         * get timezone
-         * @return the timezone.
-         */
-        public String getTimezone() { return timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         */
-        public void setTimezone(String timezone) { this.timezone = timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         * @return This instance (for method chaining).
-         */
-        public Builder withTimezone(String timezone) {
-            setTimezone(timezone);
             return this;
         }
 
