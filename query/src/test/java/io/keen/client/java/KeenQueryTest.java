@@ -586,10 +586,10 @@ public class KeenQueryTest {
     @Test
     public void testFunnelWithOnlyRootTimeframe() throws Exception {
         setMockResponse(200,
-            "{\"result\": [3,1,0],\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
+            "{\"result\": [3,1,0],\"timeframe\":\"this_7_days\",\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\": null},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\": null},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\": null}]}");
     
         Funnel funnel = new Funnel.Builder()
                 .withTimeframe(new RelativeTimeframe("this_7_days"))

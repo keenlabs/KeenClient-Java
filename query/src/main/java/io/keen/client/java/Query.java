@@ -41,7 +41,7 @@ public class Query extends KeenQueryRequest {
      */
     @Override
     Map<String, Object> constructRequestArgs() {
-
+        
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
         if (eventCollection != null) {
@@ -74,10 +74,6 @@ public class Query extends KeenQueryRequest {
 
         if (timeframe != null) {
             queryArgs.putAll(timeframe.constructTimeframeArgs());
-        }
-        
-        if (!this.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
         return queryArgs;
@@ -153,6 +149,10 @@ public class Query extends KeenQueryRequest {
         {
             this.filters = null;
         }
+        
+        if (!this.areParamsValid()) {
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+        }
     }
 
     @Override
@@ -224,7 +224,7 @@ public class Query extends KeenQueryRequest {
          * @return The Builder instance
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            this.AddFilter(propertyName, operator, propertyValue);
+            this.addFilter(propertyName, operator, propertyValue);
             return this;
         }
         
@@ -238,7 +238,7 @@ public class Query extends KeenQueryRequest {
          *                      This can be a string, number, boolean, or geo-coordinates
          *                      and are based on what the operator is.
          */
-        public void AddFilter(String propertyName, FilterOperator operator, Object propertyValue) {
+        public void addFilter(String propertyName, FilterOperator operator, Object propertyValue) {
             
             Filter filter = new Filter(propertyName, operator, propertyValue);
 
