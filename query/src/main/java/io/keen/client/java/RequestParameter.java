@@ -13,5 +13,4 @@ abstract class RequestParameter {
      * @return A jsonifiable object, such as a Map or a List.
      */
     abstract Object constructParameterRequestArgs();
-    
 }

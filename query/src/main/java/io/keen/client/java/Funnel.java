@@ -123,7 +123,7 @@ public class Funnel extends KeenQueryRequest {
          */
         public void setSteps(List<? extends FunnelStep> steps) {
             this.steps = null;
-            this.withSteps(steps); // Shallow copy the list of steps
+            withSteps(steps); // Shallow copy the list of steps
         }
         
         /**
@@ -136,7 +136,7 @@ public class Funnel extends KeenQueryRequest {
             // Add each step to the list of steps, appending to anything
             // that already exists.
             for (FunnelStep step : steps) {
-                this.withStep(step);
+                withStep(step);
             }
             
             return this;
@@ -156,7 +156,7 @@ public class Funnel extends KeenQueryRequest {
          * @return The Builder instance with the step added.
          */
         public Builder withStep(FunnelStep step) {
-            this.addStep(step);
+            addStep(step);
             return this;
         }
         

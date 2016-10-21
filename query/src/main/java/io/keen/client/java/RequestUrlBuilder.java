@@ -13,7 +13,6 @@ import java.util.logging.Logger;
  * @author baumatron
  */
 class RequestUrlBuilder {
-    
     // The API version string
     private final String apiVersion;
     
@@ -21,7 +20,6 @@ class RequestUrlBuilder {
     private final String baseUrl;
     
     RequestUrlBuilder(String apiVersion, String baseUrl) {
-        
         if (null == apiVersion || apiVersion.trim().isEmpty()) {
             throw new IllegalArgumentException("'apiVersion' is a required argument.");
         }
@@ -43,7 +41,6 @@ class RequestUrlBuilder {
      * @throws KeenQueryClientException
      */
     URL getAnalysisUrl(String projectId, String analysisName) throws KeenQueryClientException {
-        
         try {
             return new URL(String.format(
                     Locale.US,

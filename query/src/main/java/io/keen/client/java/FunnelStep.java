@@ -155,7 +155,6 @@ public class FunnelStep extends RequestParameter {
      */
     @Override
     Object constructParameterRequestArgs() {
-        
         Map<String, Object> args = new HashMap<String, Object>();
         
         // Add required step parameters

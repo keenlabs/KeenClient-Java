@@ -8,7 +8,7 @@ import java.util.Collection;
  * Constructs a jsonifiable collection of the jsonifiable parameters for each sub-parameter.
  * 
  * @author baumatron
- * @param <RequestParameterType> The type of RequestParameter
+ * @param <RequestParameterT> The type of RequestParameter
  */
 class RequestParameterCollection<RequestParameterT extends RequestParameter>
     extends RequestParameter {
@@ -16,7 +16,6 @@ class RequestParameterCollection<RequestParameterT extends RequestParameter>
     private Collection<? extends RequestParameterT> parameters;
     
     RequestParameterCollection(Collection<? extends RequestParameterT> parameters) {
-        
         if (null == parameters || parameters.isEmpty()) {
             throw new IllegalArgumentException("'parameters' is a required parameter and must not be empty.");
         }
@@ -26,7 +25,6 @@ class RequestParameterCollection<RequestParameterT extends RequestParameter>
 
     @Override
     Object constructParameterRequestArgs() {
-        
         Collection<Object> requestArgList = new LinkedList<Object>();
         
         for (RequestParameterT parameter : this.parameters) {

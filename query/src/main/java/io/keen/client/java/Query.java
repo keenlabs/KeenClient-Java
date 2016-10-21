@@ -1,20 +1,21 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.KeenQueryClientException;
 import java.net.URL;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import io.keen.client.java.exceptions.KeenQueryClientException;
 
 /**
  * Query represents all the details of the query to be run, including required
  * and optional parameters.
  *
  * Created by claireyoung on 5/18/15.
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0
  */
 public class Query extends KeenQueryRequest {
@@ -208,7 +209,7 @@ public class Query extends KeenQueryRequest {
          */
         public void setFilters(Collection<? extends Filter> filters) {
             this.filters = null;
-            this.withFilters(filters);  // Shallow copy the list of steps
+            withFilters(filters);  // Shallow copy the list of steps
         }
 
         /**
@@ -221,7 +222,7 @@ public class Query extends KeenQueryRequest {
             // Add each filter to the list of filters, appending to anything
             // that already exists.
             for (Filter filter : filters) {
-                this.addFilter(filter);
+                addFilter(filter);
             }
 
             return this;
@@ -239,7 +240,7 @@ public class Query extends KeenQueryRequest {
          * @return This instance (for method chaining).
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            this.addFilter(propertyName, operator, propertyValue);
+            addFilter(propertyName, operator, propertyValue);
             return this;
         }
         
@@ -256,7 +257,7 @@ public class Query extends KeenQueryRequest {
         public void addFilter(String propertyName, FilterOperator operator, Object propertyValue) {
             Filter filter = new Filter(propertyName, operator, propertyValue);
 
-            this.addFilter(filter);
+            addFilter(filter);
         }
 
         /**
