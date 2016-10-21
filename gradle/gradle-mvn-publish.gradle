@@ -58,15 +58,6 @@ uploadArchives.repositories.mavenDeployer {
             }
         }
     }
-
-    // The Java and Android projects depend on Core during build, but before packaging the Core
-    // classes are automatically included into the JARs. To prevent duplication of those classes,
-    // remove the dependency on Core from the POM files.
-    pom.whenConfigured { p ->
-        p.dependencies.removeAll {
-            it.artifactId.equals("keen-client-java-core")
-        }
-    }
 }
 
 signing {
