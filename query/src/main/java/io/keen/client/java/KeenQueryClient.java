@@ -34,7 +34,7 @@ import io.keen.client.java.result.StringResult;
  * KeenQueryClient provides all of the functionality required to execute the basic queries
  * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
  * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
- * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.
+ * Percentile, Select Unique, and Funnel. It does not include Extractions and Multi-Analysis.
  *
  * @author claireyoung
  * @since 1.0.0
@@ -249,12 +249,12 @@ public class KeenQueryClient {
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *
-     * @param request     The {@link KeenRequest} to be executed.
+     * @param request     The {@link KeenQueryRequest} to be executed.
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */    
-    public QueryResult execute(KeenRequest request) throws IOException {
+    public QueryResult execute(KeenQueryRequest request) throws IOException {
         
         Map<String, Object> queryArgs = request.constructRequestArgs();
         URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());

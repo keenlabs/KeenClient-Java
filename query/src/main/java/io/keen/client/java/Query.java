@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * Query represents all the details of the query to be run, including required
@@ -15,7 +17,7 @@ import java.util.ArrayList;
  * @author claireyoung
  * @since 1.0.0
  */
-public class Query implements KeenRequest {
+public class Query extends KeenQueryRequest {
 
     private final QueryType queryType;
     private final String eventCollection;
@@ -23,7 +25,7 @@ public class Query implements KeenRequest {
 
     // optional
     private final Timeframe timeframe;
-    private final RequestParameterList<Filter> filters;
+    private final RequestParameterCollection<Filter> filters;
     private final String interval;    // requires timeframe to be set
     private final List<String> groupBy;
     private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
@@ -37,7 +39,8 @@ public class Query implements KeenRequest {
      *
      * @return The JSON object map.
      */
-    public Map<String, Object> constructRequestArgs() {
+    @Override
+    Map<String, Object> constructRequestArgs() {
 
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
@@ -71,6 +74,10 @@ public class Query implements KeenRequest {
 
         if (timeframe != null) {
             queryArgs.putAll(timeframe.constructTimeframeArgs());
+        }
+        
+        if (!this.areParamsValid()) {
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
 
         return queryArgs;
@@ -140,7 +147,7 @@ public class Query implements KeenRequest {
         this.timeframe = builder.timeframe;
         if (null != builder.filters && !builder.filters.isEmpty())
         {
-            this.filters = new RequestParameterList<Filter>(builder.filters);
+            this.filters = new RequestParameterCollection<Filter>(builder.filters);
         }
         else
         {
@@ -149,19 +156,19 @@ public class Query implements KeenRequest {
     }
 
     @Override
-    public URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
+    URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
         return urlBuilder.getAnalysisUrl(
             projectId,
             this.queryType.toString());
     }
 
     @Override
-    public boolean groupedResponseExpected() {
+    boolean groupedResponseExpected() {
         return this.hasGroupBy();
     }
 
     @Override
-    public boolean intervalResponseExpected() {
+    boolean intervalResponseExpected() {
         return this.hasInterval();
     }
 
@@ -180,9 +187,9 @@ public class Query implements KeenRequest {
 
         // optional
         private Timeframe timeframe;
-        private List<Filter> filters;
+        private Collection<Filter> filters;
         private String interval;
-        private ArrayList<String> groupBy;
+        private List<String> groupBy;
         private Integer maxAge;
 
         public Builder(QueryType queryType) {
@@ -191,16 +198,16 @@ public class Query implements KeenRequest {
 
         /**
          * get filters
-         * @return a list of filters.
+         * @return a collection of filters.
          */
-        public List<Filter> getFilters() { return filters; }
+        public Collection<Filter> getFilters() { return filters; }
 
         /**
          * set filters
-         * @param filters  the filter arguments.
+         * @param filters the filter arguments.
          */
-        public void setFilters(List<Filter> filters) { this.filters = filters; }
-        public Builder withFilters(List<Filter> filters) {
+        public void setFilters(Collection<Filter> filters) { this.filters = filters; }
+        public Builder withFilters(Collection<Filter> filters) {
             setFilters(filters);
             return this;
         }
@@ -214,16 +221,32 @@ public class Query implements KeenRequest {
          * @param propertyValue       The property value. Refer to API documentation for info.
          *                            This can be a string, number, boolean, or geo-coordinates
          *                            and are based on what the operator is.
+         * @return The Builder instance
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
+            this.AddFilter(propertyName, operator, propertyValue);
+            return this;
+        }
+        
+        /**
+         * Adds a filter as an optional parameter to the query.
+         * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
+         * 
+         * @param propertyName  The name of the property.
+         * @param operator      The operator (eg., gt, lt, exists, contains)
+         * @param propertyValue The property value. Refer to API documentation for info.
+         *                      This can be a string, number, boolean, or geo-coordinates
+         *                      and are based on what the operator is.
+         */
+        public void AddFilter(String propertyName, FilterOperator operator, Object propertyValue) {
+            
             Filter filter = new Filter(propertyName, operator, propertyValue);
 
             if (filters == null) {
-                filters = new ArrayList<Filter>();
+                filters = new LinkedList<Filter>();
             }
 
             filters.add(filter);
-            return this;
         }
 
         /**
@@ -297,13 +320,13 @@ public class Query implements KeenRequest {
          * get the list of properties to group by.
          * @return the list of properties to group by.
          */
-        public ArrayList<String> getGroupBy() {return groupBy;}
+        public List<String> getGroupBy() {return groupBy;}
 
         /**
          * Set group by
          * @param groupBy the group by argument.
          */
-        public void setGroupBy(ArrayList<String> groupBy) {
+        public void setGroupBy(List<String> groupBy) {
             this.groupBy = groupBy;
         }
 
@@ -327,7 +350,7 @@ public class Query implements KeenRequest {
          * @param groupBy the ArrayList of properties to group by.
          * @return This instance (for method chaining).
          */
-        public Builder withGroupBy(ArrayList<String> groupBy) {
+        public Builder withGroupBy(List<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }

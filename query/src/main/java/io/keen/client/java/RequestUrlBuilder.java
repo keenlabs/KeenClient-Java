@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package io.keen.client.java;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
@@ -14,9 +9,10 @@ import java.util.logging.Logger;
 
 /**
  * Class which handles formatting of request URLs.
+ * 
  * @author baumatron
  */
-public class RequestUrlBuilder {
+class RequestUrlBuilder {
     
     // The API version string
     private final String apiVersion;
@@ -24,16 +20,14 @@ public class RequestUrlBuilder {
     // The base URL, including the scheme and domain
     private final String baseUrl;
     
-    public RequestUrlBuilder(String apiVersion, String baseUrl)
-    {
-        if (null == apiVersion || apiVersion.isEmpty())
-        {
-            throw new IllegalArgumentException("RequestUrlBuilder apiVersion is a required argument.");
+    RequestUrlBuilder(String apiVersion, String baseUrl) {
+        
+        if (null == apiVersion || apiVersion.trim().isEmpty()) {
+            throw new IllegalArgumentException("'apiVersion' is a required argument.");
         }
         
-        if (null == baseUrl || baseUrl.isEmpty())
-        {
-            throw new IllegalArgumentException("RequestUrlBuilder baseUrl is a required argument.");
+        if (null == baseUrl || baseUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("'baseUrl' is a required argument.");
         }
         
         this.apiVersion = apiVersion;
@@ -42,13 +36,14 @@ public class RequestUrlBuilder {
     
     /**
      * Get a format URL for an analysis request.
+     * 
      * @param projectId The project id
      * @param analysisName The analysis name
      * @return The complete URL.
      * @throws KeenQueryClientException
      */
-    public URL getAnalysisUrl(String projectId, String analysisName) throws KeenQueryClientException
-    {
+    URL getAnalysisUrl(String projectId, String analysisName) throws KeenQueryClientException {
+        
         try {
             return new URL(String.format(
                     Locale.US,
@@ -59,8 +54,8 @@ public class RequestUrlBuilder {
                     analysisName
             ));
         } catch (MalformedURLException ex) {
-            Logger.getLogger(RequestUrlBuilder.class.getName()).log(Level.SEVERE, "Failed to format single analysis URL.", ex);
-            throw new KeenQueryClientException("Failed to format analysis URL.");
+            Logger.getLogger(RequestUrlBuilder.class.getName()).log(Level.SEVERE, "Failed to format query URL.", ex);
+            throw new KeenQueryClientException("Failed to format query URL.");
         }
     }
 }

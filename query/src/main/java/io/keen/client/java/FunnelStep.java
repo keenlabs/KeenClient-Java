@@ -1,98 +1,91 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package io.keen.client.java;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 /**
  * An object which represents a funnel step.
+ * 
  * @author baumatron
  */
-public class FunnelStep implements RequestParameter {
-    
+public class FunnelStep extends RequestParameter {
+        
     // Required parameters
-    final public String eventCollection;
-    final public String actorProperty;
-    final public Timeframe timeframe;
+    private final String collectionName;
+    private final String actorPropertyName;
+    private final Timeframe timeframe;
     
     // Optional parameters
-    final public RequestParameterList<Filter> filters;
+    private final RequestParameterCollection<Filter> filters;
     
     public FunnelStep(
-        String eventCollection,
-        String actorProperty)
-    {
+        final String collectionName,
+        final String actorPropertyName) {
+        
         // timeframe can be unspecified for a funnel step, but only if it
         // has been specified at for the root request
-        this(eventCollection, actorProperty, null, null);
+        this(collectionName, actorPropertyName, null, null);
     }
         
     public FunnelStep(
-        String eventCollection,
-        String actorProperty,
-        Timeframe timeframe)
-    {
-        this(eventCollection, actorProperty, timeframe, null);
+        final String collectionName,
+        final String actorPropertyName,
+        Timeframe timeframe) {
+        
+        this(collectionName, actorPropertyName, timeframe, null);
     }
     
     public FunnelStep(
-        String eventCollection,
-        String actorProperty,
-        Timeframe timeframe,
-        List<Filter> filters)
-    {
-        if (null == eventCollection || eventCollection.isEmpty())
-        {
-            throw new IllegalArgumentException("FunnelStep parameter eventCollection must be provided.");
+        final String collectionName,
+        final String actorPropertyName,
+        final Timeframe timeframe,
+        final Collection<Filter> filters) {
+        
+        if (null == collectionName || collectionName.trim().isEmpty()) {
+            throw new IllegalArgumentException("FunnelStep parameter collectionName must be provided.");
         }
         
-        if (null == actorProperty || actorProperty.isEmpty())
-        {
-            throw new IllegalArgumentException("FunnelStep parameter actorProperty must be provided.");
+        if (null == actorPropertyName || actorPropertyName.trim().isEmpty()) {
+            throw new IllegalArgumentException("FunnelStep parameter actorPropertyName must be provided.");
         }
         
-        this.eventCollection = eventCollection;
-        this.actorProperty = actorProperty;
+        this.collectionName = collectionName;
+        this.actorPropertyName = actorPropertyName;
         
         // Timeframe may be null
         this.timeframe = timeframe;
         
-        if (null != filters && !filters.isEmpty())
-        {
-            this.filters = new RequestParameterList(filters);
+        if (null != filters && !filters.isEmpty()) {
+            this.filters = new RequestParameterCollection(filters);
         }
-        else
-        {
+        else {
             this.filters = null;
         }
     }
 
     /**
      * Constructs the sub-parameters for a funnel step.
+     * 
      * @return A jsonifiable Map containing the step's request parameters.
      */
     @Override
-    public Object constructParameterRequestArgs() {
-        HashMap<String, Object> args = new HashMap<String, Object>();
+    Object constructParameterRequestArgs() {
+        
+        Map<String, Object> args = new HashMap<String, Object>();
         
         // Add required step parameters
-        args.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
-        args.put(KeenQueryConstants.ACTOR_PROPERTY, actorProperty);
+        args.put(KeenQueryConstants.EVENT_COLLECTION, collectionName);
+        args.put(KeenQueryConstants.ACTOR_PROPERTY, actorPropertyName);
         
         // timeframe is only required if not specified for the funnel itself,
         // so it may not be set.
-        if (null != this.timeframe)
-        {
+        if (null != this.timeframe) {
             args.putAll(timeframe.constructTimeframeArgs());
         }
 
         // Add optional parameters if they've been specified.
-        if (null != this.filters)
-        {
+        if (null != this.filters) {
             args.put(
                 KeenQueryConstants.FILTERS,
                 this.filters.constructParameterRequestArgs()
@@ -102,4 +95,10 @@ public class FunnelStep implements RequestParameter {
         return args;
     }
     
+    /**
+     * Package visible accessor for validating Funnel timeframe arguments.
+     * 
+     * @return 
+     */
+    Timeframe getTimeframe() { return this.timeframe; }
 }

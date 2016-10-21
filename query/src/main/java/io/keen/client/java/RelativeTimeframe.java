@@ -15,7 +15,6 @@ public class RelativeTimeframe implements Timeframe {
     private final String relativeTimeframe;
     private final String timezone;
 
-    
     /**
      * Construct a RelativeTimeframe with a specified relative time window.
      * @param relativeTimeframe the relative timeframe string, as specified by the API docs.
@@ -32,20 +31,17 @@ public class RelativeTimeframe implements Timeframe {
      *                          For example, "this_minute", "this_month", "this_year", etc.
      * @param timezone the timezone offset to use with the relative timeframe
      */
-    public RelativeTimeframe(String relativeTimeframe, String timezone) {
+    public RelativeTimeframe(final String relativeTimeframe, final String timezone) {
         
-        if (null == relativeTimeframe || relativeTimeframe.isEmpty())
-        {
-            throw new IllegalArgumentException("RelativeTimeFrame relativeTimeframe argument must be specified and not empty.");
+        if (null == relativeTimeframe || relativeTimeframe.trim().isEmpty()) {
+            throw new IllegalArgumentException("'relativeTimeframe' argument must be specified and not empty.");
         }
         
         this.relativeTimeframe = relativeTimeframe;
-        if (null != timezone && !timezone.isEmpty())
-        {
+        if (null != timezone && !timezone.trim().isEmpty()) {
             this.timezone = timezone;
         }
-        else
-        {
+        else {
             this.timezone = null;
         }
     }
@@ -65,16 +61,15 @@ public class RelativeTimeframe implements Timeframe {
      * @return  the Timeframe Json map to send in the query.
      */
     @Override
-    public Map<String, Object> constructTimeframeArgs()
-    {
+    public Map<String, Object> constructTimeframeArgs() {
+        
         Map timeframe = new HashMap<String, Object>();
-        if (null != this.relativeTimeframe)
-        {
+        
+        if (null != this.relativeTimeframe) {
             timeframe.put(KeenQueryConstants.TIMEFRAME, this.relativeTimeframe);
         }
         
-        if (null != this.timezone)
-        {
+        if (null != this.timezone) {
             timeframe.put(KeenQueryConstants.TIMEZONE, this.timezone);
         }
 
