@@ -20,6 +20,7 @@ import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
 import io.keen.client.java.result.DoubleResult;
+import io.keen.client.java.result.FunnelResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
@@ -259,11 +260,26 @@ public class KeenQueryClient {
         Map<String, Object> queryArgs = request.constructRequestArgs();
         URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
         
-        Object postResult = postRequest(project, url, queryArgs);
-        return constructQueryResult(
-            postResult,
-            request.groupedResponseExpected(),
-            request.intervalResponseExpected());
+        Map<String, Object> postResponse = postRequest(project, url, queryArgs);
+        
+        QueryResult result = null;
+        
+        // If the request was a funnel, construct the appropriate response including
+        // other response data that might be included, such as the 'actors' key.
+        if (request instanceof Funnel) {
+            result = constructFunnelResult(postResponse);
+        }
+        else {
+            // Construct a response for more generic query responses that
+            // don't include anything more of interest than the 'result'
+            // key
+            result = constructQueryResult(
+                postResponse.get(KeenQueryConstants.RESULT),
+                request.groupedResponseExpected(),
+                request.intervalResponseExpected());
+        }
+
+        return result;
     }
 
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
@@ -375,6 +391,44 @@ public class KeenQueryClient {
 
         return new GroupByResult(groupByResult);
     }
+    
+    /**
+     * Constructs a FunnelResult from a response object map. This map should include
+     * a 'result' key and may include an optional 'actors' key as well.
+     * 
+     * @param responseMap The server response, deserialized to a Map<String, Object>
+     * @return A FunnelResult instance.
+     */
+    private static FunnelResult constructFunnelResult(Map<String, Object> responseMap) {
+        
+        // Create a result for the 'result' field of the funnel response
+        QueryResult funnelResult = constructQueryResult(
+            responseMap.get(KeenQueryConstants.RESULT),
+            false,
+            false);
+
+        if (!(funnelResult instanceof ListResult)) {
+            throw new KeenQueryClientException("'result' property of response contained data of an unexpected format.");
+        }
+
+        ListResult actorsResult = null;
+        // Check for any additional result data that has been returned and include it with the result.
+        if (responseMap.containsKey(KeenQueryConstants.ACTORS))
+        {
+            QueryResult genericActorsResult = constructQueryResult(
+                responseMap.get(KeenQueryConstants.ACTORS),
+                false,
+                false);
+
+            if (!(genericActorsResult instanceof ListResult)) {
+                throw new KeenQueryClientException("'actors' property of response contained data of an unexpected format.");
+            }
+
+            actorsResult = (ListResult)genericActorsResult;
+        }
+
+        return new FunnelResult((ListResult)funnelResult, actorsResult);
+    }
 
     /**
      * Posts a request to the server in the specified project, using the given URL and request data.
@@ -389,7 +443,7 @@ public class KeenQueryClient {
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server.
      */
-    private Object postRequest(KeenProject project, URL url,
+    private Map<String, Object> postRequest(KeenProject project, URL url,
                                final Map<String, ?> requestData) throws IOException {
 
         // Build an output source which simply writes the serialized JSON to the output.
@@ -433,9 +487,8 @@ public class KeenQueryClient {
         Map<String, Object> responseMap;
         responseMap = this.jsonHandler.readJson(reader);
 
-        // Get the result object.
-        Object result = responseMap.get(KeenQueryConstants.RESULT);
-        if (result == null) {
+        // Check for an error code if no result was provided.
+        if (null == responseMap.get(KeenQueryConstants.RESULT)) {
             // double check if result is null because there's an error (shouldn't happen but let's check)
             if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
                 String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
@@ -453,7 +506,8 @@ public class KeenQueryClient {
             }
         }
 
-        return result;
+        // Return the entire response map
+        return responseMap;
     }
 
     private long queryResultToLong(QueryResult result) throws KeenQueryClientException {

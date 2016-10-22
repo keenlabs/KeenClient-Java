@@ -20,6 +20,7 @@ import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
+import io.keen.client.java.result.FunnelResult;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -561,6 +562,8 @@ public class KeenQueryTest {
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
+        assertTrue(result instanceof FunnelResult);
+        FunnelResult funnelResult = (FunnelResult)result;
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
@@ -575,9 +578,8 @@ public class KeenQueryTest {
           + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
             requestBody);
         
-        assertTrue("Unexpected QueryResult type.", result instanceof ListResult);
-        ListResult listResult = (ListResult)result;
-        List<QueryResult> funnelResultData = listResult.getListResults();
+        ListResult funnelValues = funnelResult.getFunnelResult();
+        List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
         assertTrue("Unexpected result value.", 1 == funnelResultData.get(1).longValue());
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
@@ -600,7 +602,9 @@ public class KeenQueryTest {
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
-
+        assertTrue(result instanceof FunnelResult);
+        FunnelResult funnelResult = (FunnelResult)result;
+        
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
@@ -615,9 +619,8 @@ public class KeenQueryTest {
           + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
             requestBody);
         
-        assertTrue("Unexpected QueryResult type.", result instanceof ListResult);
-        ListResult listResult = (ListResult)result;
-        List<QueryResult> funnelResultData = listResult.getListResults();
+        ListResult funnelValues = funnelResult.getFunnelResult();
+        List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
         assertTrue("Unexpected result value.", 1 == funnelResultData.get(1).longValue());
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());

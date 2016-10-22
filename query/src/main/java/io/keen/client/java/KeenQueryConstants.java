@@ -52,6 +52,10 @@ public class KeenQueryConstants {
     // funnel
     static final String ACTOR_PROPERTY = "actor_property";
     static final String STEPS = "steps";
+    static final String INVERTED = "inverted";
+    static final String OPTIONAL = "optional";
+    static final String WITH_ACTORS = "with_actors";
+    static final String ACTORS = "actors";
 
     // return
     static final String RESULT = "result";

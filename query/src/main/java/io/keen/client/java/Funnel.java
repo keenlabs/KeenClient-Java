@@ -14,9 +14,21 @@ import java.util.Map;
  */
 public class Funnel extends KeenQueryRequest {
 
+    // Required parameters
     private final RequestParameterCollection steps;
+    
+    // Optional parameters
+    // Timeframe must be specified either on the Funnel, or for each
+    // FunnelStep. If specified for the Funnel, it can be overriden
+    // in the FunnelSteps
     private final Timeframe timeframe;
     
+    /**
+     * Private constructor for a Funnel, called by Funnel.Builder. To create a
+     * funnel, use an instance of the Funnel.Builder class.
+     * 
+     * @param builder The builder to use for building the Funnel object.
+     */
     private Funnel(final Builder builder) {
         
         if (null == builder.steps || builder.steps.isEmpty()) {
@@ -38,7 +50,24 @@ public class Funnel extends KeenQueryRequest {
                 }
             }
         }
-                
+        
+        // Validate step properties that cannot be true for the first funnel step
+        FunnelStep firstStep = builder.steps.get(0);
+        
+        if (null != firstStep.getInverted() &&
+            true == firstStep.getInverted())
+        {
+            throw new IllegalArgumentException(
+                "First step in funnel cannot have special parameter 'inverted' set to true.");
+        }
+        
+        if (null != firstStep.getOptional() &&
+            true == firstStep.getOptional())
+        {
+            throw new IllegalArgumentException(
+                "First step in funnel cannot have special parameter 'optional' set to true.");
+        }
+        
         this.steps = new RequestParameterCollection(builder.steps);
     }
     
