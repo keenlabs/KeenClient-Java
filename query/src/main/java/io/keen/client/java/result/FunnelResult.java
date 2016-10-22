@@ -44,7 +44,7 @@ public class FunnelResult extends QueryResult {
      * 
      * @return The ListResult for the actors property in the result response.
      */
-    public ListResult getActorResult() { return this.actorsResult; }
+    public ListResult getActorsResult() { return this.actorsResult; }
     
     /**
      * 
