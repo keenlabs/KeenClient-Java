@@ -19,12 +19,15 @@ import io.keen.client.java.exceptions.KeenQueryClientException;
  * @since 1.0.0
  */
 public class Query extends KeenQueryRequest {
+    // required
     private final QueryType queryType;
     private final String eventCollection;
+    private final Timeframe timeframe;
+
+    // sometimes optional
     private final String targetProperty;
 
     // optional
-    private final Timeframe timeframe;
     private final RequestParameterCollection<Filter> filters;
     private final String interval;    // requires timeframe to be set
     private final List<String> groupBy;
@@ -148,10 +151,6 @@ public class Query extends KeenQueryRequest {
         {
             this.filters = null;
         }
-        
-        if (!this.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
-        }
     }
 
     @Override
@@ -177,15 +176,18 @@ public class Query extends KeenQueryRequest {
      * individual queries may require additional arguments.
      */
     public static class Builder {
+        // required
         private QueryType queryType;
         private String eventCollection;
+        private Timeframe timeframe;
+
+        // sometimes optional
         private String targetProperty;
 
         // required by the Percentile query
         private Double percentile;    // 0-100 with two decimal places of precision for example, 99.99
 
         // optional
-        private Timeframe timeframe;
         private Collection<Filter> filters;
         private String interval;
         private List<String> groupBy;
@@ -209,7 +211,11 @@ public class Query extends KeenQueryRequest {
          */
         public void setFilters(Collection<? extends Filter> filters) {
             this.filters = null;
-            withFilters(filters);  // Shallow copy the list of steps
+
+            // Client code may just be clearing all the filters.
+            if (null != filters) {
+                withFilters(filters);  // Shallow copy the list of steps
+            }
         }
 
         /**
@@ -490,8 +496,14 @@ public class Query extends KeenQueryRequest {
          * @return The new Query instance.
          */
         public Query build() {
-            // we can do initialization here, but it's ok if everything is null.
-            return new Query(this);
+            Query query = new Query(this);
+
+            if (!query.areParamsValid()) {
+                throw new IllegalArgumentException("Keen Query parameters are insufficient. " +
+                        "Please check Query API docs for required arguments.");
+            }
+
+            return query;
         }
     }
 }

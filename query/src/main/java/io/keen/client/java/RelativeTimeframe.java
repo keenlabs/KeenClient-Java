@@ -32,7 +32,6 @@ public class RelativeTimeframe implements Timeframe {
      * @param timezone the timezone offset to use with the relative timeframe
      */
     public RelativeTimeframe(final String relativeTimeframe, final String timezone) {
-        
         if (null == relativeTimeframe || relativeTimeframe.trim().isEmpty()) {
             throw new IllegalArgumentException("'relativeTimeframe' argument must be specified and not empty.");
         }

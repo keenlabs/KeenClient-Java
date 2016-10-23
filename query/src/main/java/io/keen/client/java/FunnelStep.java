@@ -9,7 +9,7 @@ import java.util.Map;
  * 
  * @author baumatron
  */
-public class FunnelStep extends RequestParameter {
+public class FunnelStep extends RequestParameter<Map<String, Object>> {
         
     // Required parameters
     /**
@@ -154,7 +154,7 @@ public class FunnelStep extends RequestParameter {
      * @return A jsonifiable Map containing the step's request parameters.
      */
     @Override
-    Object constructParameterRequestArgs() {
+    Map<String, Object> constructParameterRequestArgs() {
         Map<String, Object> args = new HashMap<String, Object>();
         
         // Add required step parameters

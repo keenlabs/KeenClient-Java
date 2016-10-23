@@ -123,7 +123,11 @@ public class Funnel extends KeenQueryRequest {
          */
         public void setSteps(List<? extends FunnelStep> steps) {
             this.steps = null;
-            withSteps(steps); // Shallow copy the list of steps
+
+            // Client code may just be clearing all the steps.
+            if (null != steps) {
+                withSteps(steps); // Shallow copy the list of steps
+            }
         }
         
         /**

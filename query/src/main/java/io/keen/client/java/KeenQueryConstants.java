@@ -3,10 +3,10 @@ package io.keen.client.java;
 /**
  * Commonly used constants in the HTTP query request
  *
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0, 05/18/15
  */
-public class KeenQueryConstants {
+class KeenQueryConstants {
 
     // Query names
     static final String COUNT = "count";
@@ -56,6 +56,11 @@ public class KeenQueryConstants {
     static final String OPTIONAL = "optional";
     static final String WITH_ACTORS = "with_actors";
     static final String ACTORS = "actors";
+
+    // multi-analysis
+    static final String MULTI_ANALYSIS = "multi_analysis";
+    static final String ANALYSES = "analyses";
+    static final String ANALYSIS_TYPE = "analysis_type";
 
     // return
     static final String RESULT = "result";

@@ -5,12 +5,12 @@ package io.keen.client.java;
  *
  * @author baumatron
  */
-abstract class RequestParameter {
+abstract class RequestParameter<ArgsT> {
     
     /**
      * Returns a jsonifiable object, such as a Map or a List, for a request parameter.
      * 
      * @return A jsonifiable object, such as a Map or a List.
      */
-    abstract Object constructParameterRequestArgs();
+    abstract ArgsT constructParameterRequestArgs();
 }
