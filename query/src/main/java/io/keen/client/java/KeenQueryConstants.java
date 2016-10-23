@@ -18,6 +18,7 @@ public class KeenQueryConstants {
     static final String PERCENTILE_RESOURCE = "percentile";
     static final String SUM = "sum";
     static final String SELECT_UNIQUE = "select_unique";
+    static final String FUNNEL = "funnel";
 
     // Query parameters
     static final String EVENT_COLLECTION = "event_collection";
@@ -47,6 +48,14 @@ public class KeenQueryConstants {
     static final String CONTAINS = "contains";
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
+    
+    // funnel
+    static final String ACTOR_PROPERTY = "actor_property";
+    static final String STEPS = "steps";
+    static final String INVERTED = "inverted";
+    static final String OPTIONAL = "optional";
+    static final String WITH_ACTORS = "with_actors";
+    static final String ACTORS = "actors";
 
     // return
     static final String RESULT = "result";

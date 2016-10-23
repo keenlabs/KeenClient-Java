@@ -20,6 +20,7 @@ import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
 import io.keen.client.java.result.DoubleResult;
+import io.keen.client.java.result.FunnelResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
@@ -34,7 +35,7 @@ import io.keen.client.java.result.StringResult;
  * KeenQueryClient provides all of the functionality required to execute the basic queries
  * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
  * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
- * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.
+ * Percentile, Select Unique, and Funnel. It does not include Extractions and Multi-Analysis.
  *
  * @author claireyoung
  * @since 1.0.0
@@ -43,7 +44,7 @@ public class KeenQueryClient {
 
     private static final String ENCODING = "UTF-8";
     private final KeenJsonHandler jsonHandler;
-    private final String baseUrl;
+    private final RequestUrlBuilder requestUrlBuilder;
     private final KeenProject project;
     private final HttpHandler httpHandler;
 
@@ -249,26 +250,36 @@ public class KeenQueryClient {
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *
-     * @param params     The {@link Query} information, including {@link QueryType}, required args, and any optional args.
+     * @param request     The {@link KeenQueryRequest} to be executed.
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
-     */
-    public QueryResult execute(Query params) throws IOException {
-
-        // check parameters are valid
-        if (!params.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+     */    
+    public QueryResult execute(KeenQueryRequest request) throws IOException {
+        
+        Map<String, Object> queryArgs = request.constructRequestArgs();
+        URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
+        
+        Map<String, Object> postResponse = postRequest(project, url, queryArgs);
+        
+        QueryResult result = null;
+        
+        // If the request was a funnel, construct the appropriate response including
+        // other response data that might be included, such as the 'actors' key.
+        if (request instanceof Funnel) {
+            result = constructFunnelResult(postResponse);
+        }
+        else {
+            // Construct a response for more generic query responses that
+            // don't include anything more of interest than the 'result'
+            // key
+            result = constructQueryResult(
+                postResponse.get(KeenQueryConstants.RESULT),
+                request.groupedResponseExpected(),
+                request.intervalResponseExpected());
         }
 
-        // Construct Query parameter args and URL string.
-        Map<String, Object> allQueryArgs = params.constructQueryArgs();
-        String urlString = formatBaseURL(params.getQueryType().toString());
-        URL url = new URL(urlString);
-
-        // post request and construct QueryResult.
-        Object postResult = postRequest(project, url, allQueryArgs);
-        return constructQueryResult(postResult, params.hasGroupBy(), params.hasInterval());
+        return result;
     }
 
     private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
@@ -380,6 +391,44 @@ public class KeenQueryClient {
 
         return new GroupByResult(groupByResult);
     }
+    
+    /**
+     * Constructs a FunnelResult from a response object map. This map should include
+     * a 'result' key and may include an optional 'actors' key as well.
+     * 
+     * @param responseMap The server response, deserialized to a Map<String, Object>
+     * @return A FunnelResult instance.
+     */
+    private static FunnelResult constructFunnelResult(Map<String, Object> responseMap) {
+        
+        // Create a result for the 'result' field of the funnel response
+        QueryResult funnelResult = constructQueryResult(
+            responseMap.get(KeenQueryConstants.RESULT),
+            false,
+            false);
+
+        if (!(funnelResult instanceof ListResult)) {
+            throw new KeenQueryClientException("'result' property of response contained data of an unexpected format.");
+        }
+
+        ListResult actorsResult = null;
+        // Check for any additional result data that has been returned and include it with the result.
+        if (responseMap.containsKey(KeenQueryConstants.ACTORS))
+        {
+            QueryResult genericActorsResult = constructQueryResult(
+                responseMap.get(KeenQueryConstants.ACTORS),
+                false,
+                false);
+
+            if (!(genericActorsResult instanceof ListResult)) {
+                throw new KeenQueryClientException("'actors' property of response contained data of an unexpected format.");
+            }
+
+            actorsResult = (ListResult)genericActorsResult;
+        }
+
+        return new FunnelResult((ListResult)funnelResult, actorsResult);
+    }
 
     /**
      * Posts a request to the server in the specified project, using the given URL and request data.
@@ -394,7 +443,7 @@ public class KeenQueryClient {
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server.
      */
-    private Object postRequest(KeenProject project, URL url,
+    private Map<String, Object> postRequest(KeenProject project, URL url,
                                final Map<String, ?> requestData) throws IOException {
 
         // Build an output source which simply writes the serialized JSON to the output.
@@ -438,9 +487,8 @@ public class KeenQueryClient {
         Map<String, Object> responseMap;
         responseMap = this.jsonHandler.readJson(reader);
 
-        // Get the result object.
-        Object result = responseMap.get(KeenQueryConstants.RESULT);
-        if (result == null) {
+        // Check for an error code if no result was provided.
+        if (null == responseMap.get(KeenQueryConstants.RESULT)) {
             // double check if result is null because there's an error (shouldn't happen but let's check)
             if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
                 String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
@@ -458,16 +506,8 @@ public class KeenQueryClient {
             }
         }
 
-        return result;
-    }
-
-    private String formatBaseURL(String queryName) {
-        return String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                queryName        // query name
-        );
+        // Return the entire response map
+        return responseMap;
     }
 
     private long queryResultToLong(QueryResult result) throws KeenQueryClientException {
@@ -505,7 +545,7 @@ public class KeenQueryClient {
         // Initialize final properties using the builder.
         this.httpHandler = builder.httpHandler;
         this.jsonHandler = builder.jsonHandler;
-        this.baseUrl = builder.baseUrl;
+        this.requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
         this.project = builder.project;
     }
 
@@ -700,6 +740,7 @@ public class KeenQueryClient {
 
         /**
          * Builds an instance based on this builder.
+         * @return The new KeenQueryClient instance.
          */
         protected KeenQueryClient buildInstance() {
             return new KeenQueryClient(this);

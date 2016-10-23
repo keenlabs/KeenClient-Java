@@ -1,9 +1,13 @@
 package io.keen.client.java;
 
+import io.keen.client.java.exceptions.KeenQueryClientException;
+import java.net.URL;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * Query represents all the details of the query to be run, including required
@@ -13,7 +17,7 @@ import java.util.ArrayList;
  * @author claireyoung
  * @since 1.0.0
  */
-public class Query {
+public class Query extends KeenQueryRequest {
 
     private final QueryType queryType;
     private final String eventCollection;
@@ -21,9 +25,8 @@ public class Query {
 
     // optional
     private final Timeframe timeframe;
-    private final List<Map<String, Object>> filters;
+    private final RequestParameterCollection<Filter> filters;
     private final String interval;    // requires timeframe to be set
-    private final String timezone;
     private final List<String> groupBy;
     private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
@@ -36,8 +39,9 @@ public class Query {
      *
      * @return The JSON object map.
      */
-    public Map<String, Object> constructQueryArgs() {
-
+    @Override
+    Map<String, Object> constructRequestArgs() {
+        
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
         if (eventCollection != null) {
@@ -46,10 +50,6 @@ public class Query {
 
         if (interval != null) {
             queryArgs.put(KeenQueryConstants.INTERVAL, interval);
-        }
-
-        if (timezone != null) {
-            queryArgs.put(KeenQueryConstants.TIMEZONE, timezone);
         }
 
         if (groupBy != null) {
@@ -68,8 +68,8 @@ public class Query {
             queryArgs.put(KeenQueryConstants.PERCENTILE, percentile);
         }
 
-        if (filters != null && filters.isEmpty() == false) {
-            queryArgs.put(KeenQueryConstants.FILTERS, filters);
+        if (filters != null) {
+            queryArgs.put(KeenQueryConstants.FILTERS, filters.constructParameterRequestArgs());
         }
 
         if (timeframe != null) {
@@ -136,13 +136,40 @@ public class Query {
         this.eventCollection = builder.eventCollection;
         this.targetProperty = builder.targetProperty;
         this.interval = builder.interval;
-        this.timezone = builder.timezone;
         this.groupBy = builder.groupBy;
         this.maxAge = builder.maxAge;
         this.percentile = builder.percentile;
         this.queryType = builder.queryType;
         this.timeframe = builder.timeframe;
-        this.filters = builder.filters;
+        if (null != builder.filters && !builder.filters.isEmpty())
+        {
+            this.filters = new RequestParameterCollection<Filter>(builder.filters);
+        }
+        else
+        {
+            this.filters = null;
+        }
+        
+        if (!this.areParamsValid()) {
+            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+        }
+    }
+
+    @Override
+    URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
+        return urlBuilder.getAnalysisUrl(
+            projectId,
+            this.queryType.toString());
+    }
+
+    @Override
+    boolean groupedResponseExpected() {
+        return this.hasGroupBy();
+    }
+
+    @Override
+    boolean intervalResponseExpected() {
+        return this.hasInterval();
     }
 
     /**
@@ -160,10 +187,9 @@ public class Query {
 
         // optional
         private Timeframe timeframe;
-        private List<Map<String, Object>> filters;
+        private Collection<Filter> filters;
         private String interval;
-        private String timezone;
-        private ArrayList<String> groupBy;
+        private List<String> groupBy;
         private Integer maxAge;
 
         public Builder(QueryType queryType) {
@@ -172,16 +198,16 @@ public class Query {
 
         /**
          * get filters
-         * @return a list of filters.
+         * @return a collection of filters.
          */
-        public List<Map<String, Object>> getFilters() { return filters; }
+        public Collection<Filter> getFilters() { return filters; }
 
         /**
          * set filters
-         * @param filters  the filter arguments.
+         * @param filters the filter arguments.
          */
-        public void setFilters(List<Map<String, Object>> filters) {this.filters = filters;}
-        public Builder withFilters(List<Map<String, Object>> filters) {
+        public void setFilters(Collection<Filter> filters) { this.filters = filters; }
+        public Builder withFilters(Collection<Filter> filters) {
             setFilters(filters);
             return this;
         }
@@ -195,19 +221,32 @@ public class Query {
          * @param propertyValue       The property value. Refer to API documentation for info.
          *                            This can be a string, number, boolean, or geo-coordinates
          *                            and are based on what the operator is.
+         * @return The Builder instance
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            Map<String, Object> filter = new HashMap<String, Object>();
-            filter.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
-            filter.put(KeenQueryConstants.OPERATOR, operator.toString());
-            filter.put(KeenQueryConstants.PROPERTY_VALUE, propertyValue);
+            this.addFilter(propertyName, operator, propertyValue);
+            return this;
+        }
+        
+        /**
+         * Adds a filter as an optional parameter to the query.
+         * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
+         * 
+         * @param propertyName  The name of the property.
+         * @param operator      The operator (eg., gt, lt, exists, contains)
+         * @param propertyValue The property value. Refer to API documentation for info.
+         *                      This can be a string, number, boolean, or geo-coordinates
+         *                      and are based on what the operator is.
+         */
+        public void addFilter(String propertyName, FilterOperator operator, Object propertyValue) {
+            
+            Filter filter = new Filter(propertyName, operator, propertyValue);
 
             if (filters == null) {
-                filters = new ArrayList<Map<String, Object>>();
+                filters = new LinkedList<Filter>();
             }
 
             filters.add(filter);
-            return this;
         }
 
         /**
@@ -278,38 +317,16 @@ public class Query {
         }
 
         /**
-         * get timezone
-         * @return the timezone.
-         */
-        public String getTimezone() { return timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         */
-        public void setTimezone(String timezone) { this.timezone = timezone; }
-
-        /**
-         * Set timezone
-         * @param timezone the timezone.
-         * @return This instance (for method chaining).
-         */
-        public Builder withTimezone(String timezone) {
-            setTimezone(timezone);
-            return this;
-        }
-
-        /**
          * get the list of properties to group by.
          * @return the list of properties to group by.
          */
-        public ArrayList<String> getGroupBy() {return groupBy;}
+        public List<String> getGroupBy() {return groupBy;}
 
         /**
          * Set group by
          * @param groupBy the group by argument.
          */
-        public void setGroupBy(ArrayList<String> groupBy) {
+        public void setGroupBy(List<String> groupBy) {
             this.groupBy = groupBy;
         }
 
@@ -333,7 +350,7 @@ public class Query {
          * @param groupBy the ArrayList of properties to group by.
          * @return This instance (for method chaining).
          */
-        public Builder withGroupBy(ArrayList<String> groupBy) {
+        public Builder withGroupBy(List<String> groupBy) {
             setGroupBy(groupBy);
             return this;
         }
@@ -422,7 +439,8 @@ public class Query {
 
         /**
          * Build the Query after the method chaining arguments.
-         * */
+         * @return The new Query instance.
+         */
         public Query build() {
             // we can do initialization here, but it's ok if everything is null.
             return new Query(this);
