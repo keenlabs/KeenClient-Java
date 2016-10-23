@@ -1,8 +1,8 @@
 package io.keen.client.java;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -171,7 +171,7 @@ public class Funnel extends KeenQueryRequest {
          */
         public void addStep(FunnelStep step) {
             if (null == this.steps) {
-                this.steps = new LinkedList<FunnelStep>();
+                this.steps = new ArrayList<FunnelStep>();
             }
             
             this.steps.add(step);
