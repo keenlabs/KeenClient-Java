@@ -14,7 +14,7 @@ public class MultiAnalysisResult extends QueryResult {
     /**
      * Constructs a MultiAnalysisResult to hold the given mapping of labels to results.
      *
-     * @param properties The map of sub-analysis labels to results.
+     * @param analysesResults The map of sub-analysis labels to results.
      */
     public MultiAnalysisResult(Map<String, QueryResult> analysesResults) {
         this.analysesResults = Collections.unmodifiableMap(analysesResults);
