@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
 import io.keen.client.java.result.IntervalResultValue;
 import io.keen.client.java.result.ListResult;
+import io.keen.client.java.result.MultiAnalysisResult;
 import io.keen.client.java.result.QueryResult;
 
 import static org.hamcrest.CoreMatchers.allOf;
@@ -813,6 +815,76 @@ public class KeenQueryTest {
                 percentileNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
         assertEquals(30.0,
                 percentileNode.get(KeenQueryConstants.PERCENTILE).asDouble(), DOUBLE_CMP_DELTA);
+    }
+
+    @Test
+    public void testMultiAnalysisResponse_Simple() throws Exception {
+        setMockResponse(200, "{" +
+                    "\"result\": {" +
+                        "\"plain_old_count\": 24" +
+                    "}" +
+                "}");
+
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .build();
+
+        QueryResult result = queryClient.execute(multiAnalysisParams);
+
+        assertTrue(result instanceof MultiAnalysisResult);
+        MultiAnalysisResult multiAnalysisResult = (MultiAnalysisResult)result;
+        assertEquals(1, multiAnalysisResult.getAllResults().size());
+        assertEquals(24, multiAnalysisResult.getResultFor("plain_old_count").longValue());
+    }
+
+    @Test
+    public void testMultiAnalysisResponse_GroupBy() throws Exception {
+        final List<String> categories = Arrays.asList("first", "second");
+        final String groupBy = "category";
+
+        setMockResponse(200, "{" +
+                    "\"result\": [{" +
+                        "\"" + groupBy + "\": \"" + categories.get(0) + "\"," +
+                        "\"plain_old_count\": 17" +
+                    "}, {" +
+                        "\"" + groupBy + "\": \"" + categories.get(1) + "\"," +
+                        "\"plain_old_count\": 31" +
+                    "}]" +
+                "}");
+
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .withGroupBy("category")
+                .build();
+
+        QueryResult result = queryClient.execute(multiAnalysisParams);
+
+        assertTrue(result.isGroupResult());
+
+        for (Map.Entry<Group, QueryResult> groupResult : result.getGroupResults().entrySet()) {
+            // Validate the GroupByResult
+            Group group = groupResult.getKey();
+            assertEquals(1, group.getProperties().size());
+            assertTrue(group.getPropertyNames().contains(groupBy));
+            assertTrue(categories.contains(group.getGroupValue(groupBy)));
+            assertTrue(groupResult.getValue() instanceof MultiAnalysisResult);
+
+            // Validate the actual MultiAnalysisResult
+            MultiAnalysisResult multiAnalysisResult = (MultiAnalysisResult)groupResult.getValue();
+            assertEquals(1, multiAnalysisResult.getAllResults().size());
+            long resultForThisGroup =
+                    multiAnalysisResult.getResultFor("plain_old_count").longValue();
+
+            if (categories.get(0).equals(group.getGroupValue(groupBy))) {
+                assertEquals(17, resultForThisGroup);
+            } else {
+                assertEquals(31, resultForThisGroup);
+            }
+        }
     }
 
     @Test

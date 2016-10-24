@@ -46,6 +46,11 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
     }
 
     @Override
+    Collection<String> getGroupByParams() {
+        return this.groupBy;
+    }
+
+    @Override
     Map<String, Object> constructRequestArgs() {
         Map<String, Object> analysisArgs = new HashMap<String, Object>();
 

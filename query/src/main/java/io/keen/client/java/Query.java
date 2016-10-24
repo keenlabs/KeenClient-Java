@@ -170,6 +170,11 @@ public class Query extends KeenQueryRequest {
         return this.hasInterval();
     }
 
+    @Override
+    Collection<String> getGroupByParams() {
+        return this.groupBy;
+    }
+
     /**
      * Builder to construct a query with required and optional arguments.
      * Note that the only required argument in this builder is QueryType, although
