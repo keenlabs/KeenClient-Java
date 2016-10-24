@@ -6,6 +6,8 @@
 package io.keen.client.java.result;
 
 /**
+ * Represents the results from a Funnel analysis. This includes both the results of each FunnelStep
+ * and optionally the 'actor_property's at each step, if requested.
  *
  * @author baumatron
  */

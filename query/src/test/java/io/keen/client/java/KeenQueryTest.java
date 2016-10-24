@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 /**
  * KeenQueryTest
  *
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0
  */
 public class KeenQueryTest {
@@ -55,7 +55,6 @@ public class KeenQueryTest {
     private static final String ENCODING = "UTF-8";
     private static final String TEST_EVENT_COLLECTION = "android-sample-button-clicks";
     private static final String TEST_TARGET_PROPERTY = "click-number";
-    private static final String TEST_REQ_EVENT_COLLECTION_AND_TARGET_PROP = "{\"" + KeenQueryConstants.TARGET_PROPERTY + "\":\"" + TEST_TARGET_PROPERTY + "\",\"" + KeenQueryConstants.EVENT_COLLECTION + "\":\"" + TEST_EVENT_COLLECTION + "\"}";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private HttpHandler mockHttpHandler;
@@ -356,7 +355,7 @@ public class KeenQueryTest {
         // GROUP BY & INTERVAL
         Query params = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
-                .withGroupBy("click-number")
+                .withGroupBy(TEST_TARGET_PROPERTY)
                 .withGroupBy("keen.id")
                 .withInterval("weekly")
                 .withTimeframe(new RelativeTimeframe("this_year"))
@@ -716,7 +715,7 @@ public class KeenQueryTest {
     }
 
 
-    private void validateMultiAnalysisRequiredFields(ObjectNode requestNode) {
+    private static void validateMultiAnalysisRequiredFields(ObjectNode requestNode) {
         // Should have "event_collection", "analyses" and "timeframe" top-level keys, at least.
         assertTrue("Missing required top-level fields.", 3 <= requestNode.size());
         assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
