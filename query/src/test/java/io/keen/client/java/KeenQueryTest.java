@@ -900,9 +900,7 @@ public class KeenQueryTest {
         // Validate the 'group_by' is there now with two parameters.
         // We always JSONify a collection for groupBy, so this should be an array.
         ArrayNode groupByNode = (ArrayNode)requestNode.get(KeenQueryConstants.GROUP_BY);
-        assertEquals(2, groupByNode.size()); // Only one 'group_by' parameter here
-        /*assertEquals("category", groupByNode.get(0).asText());
-        assertEquals("style", groupByNode.get(1).asText());*/
+        assertEquals(2, groupByNode.size()); // Should have two 'group_by' parameters here
 
         List<String> groupByParams = new ArrayList<String>(2);
         Collections.addAll(groupByParams, "category", "style");
@@ -961,6 +959,55 @@ public class KeenQueryTest {
 
         // ...but also make sure the 'interval' is there now. It should just be a string.
         assertEquals("daily", requestNode.get(KeenQueryConstants.INTERVAL).asText());
+    }
+
+    @Test
+    public void testMultiAnalysis_GroupAndInterval() throws Exception {
+        // Response doesn't really matter here
+        setMockResponse(200, "{\"result\": \"much stuff\"}");
+
+        // This analysis has two sub-analyses, an interval, and two group by parameters.
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .withSubAnalysis(new SubAnalysis("total_cost", QueryType.SUM, "price"))
+                .withInterval("daily")
+                .withGroupBy("category")
+                .withGroupBy("style")
+                .build();
+
+        ObjectNode requestNode = getMultiAnalysisRequestNode(multiAnalysisParams);
+
+        // Should have 'event_collection', 'analyses', 'timeframe', 'interval' and 'group_by'
+        // top-level keys.
+        assertEquals(5, requestNode.size());
+
+        // Make sure the 'sum' sub-analysis is still there even though we specified 'group_by' and
+        // 'interval'.
+        ObjectNode analysesNode = (ObjectNode)requestNode.get(KeenQueryConstants.ANALYSES);
+        assertEquals(2, analysesNode.size());
+        ObjectNode totalNode = (ObjectNode)analysesNode.get("total_cost");
+        assertEquals(2, totalNode.size());
+        assertEquals("price", totalNode.get(KeenQueryConstants.TARGET_PROPERTY).asText());
+        assertEquals(KeenQueryConstants.SUM,
+                totalNode.get(KeenQueryConstants.ANALYSIS_TYPE).asText());
+
+        // ...but also make sure the 'interval' is there now. It should just be a string.
+        assertEquals("daily", requestNode.get(KeenQueryConstants.INTERVAL).asText());
+
+        // Validate the two 'group_by' parameters.
+        ArrayNode groupByNode = (ArrayNode)requestNode.get(KeenQueryConstants.GROUP_BY);
+        assertEquals(2, groupByNode.size()); // Should have two 'group_by' parameters here
+
+        List<String> groupByParams = new ArrayList<String>(2);
+        Collections.addAll(groupByParams, "category", "style");
+
+        for (JsonNode groupByParam : groupByNode) {
+            assertTrue(groupByParams.remove(groupByParam.asText()));
+        }
+
+        assertTrue(groupByParams.isEmpty());
     }
 
     @Test
@@ -1136,7 +1183,6 @@ public class KeenQueryTest {
 
         for (IntervalResultValue value : result.getIntervalResults()) {
             // Do some simple validation of the timeframe.
-
             AbsoluteTimeframe timeframe = value.getTimeframe();
             Calendar start = DatatypeConverter.parseDateTime(timeframe.getStart());
             Calendar end = DatatypeConverter.parseDateTime(timeframe.getEnd());
@@ -1160,6 +1206,119 @@ public class KeenQueryTest {
                 assertEquals(31, countForThisInterval);
             } else {
                 fail("More intervals than expected.");
+            }
+
+            intervalNum++;
+        }
+    }
+
+    @Test
+    public void testMultiAnalysisResponse_GroupAndInterval() throws Exception {
+        final List<String> categories = Arrays.asList("first", "second");
+        final List<String> styles = Arrays.asList("style1", "style2", "style3");
+        final String groupBy1 = "category";
+        final String groupBy2 = "style";
+
+        setMockResponse(200, "{" +
+                    "\"result\": [{" +
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-22T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-21T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": [{" +
+                            "\"" + groupBy1 + "\": \"" + categories.get(0) + "\"," +
+                            "\"plain_old_count\": 17," +
+                            "\"" + groupBy2 + "\": \"" + styles.get(0) + "\"," +
+                            "\"total_cost\": 143.45" +
+                        "}, {" +
+                            "\"" + groupBy1 + "\": \"" + categories.get(1) + "\"," +
+                            "\"plain_old_count\": 31," +
+                            "\"" + groupBy2 + "\": \"" + styles.get(1) + "\"," +
+                            "\"total_cost\": 233.0" +
+                        "}]" +
+                    "}, {" + // End of first IntervalResult which holds two GroupByResults
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-23T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-22T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": [{" +
+                            "\"" + groupBy1 + "\": \"" + categories.get(0) + "\"," +
+                            "\"plain_old_count\": 18," +
+                            "\"" + groupBy2 + "\": \"" + styles.get(0) + "\"," +
+                            "\"total_cost\": 144.45" +
+                        "}, {" +
+                            "\"" + groupBy1 + "\": \"" + categories.get(1) + "\"," +
+                            "\"plain_old_count\": 32," +
+                            "\"" + groupBy2 + "\": \"" + styles.get(1) + "\"," +
+                            "\"total_cost\": 234.0" +
+                        "}]" +
+                    "}]" +
+                "}");
+
+        // This analysis has two sub-analyses, an interval, and two group by parameters.
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .withSubAnalysis(new SubAnalysis("total_cost", QueryType.SUM, "price"))
+                .withInterval("daily")
+                .withGroupBy("category")
+                .withGroupBy("style")
+                .build();
+
+        QueryResult result = queryClient.execute(multiAnalysisParams);
+
+        assertTrue(result.isIntervalResult());
+        assertEquals(2, result.getIntervalResults().size()); // Two intervals
+        int intervalNum = 0;
+
+        // A lot of this code is shared across the GroupBy, MultipleGroupBy, Interval and
+        // GroupAndInterval tests, and could be combined into helpers, especially as we go to add
+        // more tests.
+        for (IntervalResultValue value : result.getIntervalResults()) {
+            // Do some simple validation of the timeframe.
+            AbsoluteTimeframe timeframe = value.getTimeframe();
+            Calendar start = DatatypeConverter.parseDateTime(timeframe.getStart());
+            Calendar end = DatatypeConverter.parseDateTime(timeframe.getEnd());
+            assertEquals("October", start.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US));
+            assertEquals(2016, end.get(Calendar.YEAR));
+            assertTrue(start.before(end));
+
+            // Validate the nested GroupResults
+
+            QueryResult groupResultInInterval = value.getResult();
+            assertTrue(groupResultInInterval.isGroupResult());
+            assertEquals(2, groupResultInInterval.getGroupResults().size()); // Two groups
+
+            for (Map.Entry<Group, QueryResult> groupResult
+                    : groupResultInInterval.getGroupResults().entrySet()) {
+                // Validate each nested GroupByResult
+                Group group = groupResult.getKey();
+                assertEquals(2, group.getProperties().size());
+
+                assertTrue(group.getPropertyNames().contains(groupBy1));
+                assertTrue(categories.contains(group.getGroupValue(groupBy1)));
+                assertTrue(group.getPropertyNames().contains(groupBy2));
+                assertTrue(styles.contains(group.getGroupValue(groupBy2)));
+
+                assertTrue(groupResult.getValue() instanceof MultiAnalysisResult);
+                MultiAnalysisResult multiAnalysisResult =
+                        (MultiAnalysisResult)groupResult.getValue();
+                assertEquals(2, multiAnalysisResult.getAllResults().size());
+
+                long countForThisGroup =
+                        multiAnalysisResult.getResultFor("plain_old_count").longValue();
+
+                double totalForThisGroup =
+                        multiAnalysisResult.getResultFor("total_cost").doubleValue();
+
+                if (categories.get(0).equals(group.getGroupValue(groupBy1))) {
+                    assertEquals(17 + intervalNum, countForThisGroup);
+                    assertEquals(143.45 + intervalNum, totalForThisGroup, 0.0);
+                } else {
+                    assertEquals(31 + intervalNum, countForThisGroup);
+                    assertEquals(233 + intervalNum, totalForThisGroup, 0.0);
+                }
             }
 
             intervalNum++;
