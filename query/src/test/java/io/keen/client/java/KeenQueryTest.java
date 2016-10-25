@@ -17,9 +17,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.exceptions.ServerException;
@@ -849,7 +853,7 @@ public class KeenQueryTest {
         assertEquals(4, requestNode.size());
 
         // Make sure the 'count' sub-analysis is still there even though we specified 'group_by'...
-        ObjectNode analysesNode = (ObjectNode)requestNode.get(KeenQueryConstants.COUNT);
+        ObjectNode analysesNode = (ObjectNode)requestNode.get(KeenQueryConstants.ANALYSES);
         assertEquals(1, analysesNode.size());
         ObjectNode countNode = (ObjectNode)analysesNode.get("plain_old_count");
         assertEquals(1, countNode.size());
@@ -908,6 +912,55 @@ public class KeenQueryTest {
         }
 
         assertTrue(groupByParams.isEmpty());
+    }
+
+    @Test
+    public void testMultiAnalysis_Interval() throws Exception {
+        // Response doesn't really matter here, but this is what it'd look like.
+        setMockResponse(200, "{" +
+                    "\"result\": [{" +
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-22T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-21T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": {" +
+                            "\"plain_old_count\": 17" +
+                        "}" +
+                    "}, {" +
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-23T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-22T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": {" +
+                            "\"plain_old_count\": 31" +
+                        "}" +
+                    "}]" +
+                "}");
+
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .withInterval("daily")
+                .build();
+
+        ObjectNode requestNode = getMultiAnalysisRequestNode(multiAnalysisParams);
+
+        // Should have 'event_collection', 'analyses', 'timeframe' and 'interval' top-level keys
+        assertEquals(4, requestNode.size());
+
+        // Make sure the 'count' sub-analysis is still there even though we specified 'group_by'...
+        ObjectNode analysesNode = (ObjectNode)requestNode.get(KeenQueryConstants.ANALYSES);
+        assertEquals(1, analysesNode.size());
+        ObjectNode countNode = (ObjectNode)analysesNode.get("plain_old_count");
+        assertEquals(1, countNode.size());
+        assertNull("There should be no 'target_property' for 'count' analysis.",
+                countNode.get(KeenQueryConstants.TARGET_PROPERTY));
+        assertEquals(KeenQueryConstants.COUNT,
+                countNode.get(KeenQueryConstants.ANALYSIS_TYPE).asText());
+
+        // ...but also make sure the 'interval' is there now. It should just be a string.
+        assertEquals("daily", requestNode.get(KeenQueryConstants.INTERVAL).asText());
     }
 
     @Test
@@ -1013,6 +1066,7 @@ public class KeenQueryTest {
         QueryResult result = queryClient.execute(multiAnalysisParams);
 
         assertTrue(result.isGroupResult());
+        assertEquals(2, result.getGroupResults().size()); // There are two groups.
 
         for (Map.Entry<Group, QueryResult> groupResult : result.getGroupResults().entrySet()) {
             // Validate the GroupByResult
@@ -1042,6 +1096,73 @@ public class KeenQueryTest {
                 assertEquals(31, countForThisGroup);
                 assertEquals(233, totalForThisGroup, 0.0);
             }
+        }
+    }
+
+    @Test
+    public void testMultiAnalysisResponse_Interval() throws Exception {
+        setMockResponse(200, "{" +
+                    "\"result\": [{" +
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-22T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-21T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": {" +
+                            "\"plain_old_count\": 17" +
+                        "}" +
+                    "}, {" +
+                        "\"timeframe\": {" +
+                            "\"end\": \"2016-10-23T00:00:00.000Z\"," +
+                            "\"start\": \"2016-10-22T00:00:00.000Z\"" +
+                        "}," +
+                        "\"value\": {" +
+                            "\"plain_old_count\": 31" +
+                        "}" +
+                    "}]" +
+                "}");
+
+        MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
+                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withTimeframe(new RelativeTimeframe("this_8_hours"))
+                .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
+                .withInterval("daily")
+                .build();
+
+        QueryResult result = queryClient.execute(multiAnalysisParams);
+
+        assertTrue(result.isIntervalResult());
+        assertEquals(2, result.getIntervalResults().size()); // There are two intervals.
+        int intervalNum = 0;
+
+        for (IntervalResultValue value : result.getIntervalResults()) {
+            // Do some simple validation of the timeframe.
+
+            AbsoluteTimeframe timeframe = value.getTimeframe();
+            Calendar start = DatatypeConverter.parseDateTime(timeframe.getStart());
+            Calendar end = DatatypeConverter.parseDateTime(timeframe.getEnd());
+            assertEquals("October", start.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US));
+            assertEquals(2016, end.get(Calendar.YEAR));
+            assertTrue(start.before(end));
+
+            // Validate the QueryResult
+            assertTrue(value.getResult() instanceof MultiAnalysisResult);
+            MultiAnalysisResult multiAnalysisResult = (MultiAnalysisResult)value.getResult();
+
+            assertEquals(1, multiAnalysisResult.getAllResults().size());
+            long countForThisInterval =
+                    multiAnalysisResult.getResultFor("plain_old_count").longValue();
+
+            // Intervals, unlike groups and results for sub-analyses, actually come back in order,
+            // or at least it seems like they do.
+            if (0 == intervalNum) {
+                assertEquals(17, countForThisInterval);
+            } else if (1 == intervalNum) {
+                assertEquals(31, countForThisInterval);
+            } else {
+                fail("More intervals than expected.");
+            }
+
+            intervalNum++;
         }
     }
 

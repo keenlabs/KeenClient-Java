@@ -320,6 +320,11 @@ public class KeenQueryClient {
         } else if (input instanceof String) {
             result = new StringResult((String) input);
         } else if (input instanceof Map) {
+            if (!isMultiAnalysis) {
+                throw new IllegalStateException("Received a JSON dictionary result when not " +
+                        "expecting a MultiAnalysisResult.");
+            }
+
             // Multi-Analysis results:
             // - Simple: just a single JSON object with each key matching the label of a
             // sub-analysis that was specified in the 'analyses' field of the request.
@@ -465,7 +470,12 @@ public class KeenQueryClient {
                     throw new IllegalStateException("There were no results in the GroupBy result.");
                 } else if (isMultiAnalysis) {
                     // For Multi-Analysis, pass the entire dictionary of sub-analyses results.
-                    result = constructQueryResult(results, false, false);
+                    result = constructQueryResult(
+                            results,
+                            false,
+                            false,
+                            isMultiAnalysis,
+                            groupByParams);
                 } else {
                     if (!results.containsKey(KeenQueryConstants.RESULT)) {
                         throw new IllegalStateException("Single Analysis GroupBy result is " +
