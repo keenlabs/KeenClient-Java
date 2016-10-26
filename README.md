@@ -262,7 +262,7 @@ The query capabilities within the Java Keen client enable you to send POST queri
 
 #### Add the Keen Query Client Package to your Build
 
-The Query Client is published into a separate artifact, since many applications only need event publishing. If you would like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. The instructions are the same as described above under [Installation](#installation), but with the artifact name `keen-client-api-query` (instead of either `keen-client-api-java` or `keen-client-api-android`).
+The Query Client is published into a separate artifact, since many applications only need event publishing. If you would like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. The instructions are the same as described above under [Installation](#installation), but with the artifact name `keen-client-api-query` (instead of `keen-client-api-java` or `keen-client-api-android`).
 
 #### Building a Keen Query Client
 You can build a KeenQueryClient by just providing a KeenProject. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same KeenProject will be used for publishing events as well.
@@ -279,7 +279,7 @@ KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
 		.build();
 ```
 #### Using the KeenQueryClient to send Queries
-The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that we strongly encourage users to pass in the Timeframe parameter, but it can be null.
+The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO back end.
 ```java
 long count = queryClient.count("<event_collection>", new RelativeTimeframe("this_week"));
 long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2015-05-15T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
@@ -290,7 +290,7 @@ double median = queryClient.median("<event_collection>", "<target_property>", ne
 double percentile = queryClient.percentile("<event_collection>", "<target_property>", new RelativeTimeframe("this_week"));
 double sum = queryClient.sum("<event_collection>", "<target_property>", new RelativeTimeframe("this_week"));
 ```
-The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries. These queries are a little more complicated, and only the Select Unique query is included in the initial release of the Keen Query Client.
+The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries. These queries are a little more complicated, and Extraction is currently not supported by the Keen Query Client.
 
 #### Advanced
 Alternatively, users can use optional parameters to send queries. The return type is a QueryResult object. The user is expected to verify the expected QueryResult subclass, given the parameters entered.
@@ -384,10 +384,32 @@ if (result.isIntervalResult()) {
     }
 }
 ```
+To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the MultiAnalysis.Builder instead. An instance of MultiAnalysisResult will be returned unless Group By and/or Interval parameters are included, in which case the MultiAnalysisResult(s) will be nested inside an IntervalResult and/or a GroupByResult, just like any other QueryResult for other single analysis types when grouping/intervals are applied:
+
+``` java
+final MultiAnalysis multiAnalysis = new MultiAnalysis.Builder()
+        .withCollectionName("the_collection")
+        .withTimeframe(new RelativeTimeframe("this_month")
+        .withSubAnalysis(new SubAnalysis("label_for_count", QueryType.COUNT))
+        .withSubAnalysis(new SubAnalysis("sum_analysis_label", QueryType.SUM, "property_to_sum"))
+        .build();
+        
+QueryResult result = this.queryClient.execute(multiAnalysis);
+
+if (result instanceof MultiAnalysisResult) {
+    MultiAnalysisResult multiAnalysisResult = (MultiAnalysisResult)result;
+    
+    for (String subAnalysisLabel : multiAnalysisResult.getAllResults().keySet()) {
+        QueryResult resultForSubAnalysis = multiAnalysisResult.getResultFor(subAnalysisLabel);
+        // ... do something with the results of the various sub-analyses.
+    }
+}
+```
+The ```MultiAnalysis.Builder``` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no SubAnalysis instances set.
 
 ### Utility Methods
 
-There are also some utility methods to add filters and absolute timeframes to a Query:
+There are also some utility methods to add filters and timeframes to a Query:
 ```java
 
 // this will add two filter parameters, with 1 < click-count < 5
@@ -553,6 +575,16 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.1.1
+
++ Add Multi-Analysis and Funnel capabilities to KeenQueryClient.
++ Multi-Analysis support includes MultiAnalysis, a Builder, SubAnalysis and MultiAnalysisResult.
++ Some refactoring to share code common to MultiAnalysis and SingleAnalysis.
++ SingleAnalysis does not yet replace the Query class, but will soon.
++ Timezone parameter is now built into RelativeTimeframe.
++ Query filters are now an unordered collection of instances of the new Filter class.
++ Query.Builder.setFilters() now shallow copies the given collection of filters.
+
 ##### 5.0.1
 
 + Fixed bug in packaging; artifacts now correctly include transitive dependencies.
@@ -638,10 +670,6 @@ client.addEvent("collection-name", event, keenProperties);
 
 + Changed project token -> project ID.
 + Added support for read and write scoped keys.
-
-### To Do
-
-* Support analysis APIs.
 
 ### Questions & Support
 
