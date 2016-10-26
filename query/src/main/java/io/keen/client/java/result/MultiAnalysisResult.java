@@ -29,7 +29,7 @@ public class MultiAnalysisResult extends QueryResult {
      */
     public QueryResult getResultFor(String subAnalysisLabel) {
         if (!this.analysesResults.containsKey(subAnalysisLabel)) {
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("No results for a sub-analysis with that label.");
         }
 
         return this.analysesResults.get(subAnalysisLabel);
