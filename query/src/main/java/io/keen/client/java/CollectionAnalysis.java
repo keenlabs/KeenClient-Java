@@ -46,6 +46,11 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
     }
 
     @Override
+    Collection<String> getGroupByParams() {
+        return this.groupBy;
+    }
+
+    @Override
     Map<String, Object> constructRequestArgs() {
         Map<String, Object> analysisArgs = new HashMap<String, Object>();
 
@@ -56,10 +61,9 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
         analysisArgs.put(KeenQueryConstants.EVENT_COLLECTION, this.collectionName);
         analysisArgs.putAll(this.timeframe.constructTimeframeArgs());
 
-        // Technically this could add an empty "'filters': []," to the request, but that's fine.
-        // We can fix that later by checking if the RequestParameterCollection is empty, or by
-        // changing RequestParameter's interface to take the outer Map<> as a parameter and add
-        // things only as needed.
+        // This code shouldn't be able  add an empty "'filters': []," or "'group_by': []," because
+        // in our ctor we made sure they were only non-null if also non-empty collections.
+
         if (null != this.filters) {
             analysisArgs.put(KeenQueryConstants.FILTERS,
                     this.filters.constructParameterRequestArgs());
@@ -80,14 +84,19 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
         this.collectionName = builder.collectionName;
         this.timeframe = builder.timeframe;
         this.interval = builder.interval;
-        this.groupBy = builder.groupBy;
 
-        if (null != builder.filters && !builder.filters.isEmpty())
-        {
-            this.filters = new RequestParameterCollection<Filter>(builder.filters);
+        // For both groupBy and filters, make sure it's only non-null if there are actually
+        // elements in the respective parameter lists.
+
+        if (null != builder.groupBy && !builder.groupBy.isEmpty()) {
+            this.groupBy = builder.groupBy;
+        } else {
+            this.groupBy = null;
         }
-        else
-        {
+
+        if (null != builder.filters && !builder.filters.isEmpty()) {
+            this.filters = new RequestParameterCollection<Filter>(builder.filters);
+        } else {
             this.filters = null;
         }
     }
@@ -102,16 +111,16 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
      *
      * @throws KeenQueryClientException if validation fails with specific reason for failure.
      */
-    protected void validateParams() throws KeenQueryClientException {
+    protected void validateParams() {
         // Event collection name is required.
         if (null == this.collectionName || this.collectionName.trim().isEmpty()) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "There must be an event collection name set to perform a CollectionAnalysis.");
         }
 
         // Timeframe is required.
         if (null == this.timeframe) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "A 'timeframe' parameter is required for a CollectionAnalysis");
         }
 
@@ -119,7 +128,7 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
         if (null != this.groupBy && null != this.filters) {
             for (Filter filter : this.filters) {
                 if (filter.isGeoFilter()) {
-                    throw new KeenQueryClientException("The 'group_by' parameter cannot be used " +
+                    throw new IllegalArgumentException("The 'group_by' parameter cannot be used " +
                             "in conjunction with geo-filtering.");
                 }
             }

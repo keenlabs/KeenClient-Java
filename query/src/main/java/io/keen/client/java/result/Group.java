@@ -11,7 +11,6 @@ import java.util.Set;
  * @since 1.0.0, 07/06/15
  */
 public class Group {
-
     private final Map<String, Object> properties;
 
     /**
@@ -40,9 +39,9 @@ public class Group {
      * @return the property value.
      */
     public Object getGroupValue(String propertyName) {
-
-        if (properties.containsKey(propertyName) == false) {
-            throw new IllegalStateException("GroupBy does not contain expected property " + propertyName);
+        if (!properties.containsKey(propertyName)) {
+            throw new IllegalStateException(
+                    "GroupBy does not contain expected property '" + propertyName + "'.");
         }
 
         return properties.get(propertyName);

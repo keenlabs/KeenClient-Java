@@ -54,11 +54,11 @@ public class MultiAnalysis extends CollectionAnalysis {
     }
 
     @Override
-    protected void validateParams() throws KeenQueryClientException {
+    protected void validateParams() {
         super.validateParams();
 
         if (null == this.analyses || this.analyses.isEmpty()) {
-            throw new KeenQueryClientException("MultiAnalysis requires that 'analyses' be set.");
+            throw new IllegalArgumentException("MultiAnalysis requires that 'analyses' be set.");
         }
     }
 
