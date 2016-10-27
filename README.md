@@ -51,7 +51,7 @@ For Android, replace the `artifactId` element with these two elements:
 
 ### JAR Download
 
-**Warning:** This approach is not recommended as it forces you to deal with getting all the 
+**Warning:** This approach is not recommended as it forces you to deal with getting all the
 right transitive dependencies. We highly encourage you to use a dependency management
 framework such as Maven :)
 
@@ -359,7 +359,7 @@ if (result.isIntervalResult()) {
             long intervalCount = intervalResult.getValue().longValue();
             // ... do something with the absolute timeframe and count result.
         }
-}      
+}
 ```
 Filtering via both Group By and Interval will cause the query response to be an IntervalResult object that contains GroupByResult objects follows:
 
@@ -389,16 +389,16 @@ To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the
 ``` java
 final MultiAnalysis multiAnalysis = new MultiAnalysis.Builder()
         .withCollectionName("the_collection")
-        .withTimeframe(new RelativeTimeframe("this_month")
+        .withTimeframe(new RelativeTimeframe("this_month"))
         .withSubAnalysis(new SubAnalysis("label_for_count", QueryType.COUNT))
         .withSubAnalysis(new SubAnalysis("sum_analysis_label", QueryType.SUM, "property_to_sum"))
         .build();
-        
+
 QueryResult result = this.queryClient.execute(multiAnalysis);
 
 if (result instanceof MultiAnalysisResult) {
     MultiAnalysisResult multiAnalysisResult = (MultiAnalysisResult)result;
-    
+
     for (String subAnalysisLabel : multiAnalysisResult.getAllResults().keySet()) {
         QueryResult resultForSubAnalysis = multiAnalysisResult.getResultFor(subAnalysisLabel);
         // ... do something with the results of the various sub-analyses.
@@ -406,6 +406,61 @@ if (result instanceof MultiAnalysisResult) {
 }
 ```
 The ```MultiAnalysis.Builder``` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no SubAnalysis instances set.
+
+Funnel analysis can similarly be perfomed using the `Funnel.Builder`. As with multi-analysis, some parameter checking is done to ensure a required parameters are at least provided. The result of a funnel analysis is a `FunnelResult`, on which a `ListResult` containing the results of the funnel are available through `getFunnelResult()`, and if actor values were requested, their results will be available through `getActorsResult()`. `FunnelStep`s are required to provide a collection name, an actor property name, and a `Timeframe` instance unless one is provided for the entire funnel using `Funnel.Builder.withTimeframe()`. Additional optional parameters are available for specifying a list of `Filter`s for each step and the special parameters `inverted`, `optional`, and `withActors`.
+
+``` java
+final Funnel funnel = new Funnel.Builder()
+        .withStep(new FunnelStep("signed_up", "visitor.guid", new RelativeTimeframe("this_7_days")))
+        .withStep(new FunnelStep("completed_profile", "user.guid", new RelativeTimeframe("this_7_days")))
+        .withStep(new FunnelStep("referred_user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))
+        .build();
+
+QueryResult result = this.queryClient.execute(funnel);
+
+if (result instanceof FunnelResult) {
+    // The result was a FunnelResult as expected.
+    // Cast the result to the appropriate type.
+    FunnelResult funnelResult = (FunnelResult)result;
+    // Get the sub-result for the funnel analysis
+    ListResult funnelListResult = funnelResult.getFunnelResult();
+    // Unpack the list of QueryResults for each funnel step
+    List<QueryResult> funnelResultData = funnelListResult.getListResults();
+    // Iterate through each funnel step result
+    for (QueryResult stepResult : funnelResultData) {
+        if (stepResult instanceof LongResult) {
+            // Do something with each result of the funnel.
+            long stepData = stepResult.longValue();
+        }
+    }
+
+    // Get the actors result, which may be null.
+    // In the case of this example, no steps requested actor values
+    // so it indeed would be null, but FunnelStep has an optional parameter
+    // to request actor values which will populate this result.
+    ListResult actorsResult = funnelResult.getActorsResult();
+    if (null != result.getActorsResult()) {
+        // A list of actor values was provided in the response.
+        // Unpack the list of lists of actors
+        List<QueryResult> actorsResultLists = actorsResult.getListResults();
+        for (QueryResult stepActorsResult : actorsResultLists) {
+            // Get the list of actors for this step
+            List<QueryResult> stepActorsResultList = stepActorsResult.getListResults();
+            // Iterate through all actor values
+            for (QueryResult actorResult : stepActorsResultList) {
+                // Unpack the actor value
+                if (actorResult instanceof StringResult) {
+                    String actorValue = actorResult.stringValue();
+                }
+                else if (actorResult instanceof LongResult) {
+                    long actorValue = actorResult.longValue();
+                }
+            }
+        }
+    }
+}
+
+```
 
 ### Utility Methods
 
