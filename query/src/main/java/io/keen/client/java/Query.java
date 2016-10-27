@@ -1,30 +1,33 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.KeenQueryClientException;
 import java.net.URL;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import io.keen.client.java.exceptions.KeenQueryClientException;
 
 /**
  * Query represents all the details of the query to be run, including required
  * and optional parameters.
  *
  * Created by claireyoung on 5/18/15.
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0
  */
 public class Query extends KeenQueryRequest {
-
+    // required
     private final QueryType queryType;
     private final String eventCollection;
+    private final Timeframe timeframe;
+
+    // sometimes optional
     private final String targetProperty;
 
     // optional
-    private final Timeframe timeframe;
     private final RequestParameterCollection<Filter> filters;
     private final String interval;    // requires timeframe to be set
     private final List<String> groupBy;
@@ -41,7 +44,6 @@ public class Query extends KeenQueryRequest {
      */
     @Override
     Map<String, Object> constructRequestArgs() {
-        
         Map<String, Object> queryArgs = new HashMap<String, Object>();
 
         if (eventCollection != null) {
@@ -100,7 +102,6 @@ public class Query extends KeenQueryRequest {
      * @return       whether the parameters are valid.
      */
     public boolean areParamsValid() {
-
         if (queryType == QueryType.COUNT) {
             if (eventCollection == null || eventCollection.isEmpty()) {
                 return false;
@@ -128,7 +129,7 @@ public class Query extends KeenQueryRequest {
     }
 
     /**
-     * Constructs a Keen Query Params using a builder.
+     * Constructs a Keen Query using a Builder.
      *
      * @param builder The builder from which to retrieve this client's interfaces and settings.
      */
@@ -141,6 +142,7 @@ public class Query extends KeenQueryRequest {
         this.percentile = builder.percentile;
         this.queryType = builder.queryType;
         this.timeframe = builder.timeframe;
+
         if (null != builder.filters && !builder.filters.isEmpty())
         {
             this.filters = new RequestParameterCollection<Filter>(builder.filters);
@@ -148,10 +150,6 @@ public class Query extends KeenQueryRequest {
         else
         {
             this.filters = null;
-        }
-        
-        if (!this.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
         }
     }
 
@@ -178,15 +176,18 @@ public class Query extends KeenQueryRequest {
      * individual queries may require additional arguments.
      */
     public static class Builder {
+        // required
         private QueryType queryType;
         private String eventCollection;
+        private Timeframe timeframe;
+
+        // sometimes optional
         private String targetProperty;
 
         // required by the Percentile query
         private Double percentile;    // 0-100 with two decimal places of precision for example, 99.99
 
         // optional
-        private Timeframe timeframe;
         private Collection<Filter> filters;
         private String interval;
         private List<String> groupBy;
@@ -197,18 +198,39 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get filters
+         * Get filters
+         *
          * @return a collection of filters.
          */
         public Collection<Filter> getFilters() { return filters; }
 
         /**
-         * set filters
+         * Set the list of filters. Existing filters will be discarded.
+         *
          * @param filters the filter arguments.
          */
-        public void setFilters(Collection<Filter> filters) { this.filters = filters; }
-        public Builder withFilters(Collection<Filter> filters) {
-            setFilters(filters);
+        public void setFilters(Collection<? extends Filter> filters) {
+            this.filters = null;
+
+            // Client code may just be clearing all the filters.
+            if (null != filters) {
+                withFilters(filters);  // Shallow copy the list of steps
+            }
+        }
+
+        /**
+         * Adds the given filters as optional parameters to the query.
+         *
+         * @param filters the filter arguments.
+         * @return This instance (for method chaining).
+         */
+        public Builder withFilters(Collection<? extends Filter> filters) {
+            // Add each filter to the list of filters, appending to anything
+            // that already exists.
+            for (Filter filter : filters) {
+                addFilter(filter);
+            }
+
             return this;
         }
 
@@ -221,10 +243,10 @@ public class Query extends KeenQueryRequest {
          * @param propertyValue       The property value. Refer to API documentation for info.
          *                            This can be a string, number, boolean, or geo-coordinates
          *                            and are based on what the operator is.
-         * @return The Builder instance
+         * @return This instance (for method chaining).
          */
         public Builder withFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            this.addFilter(propertyName, operator, propertyValue);
+            addFilter(propertyName, operator, propertyValue);
             return this;
         }
         
@@ -239,9 +261,18 @@ public class Query extends KeenQueryRequest {
          *                      and are based on what the operator is.
          */
         public void addFilter(String propertyName, FilterOperator operator, Object propertyValue) {
-            
             Filter filter = new Filter(propertyName, operator, propertyValue);
 
+            addFilter(filter);
+        }
+
+        /**
+         * Adds a filter as an optional parameter to the query.
+         * Refer to API documentation: https://keen.io/docs/data-analysis/filters/
+         *
+         * @param filter the filter to add to the list of filters.
+         */
+        public void addFilter(Filter filter) {
             if (filters == null) {
                 filters = new LinkedList<Filter>();
             }
@@ -250,13 +281,15 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get event collection
+         * Get event collection
+         *
          * @return the event collection.
          */
         public String getEventCollection() { return eventCollection; }
 
         /**
          * Set event collection
+         *
          * @param eventCollection the event collection.
          */
         public void setEventCollection(String eventCollection) { this.eventCollection = eventCollection; }
@@ -273,19 +306,22 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get target property
+         * Get target property
+         *
          * @return the target property.
          */
         public String getTargetProperty() { return targetProperty; }
 
         /**
          * Set target property
+         *
          * @param targetProperty the target property.
          */
         public void setTargetProperty(String targetProperty) { this.targetProperty = targetProperty; }
 
         /**
          * Set target property
+         *
          * @param targetProperty the target property.
          * @return This instance (for method chaining).
          */
@@ -295,19 +331,22 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get Interval
+         * Get Interval
+         *
          * @return the interval.
          */
         public String getInterval() { return interval; }
 
         /**
          * Set interval
+         *
          * @param interval the interval.
          */
         public void setInterval(String interval) { this.interval = interval; }
 
         /**
          * Set interval
+         *
          * @param interval the interval.
          * @return This instance (for method chaining).
          */
@@ -317,13 +356,15 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get the list of properties to group by.
+         * Get the list of properties to group by.
+         *
          * @return the list of properties to group by.
          */
-        public List<String> getGroupBy() {return groupBy;}
+        public List<String> getGroupBy() { return groupBy; }
 
         /**
-         * Set group by
+         * Set GroupBy
+         *
          * @param groupBy the group by argument.
          */
         public void setGroupBy(List<String> groupBy) {
@@ -347,6 +388,7 @@ public class Query extends KeenQueryRequest {
 
         /**
          * Set the GroupBy
+         *
          * @param groupBy the ArrayList of properties to group by.
          * @return This instance (for method chaining).
          */
@@ -356,19 +398,22 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get max age
+         * Get max age
+         *
          * @return the max age.
          */
         public Integer getMaxAge() { return maxAge; }
 
         /**
          * Set max age
+         *
          * @param maxAge the max age.
          */
         public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
 
         /**
          * Set max age
+         *
          * @param maxAge the max age.
          * @return This instance (for method chaining).
          */
@@ -378,25 +423,29 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get the percentile
+         * Get the percentile
+         *
          * @return the percentile.
          */
         public Double getPercentile() { return percentile; }
 
         /**
          * Set percentile
+         *
          * @param percentile the percentile.
          */
         public void setPercentile(Double percentile) { this.percentile = percentile;  }
 
         /**
          * Set percentile
+         *
          * @param percentile the percentile.
          */
         public void setPercentile(Integer percentile) { this.percentile = percentile.doubleValue(); }
 
         /**
          * Set percentile
+         *
          * @param percentile the percentile (type Double).
          * @return This instance (for method chaining).
          */
@@ -407,6 +456,7 @@ public class Query extends KeenQueryRequest {
 
         /**
          * Set percentile
+         *
          * @param percentile the percentile (type Integer).
          * @return This instance (for method chaining).
          */
@@ -416,19 +466,22 @@ public class Query extends KeenQueryRequest {
         }
 
         /**
-         * get timeframe
+         * Get timeframe
+         *
          * @return the timeframe.
          */
         public Timeframe getTimeframe() { return timeframe; }
 
         /**
          * Set timeframe
+         *
          * @param timeframe the timeframe.
          */
         public void setTimeframe(Timeframe timeframe) { this.timeframe = timeframe; }
 
         /**
          * Set timeframe
+         *
          * @param timeframe the timeframe.
          * @return This instance (for method chaining).
          */
@@ -439,11 +492,18 @@ public class Query extends KeenQueryRequest {
 
         /**
          * Build the Query after the method chaining arguments.
+         *
          * @return The new Query instance.
          */
         public Query build() {
-            // we can do initialization here, but it's ok if everything is null.
-            return new Query(this);
+            Query query = new Query(this);
+
+            if (!query.areParamsValid()) {
+                throw new IllegalArgumentException("Keen Query parameters are insufficient. " +
+                        "Please check Query API docs for required arguments.");
+            }
+
+            return query;
         }
     }
 }

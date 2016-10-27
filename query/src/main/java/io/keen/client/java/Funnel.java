@@ -1,11 +1,12 @@
 package io.keen.client.java;
 
-import io.keen.client.java.exceptions.KeenQueryClientException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.keen.client.java.exceptions.KeenQueryClientException;
 
 /**
  * Object for making funnel analysis requests.
@@ -15,7 +16,7 @@ import java.util.Map;
 public class Funnel extends KeenQueryRequest {
 
     // Required parameters
-    private final RequestParameterCollection steps;
+    private final RequestParameterCollection<FunnelStep> steps;
     
     // Optional parameters
     // Timeframe must be specified either on the Funnel, or for each
@@ -30,7 +31,6 @@ public class Funnel extends KeenQueryRequest {
      * @param builder The builder to use for building the Funnel object.
      */
     private Funnel(final Builder builder) {
-        
         if (null == builder.steps || builder.steps.isEmpty()) {
             throw new IllegalArgumentException("Funnel parameter builder.steps must be provided.");
         }
@@ -68,7 +68,8 @@ public class Funnel extends KeenQueryRequest {
                 "First step in funnel cannot have special parameter 'optional' set to true.");
         }
         
-        this.steps = new RequestParameterCollection(builder.steps);
+        // The steps in the Builder are ordered, so the request params will be too.
+        this.steps = new RequestParameterCollection<FunnelStep>(builder.steps);
     }
     
     /**
@@ -91,7 +92,6 @@ public class Funnel extends KeenQueryRequest {
      */
     @Override
     Map<String, Object> constructRequestArgs() {
-        
         Map<String, Object> args = new HashMap<String, Object>();
         
         args.put(KeenQueryConstants.STEPS, this.steps.constructParameterRequestArgs());
@@ -113,16 +113,22 @@ public class Funnel extends KeenQueryRequest {
      * Builder for creating a Funnel query.
      */
     public static class Builder {
-        
         private List<FunnelStep> steps;
         private Timeframe timeframe;
         
         /**
-         * Set the list of funnel steps.
+         * Set the list of funnel steps. Existing steps will be lost.
          * 
          * @param steps The funnel steps.
          */
-        public void setSteps(List<FunnelStep> steps) { this.steps = steps; }
+        public void setSteps(List<? extends FunnelStep> steps) {
+            this.steps = null;
+
+            // Client code may just be clearing all the steps.
+            if (null != steps) {
+                withSteps(steps); // Shallow copy the list of steps
+            }
+        }
         
         /**
          * Set the list of funnel steps.
@@ -130,12 +136,11 @@ public class Funnel extends KeenQueryRequest {
          * @param steps The funnel steps.
          * @return This Builder instance with the steps added.
          */
-        public Builder withSteps(List<FunnelStep> steps) {
-            
+        public Builder withSteps(List<? extends FunnelStep> steps) {
             // Add each step to the list of steps, appending to anything
             // that already exists.
             for (FunnelStep step : steps) {
-                this.withStep(step);
+                withStep(step);
             }
             
             return this;
@@ -155,7 +160,7 @@ public class Funnel extends KeenQueryRequest {
          * @return The Builder instance with the step added.
          */
         public Builder withStep(FunnelStep step) {
-            this.addStep(step);
+            addStep(step);
             return this;
         }
         
@@ -165,7 +170,6 @@ public class Funnel extends KeenQueryRequest {
          * @param step A funnel step to add.
          */
         public void addStep(FunnelStep step) {
-            
             if (null == this.steps) {
                 this.steps = new ArrayList<FunnelStep>();
             }
@@ -174,7 +178,7 @@ public class Funnel extends KeenQueryRequest {
         }
         
         /**
-         * get timeframe
+         * Get timeframe
          * 
          * @return the timeframe.
          */
@@ -194,7 +198,6 @@ public class Funnel extends KeenQueryRequest {
          * @return This instance (for method chaining).
          */
         public Builder withTimeframe(Timeframe timeframe) {
-            
             if (null != this.timeframe) {
                 throw new IllegalStateException("'withTimeframe' called, but a Timeframe instance has already been set.");
             }
@@ -210,5 +213,4 @@ public class Funnel extends KeenQueryRequest {
          */
         public Funnel build() { return new Funnel(this); }
     }
-    
 }

@@ -1,13 +1,14 @@
 package io.keen.client.java;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class which represents a query filter
  * 
- * @author baumatron
+ * @author baumatron, masojus
  */
-public class Filter extends RequestParameter {
+public class Filter extends RequestParameter<Map<String, Object>> {
     
     // Required parameters
     private final String propertyName;
@@ -35,6 +36,16 @@ public class Filter extends RequestParameter {
         this.operator = operator;
         this.propertyValue = propertyValue;
     }
+
+    /**
+     * Tells us if this Filter represents a <a href="https://keen.io/docs/api/#geo-filtering">Geo
+     * Filter</a>.
+     *
+     * @return true if this is a Geo Filter.
+     */
+    public boolean isGeoFilter() {
+        return FilterOperator.WITHIN == this.operator;
+    }
     
     /**
      * Constructs request sub-parameters for the filter.
@@ -42,9 +53,8 @@ public class Filter extends RequestParameter {
      * @return A jsonifiable object
      */
     @Override
-    Object constructParameterRequestArgs() {
-        
-        HashMap<String, Object> args = new HashMap<String, Object>();
+    Map<String, Object> constructParameterRequestArgs() {
+        Map<String, Object> args = new HashMap<String, Object>();
         
         args.put(KeenQueryConstants.PROPERTY_NAME, propertyName);
         args.put(KeenQueryConstants.OPERATOR, operator.toString());

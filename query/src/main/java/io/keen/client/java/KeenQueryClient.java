@@ -33,15 +33,15 @@ import io.keen.client.java.result.StringResult;
 /**
  * <p>
  * KeenQueryClient provides all of the functionality required to execute the basic queries
- * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
- * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
- * Percentile, Select Unique, and Funnel. It does not include Extractions and Multi-Analysis.
+ * supported by the <a href="https://keen.io/docs/api/#analyses">Data Analysis API</a>.
+ * <p> This includes Count, Count Unique, Sum, Average, Maximum, Minimum, Median, Percentile,
+ * Select Unique, Funnel and Multi-Analysis. It does not include Extractions, Saved Queries or
+ * Query Caching.
  *
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0
  */
 public class KeenQueryClient {
-
     private static final String ENCODING = "UTF-8";
     private final KeenJsonHandler jsonHandler;
     private final RequestUrlBuilder requestUrlBuilder;
@@ -256,7 +256,6 @@ public class KeenQueryClient {
      * an error message received from the server.
      */    
     public QueryResult execute(KeenQueryRequest request) throws IOException {
-        
         Map<String, Object> queryArgs = request.constructRequestArgs();
         URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
         
@@ -309,7 +308,6 @@ public class KeenQueryClient {
                 // code will be called later from within constructIntervalResult()
                 result = constructGroupByResult(listInput);
             } else {
-
                 // else if this is just a List of QueryResult objects - for example,
                 // Select Unique query returns a list of unique objects.
                 List<QueryResult> listOutput = new ArrayList<QueryResult>();
@@ -561,7 +559,6 @@ public class KeenQueryClient {
      * @since 1.0.0
      */
     public static class Builder {
-
         private HttpHandler httpHandler;
         private KeenJsonHandler jsonHandler;
         private String baseUrl;
@@ -708,10 +705,9 @@ public class KeenQueryClient {
          * have been specified.
          *
          * @return A newly constructed Keen client.
-         *  @throws IllegalArgumentException when the project is null.
+         * @throws IllegalArgumentException when the project is null.
          */
         public KeenQueryClient build() {
-
             try {
                 if (httpHandler == null) {
                     httpHandler = getDefaultHttpHandler();
@@ -735,6 +731,7 @@ public class KeenQueryClient {
             if (baseUrl == null) {
                 baseUrl = KeenConstants.SERVER_ADDRESS;
             }
+
             return buildInstance();
         }
 
@@ -745,6 +742,5 @@ public class KeenQueryClient {
         protected KeenQueryClient buildInstance() {
             return new KeenQueryClient(this);
         }
-
     }
 }

@@ -32,7 +32,6 @@ public class RelativeTimeframe implements Timeframe {
      * @param timezone the timezone offset to use with the relative timeframe
      */
     public RelativeTimeframe(final String relativeTimeframe, final String timezone) {
-        
         if (null == relativeTimeframe || relativeTimeframe.trim().isEmpty()) {
             throw new IllegalArgumentException("'relativeTimeframe' argument must be specified and not empty.");
         }
@@ -52,7 +51,7 @@ public class RelativeTimeframe implements Timeframe {
      * @return  the relative timeframe.
      */
     public String getTimeframe() {
-        return relativeTimeframe;
+        return this.relativeTimeframe;
     }
 
     /**
@@ -62,8 +61,7 @@ public class RelativeTimeframe implements Timeframe {
      */
     @Override
     public Map<String, Object> constructTimeframeArgs() {
-        
-        Map<String, Object> timeframe = new HashMap<String, Object>();
+        Map<String, Object> timeframe = new HashMap<String, Object>(2);
         
         if (null != this.relativeTimeframe) {
             timeframe.put(KeenQueryConstants.TIMEFRAME, this.relativeTimeframe);
