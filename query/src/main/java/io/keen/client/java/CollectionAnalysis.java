@@ -111,16 +111,16 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
      *
      * @throws KeenQueryClientException if validation fails with specific reason for failure.
      */
-    protected void validateParams() throws KeenQueryClientException {
+    protected void validateParams() {
         // Event collection name is required.
         if (null == this.collectionName || this.collectionName.trim().isEmpty()) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "There must be an event collection name set to perform a CollectionAnalysis.");
         }
 
         // Timeframe is required.
         if (null == this.timeframe) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "A 'timeframe' parameter is required for a CollectionAnalysis");
         }
 
@@ -128,7 +128,7 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
         if (null != this.groupBy && null != this.filters) {
             for (Filter filter : this.filters) {
                 if (filter.isGeoFilter()) {
-                    throw new KeenQueryClientException("The 'group_by' parameter cannot be used " +
+                    throw new IllegalArgumentException("The 'group_by' parameter cannot be used " +
                             "in conjunction with geo-filtering.");
                 }
             }

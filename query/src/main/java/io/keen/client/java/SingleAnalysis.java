@@ -54,21 +54,21 @@ public class SingleAnalysis extends CollectionAnalysis {
     }
 
     @Override
-    protected void validateParams() throws KeenQueryClientException {
+    protected void validateParams() {
         super.validateParams();
 
         if (null == this.queryType) {
-            throw new KeenQueryClientException("A 'queryType' is required.");
+            throw new IllegalArgumentException("A 'queryType' is required.");
         }
 
         if (QueryType.COUNT == this.queryType && null != this.targetPropertyName) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "Analysis type 'count' should not specify a 'targetPropertyName' parameter.");
         }
 
         if (QueryType.COUNT != this.queryType
                 && (null == this.targetPropertyName || this.targetPropertyName.trim().isEmpty())) {
-            throw new KeenQueryClientException(
+            throw new IllegalArgumentException(
                     "All but the 'count' analysis type require a target property name.");
         }
 
