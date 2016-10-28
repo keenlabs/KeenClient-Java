@@ -473,21 +473,71 @@ public class KeenQueryTest {
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
 
-        assertEquals( requestString, "{\""+KeenQueryConstants.TIMEFRAME+"\":{\""+KeenQueryConstants.START+"\":\""+startTime+"\",\""+KeenQueryConstants.END+"\":\""+endTime+"\"},\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
+        JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
+        JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
+        
+        assertTrue(timeframeNode.has(KeenQueryConstants.START));
+        JsonNode startTimeNode = timeframeNode.get(KeenQueryConstants.START);
+        assertEquals(startTime, startTimeNode.asText());
+        
+        assertTrue(timeframeNode.has(KeenQueryConstants.END));
+        JsonNode endTimeNode = timeframeNode.get(KeenQueryConstants.END);
+        assertEquals(endTime, endTimeNode.asText());
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
+        JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
+        assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
     }
 
     @Test
     public void testRelativeTimeframe() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
-        Timeframe timeframe = new RelativeTimeframe("this_month");
+        String timeframeText = "this_month";
+        Timeframe timeframe = new RelativeTimeframe(timeframeText);
         Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(timeframe)
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-        assertEquals( requestString,  "{\""+KeenQueryConstants.TIMEFRAME+"\":\"this_month\",\""+KeenQueryConstants.EVENT_COLLECTION+"\":\""+TEST_EVENT_COLLECTION+"\"}");
-
+        
+        JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
+        JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
+        assertEquals(timeframeText, timeframeNode.asText());
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
+        JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
+        assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
+    }
+    
+    @Test
+    public void testRelativeTimeframeWithTimezone() throws Exception {
+        setMockResponse(200, "{\"result\": 2}");
+        String timeframeText = "this_month";
+        String timezoneText = "UTC";
+        Timeframe timeframe = new RelativeTimeframe(timeframeText, timezoneText);
+        Query queryParams = new Query.Builder(QueryType.COUNT)
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withTimeframe(timeframe)
+                .build();
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        
+        JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
+        JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
+        assertEquals(timeframeText, timeframeNode.asText());
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.TIMEZONE));
+        JsonNode timezoneNode = requestRootNode.get(KeenQueryConstants.TIMEZONE);
+        assertEquals(timezoneText, timezoneNode.asText());
+        
+        assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
+        JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
+        assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
     }
 
     // interval requires timeframe.
