@@ -55,15 +55,13 @@ public class Funnel extends KeenQueryRequest {
         FunnelStep firstStep = builder.steps.get(0);
         
         if (null != firstStep.getInverted() &&
-            true == firstStep.getInverted())
-        {
+            true == firstStep.getInverted()) {
             throw new IllegalArgumentException(
                 "First step in funnel cannot have special parameter 'inverted' set to true.");
         }
         
         if (null != firstStep.getOptional() &&
-            true == firstStep.getOptional())
-        {
+            true == firstStep.getOptional()) {
             throw new IllegalArgumentException(
                 "First step in funnel cannot have special parameter 'optional' set to true.");
         }

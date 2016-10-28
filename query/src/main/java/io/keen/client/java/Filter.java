@@ -17,18 +17,15 @@ public class Filter extends RequestParameter<Map<String, Object>> {
     
     public Filter(String propertyName, FilterOperator operator, Object propertyValue) {
         
-        if (null == propertyName || propertyName.trim().isEmpty())
-        {
+        if (null == propertyName || propertyName.trim().isEmpty()) {
             throw new IllegalArgumentException("Filter parameter 'propertyName' must be provided.");
         }
         
-        if (null == operator)
-        {
+        if (null == operator) {
             throw new IllegalArgumentException("Filter parameter 'operator' must be provided.");
         }
         
-        if (null == propertyValue)
-        {
+        if (null == propertyValue) {
             throw new IllegalArgumentException("Filter parameter 'propertyValue' must be provided.");
         }
                 
