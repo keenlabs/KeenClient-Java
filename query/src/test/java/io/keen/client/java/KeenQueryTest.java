@@ -39,7 +39,10 @@ import io.keen.client.java.result.ListResult;
 import io.keen.client.java.result.MultiAnalysisResult;
 import io.keen.client.java.result.QueryResult;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -610,18 +613,121 @@ public class KeenQueryTest {
         mockCaptureCountQueryRequest(queryParams);
     }
     
+    private FilterOperator stringToFilterOperator(String operator) {
+        FilterOperator result = null;
+        
+        if (0 == operator.compareTo("eq")) {
+            result = FilterOperator.EQUAL_TO;
+        }
+        else {
+            throw new IllegalStateException("Unimplemented string to FilterOperator value");
+        }
+        
+        return result;
+    }
+    
+    private List<FunnelStep> buildFunnelStepsFromRequestJson(JsonNode requestJson) {
+        
+        JsonNode stepsJson = requestJson.findValue("steps");
+        
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = new ArrayList<FunnelStep>();
+        Iterator<JsonNode> stepsIterator = stepsJson.iterator();
+        while (stepsIterator.hasNext()) {
+            JsonNode stepJson = stepsIterator.next();
+            
+            Timeframe timeframe = null;
+            List<Filter> filters = null;
+            Boolean inverted = null;
+            Boolean optional = null;
+            Boolean withActors = null;
+            
+            if (stepJson.has(KeenQueryConstants.TIMEFRAME) &&
+                stepJson.has(KeenQueryConstants.TIMEZONE)) {
+                timeframe = new RelativeTimeframe(
+                        stepJson.get(KeenQueryConstants.TIMEFRAME).asText(),
+                        stepJson.get(KeenQueryConstants.TIMEZONE).asText());
+            }
+            else if(stepJson.has(KeenQueryConstants.TIMEFRAME)) {
+                JsonNode timeframeJson = stepJson.get(KeenQueryConstants.TIMEFRAME);
+                if (!timeframeJson.isObject()) {
+                    timeframe = new RelativeTimeframe(timeframeJson.asText());
+                }
+                else {
+                    throw new IllegalStateException(
+                            "Building absolute timeframes isn't supported by this method.");
+                }
+            }
+            
+            if (stepJson.has(KeenQueryConstants.FILTERS)) {
+                JsonNode filterListJson = stepJson.get(KeenQueryConstants.FILTERS);
+                Iterator<JsonNode> filterJsonIterator = filterListJson.iterator();
+                while (filterJsonIterator.hasNext()) {
+                    JsonNode filterJson = filterJsonIterator.next();
+                    if (null == filters) {
+                        filters = new LinkedList<Filter>();
+                    }
+                    filters.add(
+                        new Filter(
+                            filterJson.get(KeenQueryConstants.PROPERTY_NAME).asText(),
+                            stringToFilterOperator(filterJson.get(KeenQueryConstants.OPERATOR).asText()),
+                            filterJson.get(KeenQueryConstants.PROPERTY_VALUE).asText()
+                        )
+                    );
+                }
+            }
+            
+            if (stepJson.has(KeenQueryConstants.INVERTED)) {
+                inverted = stepJson.get(KeenQueryConstants.INVERTED).asBoolean();
+            }
+            
+            if (stepJson.has(KeenQueryConstants.OPTIONAL)) {
+                optional = stepJson.get(KeenQueryConstants.OPTIONAL).asBoolean();
+            }
+            
+            if (stepJson.has(KeenQueryConstants.WITH_ACTORS)) {
+                withActors = stepJson.get(KeenQueryConstants.WITH_ACTORS).asBoolean();
+            }
+            
+            FunnelStep step = new FunnelStep(
+                    stepJson.get(KeenQueryConstants.EVENT_COLLECTION).asText(),
+                    stepJson.get(KeenQueryConstants.ACTOR_PROPERTY).asText(),
+                    timeframe,
+                    filters,
+                    inverted,
+                    optional,
+                    withActors
+            );
+            
+            funnelSteps.add(step);
+        }
+        
+        return funnelSteps;
+    }
+    
     @Test
     public void testFunnelWithOnlyRequiredParameters() throws Exception {
-        setMockResponse(200,
-            "{\"result\": [3,1,0],\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
-    
+        
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+            "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
+        );
+ 
+        // Build the mock response based on provided data
+        String mockResponse =
+                  "{\"result\": [3,1,0],\"steps\":"
+                + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
+                + "}";          
+        setMockResponse(200, mockResponse);
+
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
+        
         Funnel funnel = new Funnel.Builder()
-                .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days")))
-                .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")))
-                .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))
+                .withStep(funnelSteps.get(0))
+                .withStep(funnelSteps.get(1))
+                .withStep(funnelSteps.get(2))
                 .build();
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
@@ -629,19 +735,19 @@ public class KeenQueryTest {
         assertTrue(result instanceof FunnelResult);
         FunnelResult funnelResult = (FunnelResult)result;
 
+        // Capture the request for validation
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        assertEquals(
-            "Unexpected request body",
-            "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
-          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
-          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
-            requestBody);
         
+        // Validate request
+        JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
+        assertTrue(expectedRequest.equals(requestNode));
+        
+        // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
@@ -652,19 +758,25 @@ public class KeenQueryTest {
     
     @Test
     public void testFunnelBuilderNonFluent() throws Exception {
-        setMockResponse(200,
-            "{\"result\": [3,1,0],\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
-    
-        List<FunnelStep> steps = new LinkedList<FunnelStep>();
-        steps.add(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days")));
-        steps.add(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")));
-        steps.add(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")));
+        
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+            "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
+        );
+ 
+        // Build the mock response based on provided data
+        String mockResponse =
+                  "{\"result\": [3,1,0],\"steps\":"
+                + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
+                + "}";          
+        setMockResponse(200, mockResponse);
+
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
         
         Funnel.Builder builder = new Funnel.Builder();
-        builder.setSteps(steps);
+        builder.setSteps(funnelSteps);
         Funnel funnel = builder.build();
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
@@ -672,19 +784,19 @@ public class KeenQueryTest {
         assertTrue(result instanceof FunnelResult);
         FunnelResult funnelResult = (FunnelResult)result;
 
+        // Capture the request for validation
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        assertEquals(
-            "Unexpected request body",
-            "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
-          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
-          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
-            requestBody);
         
+        // Validate request
+        JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
+        assertTrue(expectedRequest.equals(requestNode));
+        
+        // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
@@ -695,38 +807,51 @@ public class KeenQueryTest {
     
     @Test
     public void testFunnelWithOnlyRootTimeframe() throws Exception {
-         setMockResponse(200,
-            "{\"result\": [3,1,0],\"timeframe\":\"this_7_days\",\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\": null},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\": null},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\": null}]}");
+        
+        String rootTimeframeString = "this_7_days";
+        
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+            "{\"timeframe\":\"" + rootTimeframeString + "\",\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
+        );
+ 
+        // Build the mock response based on provided data
+        String mockResponse =
+                  "{\"result\": [3,1,0],\"timeframe\":\"" + rootTimeframeString + "\",\"steps\":"
+                + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
+                + "}";          
+        setMockResponse(200, mockResponse);
+
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
     
         Funnel funnel = new Funnel.Builder()
-                .withTimeframe(new RelativeTimeframe("this_7_days"))
-                .withStep(new FunnelStep("signed up", "visitor.guid"))
-                .withStep(new FunnelStep("completed profile", "user.guid"))
-                .withStep(new FunnelStep("referred user", "user.guid"))
+                .withTimeframe(new RelativeTimeframe(rootTimeframeString))
+                .withStep(funnelSteps.get(0))
+                .withStep(funnelSteps.get(1))
+                .withStep(funnelSteps.get(2))
                 .build();
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
         assertTrue(result instanceof FunnelResult);
         FunnelResult funnelResult = (FunnelResult)result;
-        
+
+        // Capture the request for validation
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        assertEquals(
-            "Unexpected request body",
-            "{\"timeframe\":\"this_7_days\",\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
-            requestBody);
         
+        // Validate request
+        JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
+        assertTrue(expectedRequest.equals(requestNode));
+        
+        // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
@@ -737,18 +862,34 @@ public class KeenQueryTest {
     
     @Test
     public void testFunnelWithSpecialParameters() throws Exception {
-        setMockResponse(200,
-            "{\"result\": [3,2,1],"
-          + "\"actors\": [[\"f9332409s0\",\"b7732409s0\",\"k22315b211\"], null, null],"
-          + "\"steps\":["
-          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
-          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
+        
+        List<String> actorValues = new ArrayList<String>();
+        actorValues.add("f9332409s0");
+        actorValues.add("b7732409s0");
+        actorValues.add("k22315b211");
+        
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+            "{\"steps\":["
+          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"with_actors\":true},"
+          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"inverted\":true},"
+          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"optional\":true,\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
+        );
+ 
+        // Build the mock response based on provided data
+        String mockResponse =
+                  "{\"result\": [3,2,1],"
+                + "\"actors\": [" + OBJECT_MAPPER.writeValueAsString(actorValues) + ", null, null],"
+                + "\"steps\":" + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
+                + "}";          
+        setMockResponse(200, mockResponse);
+        
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
     
         Funnel funnel = new Funnel.Builder()
-                .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days"), null, null, null, true))
-                .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days"), null, true, null, null))
-                .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC"), null, null, true, null))
+                .withStep(funnelSteps.get(0))
+                .withStep(funnelSteps.get(1))
+                .withStep(funnelSteps.get(2))
                 .build();
         
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
@@ -756,20 +897,19 @@ public class KeenQueryTest {
         assertTrue(result instanceof FunnelResult);
         FunnelResult funnelResult = (FunnelResult)result;
 
+        // Capture the request for validation
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        assertEquals(
-            "Unexpected request body",
-            "{\"steps\":["
-          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"with_actors\":true},"
-          + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"inverted\":true},"
-          + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"optional\":true,\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}",
-            requestBody);
-            
+        
+        // Validate request
+        JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
+        assertTrue(expectedRequest.equals(requestNode));
+        
+        // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
@@ -778,28 +918,40 @@ public class KeenQueryTest {
         ListResult actorResult = funnelResult.getActorsResult();
         List<QueryResult> actorResultList = actorResult.getListResults();
         List<QueryResult> firstStepActorList = actorResultList.get(0).getListResults();
-        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(0).stringValue().compareTo("f9332409s0"));
-        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(1).stringValue().compareTo("b7732409s0"));
-        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(2).stringValue().compareTo("k22315b211"));
+        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(0).stringValue().compareTo(actorValues.get(0)));
+        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(1).stringValue().compareTo(actorValues.get(1)));
+        assertTrue("Unexpected actor value.", 0 == firstStepActorList.get(2).stringValue().compareTo(actorValues.get(2)));
         assertTrue("Unexpected actor result.", null == actorResultList.get(1));
         assertTrue("Unexpected actor result.", null == actorResultList.get(2));
     }
 
     @Test
     public void testFunnelWithFilters() throws Exception {
-        setMockResponse(200,
-                "{\"result\": [3,1,0],\"steps\":["
-                        + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"timeframe\":\"this_7_days\"},"
-                        + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"timeframe\":\"this_7_days\"},"
-                        + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\",\"timeframe\":\"this_7_days\"}]}");
-
-        Collection<Filter> filters = new LinkedList<Filter>();
-        filters.add(new Filter("some_name", FilterOperator.EQUAL_TO, "some_value"));
-
+        
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+                "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\","
+              + "\"filters\":[{\"property_value\":\"some_value\",\"operator\":\"eq\","
+              + "\"property_name\":\"some_name\"}],\"event_collection\":\"signed up\"},"
+              + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\","
+              + "\"event_collection\":\"completed profile\"},{\"timeframe\":\"this_7_days\","
+              + "\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":"
+              + "\"referred user\"}]}"
+        );
+ 
+        // Build the mock response based on provided data
+        String mockResponse =
+                  "{\"result\": [3,1,0],\"steps\":"
+                + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
+                + "}";          
+        setMockResponse(200, mockResponse);
+        
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
+        
         Funnel funnel = new Funnel.Builder()
-                .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days"), filters, null, null, null))
-                .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")))
-                .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))
+                .withStep(funnelSteps.get(0))
+                .withStep(funnelSteps.get(1))
+                .withStep(funnelSteps.get(2))
                 .build();
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
@@ -807,23 +959,19 @@ public class KeenQueryTest {
         assertTrue(result instanceof FunnelResult);
         FunnelResult funnelResult = (FunnelResult)result;
 
+        // Capture the request for validation
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        assertEquals(
-                "Unexpected request body",
-                "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\","
-              + "\"filters\":[{\"property_value\":\"some_value\",\"operator\":\"eq\","
-              + "\"property_name\":\"some_name\"}],\"event_collection\":\"signed up\"},"
-              + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\","
-              + "\"event_collection\":\"completed profile\"},{\"timeframe\":\"this_7_days\","
-              + "\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":"
-              + "\"referred user\"}]}",
-                requestBody);
-
+        
+        // Validate request
+        JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
+        assertTrue(expectedRequest.equals(requestNode));
+        
+        // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
         assertTrue("Unexpected result value.", 3 == funnelResultData.get(0).longValue());
