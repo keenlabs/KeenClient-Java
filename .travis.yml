@@ -3,13 +3,13 @@ android:
   components:
     - tools
     - platform-tools
-    - build-tools-25.0.0
-    - android-25
+    - build-tools-23.0.3
+    - android-23
 
   licenses:
-      - 'android-sdk-preview-license-.+'
-      - 'android-sdk-license-.+'
-      - 'google-gdk-license-.+'
+    - 'android-sdk-preview-license-.+'
+    - 'android-sdk-license-.+'
+    - 'google-gdk-license-.+'
 
 sudo: required
 
@@ -18,6 +18,8 @@ addons:
 
 jdk:
   - oraclejdk8
+  - oraclejdk7
+  - openjdk7
 
 before_install:
 
