@@ -160,7 +160,7 @@ public class MultiAnalysis extends CollectionAnalysis {
          * @return The new MultiAnalysis instance, configured and validated.
          * @throws KeenQueryClientException if validating analysis parameters fails.
          */
-        public MultiAnalysis build() throws KeenQueryClientException {
+        public MultiAnalysis build() {
             MultiAnalysis multiAnalysis = new MultiAnalysis(this);
 
             // Bail as early as possible if these parameters do not make sense.

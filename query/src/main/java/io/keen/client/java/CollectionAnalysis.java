@@ -124,7 +124,7 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
                     "A 'timeframe' parameter is required for a CollectionAnalysis");
         }
 
-        // Group by does not supper geo-filtering.
+        // Group by does not support geo-filtering.
         if (null != this.groupBy && null != this.filters) {
             for (Filter filter : this.filters) {
                 if (filter.isGeoFilter()) {
@@ -285,8 +285,8 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
          * @return This instance (for method chaining).
          */
         public ChainT withFilter(String propertyName,
-                                  FilterOperator operator,
-                                  Object propertyValue) {
+                                 FilterOperator operator,
+                                 Object propertyValue) {
             addFilter(propertyName, operator, propertyValue);
             return getThis();
         }

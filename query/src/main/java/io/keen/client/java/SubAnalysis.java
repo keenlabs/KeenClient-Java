@@ -102,7 +102,7 @@ public class SubAnalysis extends RequestParameter<Map<String, Object>> {
         // We could fix this by changing RequestParameter's interface to take the outer Map<> as a
         // parameter, and then each RequestParameter would know whether to add a Map<> or a
         // Collection<> or just add a (K, V).
-        Map<String, Object> subAnalysisInfo = new HashMap<String, Object>(3);
+        Map<String, Object> subAnalysisInfo = new HashMap<String, Object>(4);
 
         subAnalysisInfo.put(KeenQueryConstants.ANALYSIS_TYPE, this.analysisType.toString());
 

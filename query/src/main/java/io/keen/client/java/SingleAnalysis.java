@@ -189,7 +189,7 @@ public class SingleAnalysis extends CollectionAnalysis {
          * @return The new SingleAnalysis instance, configured and validated.
          * @throws KeenQueryClientException if validating analysis parameters fails.
          */
-        public SingleAnalysis build() throws KeenQueryClientException {
+        public SingleAnalysis build() {
             SingleAnalysis singleAnalysis = new SingleAnalysis(this);
 
             // Bail as early as possible if these parameters do not make sense.

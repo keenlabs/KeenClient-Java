@@ -61,7 +61,7 @@ public class RelativeTimeframe implements Timeframe {
      */
     @Override
     public Map<String, Object> constructTimeframeArgs() {
-        Map<String, Object> timeframe = new HashMap<String, Object>(2);
+        Map<String, Object> timeframe = new HashMap<String, Object>(3);
         
         if (null != this.relativeTimeframe) {
             timeframe.put(KeenQueryConstants.TIMEFRAME, this.relativeTimeframe);
