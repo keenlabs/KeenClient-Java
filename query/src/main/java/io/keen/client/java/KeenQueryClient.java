@@ -272,8 +272,7 @@ public class KeenQueryClient {
         // other response data that might be included, such as the 'actors' key.
         if (isFunnel) {
             result = constructFunnelResult(postResponse);
-        }
-        else {
+        } else {
             final Collection<String> groupByParams = request.groupedResponseExpected() ?
                     request.getGroupByParams() : Collections.<String>emptyList();
 

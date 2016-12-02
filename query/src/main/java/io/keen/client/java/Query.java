@@ -143,12 +143,9 @@ public class Query extends KeenQueryRequest {
         this.queryType = builder.queryType;
         this.timeframe = builder.timeframe;
 
-        if (null != builder.filters && !builder.filters.isEmpty())
-        {
+        if (null != builder.filters && !builder.filters.isEmpty()) {
             this.filters = new RequestParameterCollection<Filter>(builder.filters);
-        }
-        else
-        {
+        } else {
             this.filters = null;
         }
     }

@@ -37,8 +37,7 @@ public class Funnel extends KeenQueryRequest {
         
         if (null != builder.timeframe) {
             this.timeframe = builder.timeframe;
-        }
-        else {
+        } else {
             this.timeframe = null;
             // If no timeframe has been specified for the funnel, 
             // each step needs to provide one.

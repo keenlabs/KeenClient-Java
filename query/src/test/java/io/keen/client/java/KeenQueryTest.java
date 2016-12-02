@@ -618,8 +618,7 @@ public class KeenQueryTest {
         
         if (0 == operator.compareTo("eq")) {
             result = FilterOperator.EQUAL_TO;
-        }
-        else {
+        } else {
             throw new IllegalStateException("Unimplemented string to FilterOperator value");
         }
         
@@ -647,13 +646,11 @@ public class KeenQueryTest {
                 timeframe = new RelativeTimeframe(
                         stepJson.get(KeenQueryConstants.TIMEFRAME).asText(),
                         stepJson.get(KeenQueryConstants.TIMEZONE).asText());
-            }
-            else if(stepJson.has(KeenQueryConstants.TIMEFRAME)) {
+            } else if(stepJson.has(KeenQueryConstants.TIMEFRAME)) {
                 JsonNode timeframeJson = stepJson.get(KeenQueryConstants.TIMEFRAME);
                 if (!timeframeJson.isObject()) {
                     timeframe = new RelativeTimeframe(timeframeJson.asText());
-                }
-                else {
+                } else {
                     throw new IllegalStateException(
                             "Building absolute timeframes isn't supported by this method.");
                 }

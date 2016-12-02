@@ -102,8 +102,7 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
         
         if (null != filters && !filters.isEmpty()) {
             this.filters = new RequestParameterCollection(filters);
-        }
-        else {
+        } else {
             this.filters = null;
         }
         
