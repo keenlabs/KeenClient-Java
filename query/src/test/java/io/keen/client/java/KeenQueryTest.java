@@ -801,7 +801,7 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
     }
-
+    
     @Test
     public void testFunnelWithOnlyRootTimeframe() throws Exception {
 
@@ -855,6 +855,35 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 1 == funnelResultData.get(1).longValue());
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
+    }
+
+    @Test
+    public void testFunnelBuilderEnsureWithStepsThrowsWithWrongUsage() throws Exception {
+
+        String rootTimeframeString = "this_7_days";
+
+        JsonNode expectedRequest = OBJECT_MAPPER.readTree(
+            "{\"timeframe\":\"" + rootTimeframeString + "\",\"steps\":["
+          + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
+          + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
+        );
+
+        // Construct a list of funnel steps based on provided data
+        List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
+
+        boolean threwCorrectExceptionType = false;
+        try {
+            Funnel funnel = new Funnel.Builder()
+                    .withStep(funnelSteps.get(0))
+                    .withSteps(funnelSteps)
+                    .build();
+            fail("Expected KeenQueryClientException with incorrect usage of withStep" +
+                 "combined with withSteps.");
+        } catch (KeenQueryClientException keenException) {
+            threwCorrectExceptionType = true;
+        }
+        assertTrue(threwCorrectExceptionType);
     }
 
     @Test

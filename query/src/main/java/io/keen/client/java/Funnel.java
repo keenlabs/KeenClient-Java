@@ -119,11 +119,16 @@ public class Funnel extends KeenQueryRequest {
          * @param steps The funnel steps.
          */
         public void setSteps(List<? extends FunnelStep> steps) {
+            // Clear existing set of steps
             this.steps = null;
 
             // Client code may just be clearing all the steps.
             if (null != steps) {
-                withSteps(steps); // Shallow copy the list of steps
+                // Create a new container and copy the FunnelSteps doing a shallow copy
+                // since FunnelSteps are immutable
+                for (FunnelStep step : steps) {
+                    this.addStep(step);
+                }
             }
         }
         
@@ -134,12 +139,19 @@ public class Funnel extends KeenQueryRequest {
          * @return This Builder instance with the steps added.
          */
         public Builder withSteps(List<? extends FunnelStep> steps) {
-            // Add each step to the list of steps, appending to anything
-            // that already exists.
-            for (FunnelStep step : steps) {
-                withStep(step);
+            if (null != this.steps) {
+                // It would be odd to call this method if a step
+                // has already been added. This probably indicates
+                // that the SDK user doesn't understand that this
+                // method replaces the entire list of funnel steps.
+                throw new KeenQueryClientException(
+                    "Incorrect Usage: withSteps() called, which would clear any existing steps already added. " +
+                    "Don't add steps prior to calling withSteps(), or append additional steps by calling withStep()."
+                );
             }
             
+            setSteps(steps);
+
             return this;
         }
         
