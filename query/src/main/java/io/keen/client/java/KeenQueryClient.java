@@ -257,17 +257,17 @@ public class KeenQueryClient {
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
-     */    
+     */
     public QueryResult execute(KeenQueryRequest request) throws IOException {
         Map<String, Object> queryArgs = request.constructRequestArgs();
         URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
-        
+
         Map<String, Object> postResponse = postRequest(project, url, queryArgs);
-        
+
         QueryResult result = null;
         boolean isFunnel = request instanceof Funnel;
         boolean isMultiAnalysis = request instanceof MultiAnalysis;
-        
+
         // If the request was a funnel, construct the appropriate response including
         // other response data that might be included, such as the 'actors' key.
         if (isFunnel) {
@@ -324,66 +324,89 @@ public class KeenQueryClient {
                         "expecting a MultiAnalysisResult.");
             }
 
-            // Multi-Analysis results:
-            // - Simple: just a single JSON object with each key matching the label of a
-            // sub-analysis that was specified in the 'analyses' field of the request.
-            // - Group By: a list of JSON objects, each of which has all the sub-analysis keys just
-            // like the simple result, plus a key(s) with the name(s) of the 'group_by'(s) as
-            // specified in the request. There is *not* a 'result' key here.
-            // - Interval : a list of interval results ('timeframe' and 'value' keys) where the
-            // 'value' is a JSON object just like a simple result.
-            // - Interval + Group By: a list of interval results ('timeframe' and 'value' keys)
-            // where the 'value' is a list of JSON objects just like a group by result.
-            Map<?, ?> inputMap = (Map)input;
-            Map<String, QueryResult> subAnalysesResults =
-                    new HashMap<String, QueryResult>(inputMap.size());
+            result = constructMultiAnalysisResult(input);
+        } else if (input instanceof List) {
 
-            for (Map.Entry<?, ?> entry : inputMap.entrySet()) {
-                Object key = entry.getKey();
-                Object value = entry.getValue();
-
-                if (!(key instanceof String)) {
-                    throw new IllegalStateException("Somehow a parsed JSON key was not a String.");
-                }
-
-                if (value instanceof Map) {
-                    throw new IllegalStateException("Somehow a parsed JSON value for a simple " +
-                            "MultiAnalysis result was a nested JSON dictionary.");
-                }
-
-                subAnalysesResults.put((String)key, constructQueryResult(value, false, false));
-            }
-
-            result = new MultiAnalysisResult(subAnalysesResults);
+            result = constructListResult(
+                    input,
+                    isGroupBy,
+                    isInterval,
+                    isMultiAnalysis,
+                    groupByParams
+            );
         }
-        else if (input instanceof List) {
 
-            // recursively construct the children of this...
-            List<Object> listInput = (ArrayList<Object>)input;
+        return result;
+    }
 
-            // if this is an IntervalResult, construct the IntervalResult object.
-            if (isInterval) {
-                result = constructIntervalResult(
-                        listInput,
-                        isGroupBy,
-                        isMultiAnalysis,
-                        groupByParams);
-            } else if (isGroupBy) {
-                // if this is a GroupByResult, construct the GroupByResult object.
-                // Note that if this is both an Interval and GroupBy, the GroupBy
-                // code will be called later from within constructIntervalResult()
-                result = constructGroupByResult(listInput, groupByParams, isMultiAnalysis);
-            } else {
-                // else if this is just a List of QueryResult objects - for example,
-                // Select Unique query returns a list of unique objects.
-                List<QueryResult> listOutput = new ArrayList<QueryResult>();
-                for (Object child : listInput) {
-                    // We don't expect this list to contain nested GroupByResults.
-                    QueryResult resultItem = constructQueryResult(child, false, false);
-                    listOutput.add(resultItem);
-                }
-                result = new ListResult(listOutput);
+    private static QueryResult constructMultiAnalysisResult(Object input) {
+        // Multi-Analysis results:
+        // - Simple: just a single JSON object with each key matching the label of a
+        // sub-analysis that was specified in the 'analyses' field of the request.
+        // - Group By: a list of JSON objects, each of which has all the sub-analysis keys just
+        // like the simple result, plus a key(s) with the name(s) of the 'group_by'(s) as
+        // specified in the request. There is *not* a 'result' key here.
+        // - Interval : a list of interval results ('timeframe' and 'value' keys) where the
+        // 'value' is a JSON object just like a simple result.
+        // - Interval + Group By: a list of interval results ('timeframe' and 'value' keys)
+        // where the 'value' is a list of JSON objects just like a group by result.
+        Map<?, ?> inputMap = (Map)input;
+        Map<String, QueryResult> subAnalysesResults =
+                new HashMap<String, QueryResult>(inputMap.size());
+
+        for (Map.Entry<?, ?> entry : inputMap.entrySet()) {
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (!(key instanceof String)) {
+                throw new IllegalStateException("Somehow a parsed JSON key was not a String.");
             }
+
+            if (value instanceof Map) {
+                throw new IllegalStateException("Somehow a parsed JSON value for a simple " +
+                        "MultiAnalysis result was a nested JSON dictionary.");
+            }
+
+            subAnalysesResults.put((String)key, constructQueryResult(value, false, false));
+        }
+
+        return new MultiAnalysisResult(subAnalysesResults);
+    }
+
+    private static QueryResult constructListResult(
+            Object input,
+            boolean isGroupBy,
+            boolean isInterval,
+            boolean isMultiAnalysis,
+            Collection<String> groupByParams) {
+
+        QueryResult result = null;
+        // recursively construct the children of this...
+        List<Object> listInput = (ArrayList<Object>)input;
+
+        // if this is an IntervalResult, construct the IntervalResult object.
+        if (isInterval) {
+            result = constructIntervalResult(
+                    listInput,
+                    isGroupBy,
+                    isMultiAnalysis,
+                    groupByParams
+            );
+        } else if (isGroupBy) {
+            // if this is a GroupByResult, construct the GroupByResult object.
+            // Note that if this is both an Interval and GroupBy, the GroupBy
+            // code will be called later from within constructIntervalResult()
+            result = constructGroupByResult(listInput, groupByParams, isMultiAnalysis);
+        } else {
+            // else if this is just a List of QueryResult objects - for example,
+            // Select Unique query returns a list of unique objects.
+            List<QueryResult> listOutput = new ArrayList<QueryResult>();
+            for (Object child : listInput) {
+                // We don't expect this list to contain nested GroupByResults.
+                QueryResult resultItem = constructQueryResult(child, false, false);
+                listOutput.add(resultItem);
+            }
+            result = new ListResult(listOutput);
         }
 
         return result;
@@ -497,16 +520,16 @@ public class KeenQueryClient {
 
         return new GroupByResult(groupByResult);
     }
-    
+
     /**
      * Constructs a FunnelResult from a response object map. This map should include
      * a 'result' key and may include an optional 'actors' key as well.
-     * 
+     *
      * @param responseMap The server response, deserialized to a Map<String, Object>
      * @return A FunnelResult instance.
      */
     private static FunnelResult constructFunnelResult(Map<String, Object> responseMap) {
-        
+
         // Create a result for the 'result' field of the funnel response. FunnelResult won't contain
         // intervals or groups, as those parameters aren't supported for Funnel.
         QueryResult funnelResult = constructQueryResult(
