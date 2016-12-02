@@ -200,11 +200,11 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
     }
     
     /**
-     * Package visible accessor for validating Funnel timeframe arguments.
+     * Package visible accessor for validating Funnel Timeframe arguments.
      * 
-     * @return 
+     * @return The step's Timeframe
      */
-    Timeframe getTimeframe() { return this.timeframe; }
+    public Timeframe getTimeframe() { return this.timeframe; }
     
     /**
      * Get the value of the inverted special property. Will return null
@@ -212,7 +212,7 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
      * 
      * @return The value of 'inverted'
      */
-    Boolean getInverted() { return this.inverted; }
+    public Boolean getInverted() { return this.inverted; }
     
     /**
      * Get the value of the optional special property. Will return null
@@ -220,5 +220,5 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
      * 
      * @return The value of 'optional'
      */
-    Boolean getOptional() { return this.optional; }
+    public Boolean getOptional() { return this.optional; }
 }
