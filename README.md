@@ -279,7 +279,7 @@ KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
 		.build();
 ```
 #### Using the KeenQueryClient to send Queries
-The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO back end.
+The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO API.
 ```java
 long count = queryClient.count("<event_collection>", new RelativeTimeframe("this_week"));
 long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2015-05-15T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
@@ -388,7 +388,7 @@ To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the
 
 ``` java
 final MultiAnalysis multiAnalysis = new MultiAnalysis.Builder()
-        .withCollectionName("the_collection")
+        .withEventCollection("the_collection")
         .withTimeframe(new RelativeTimeframe("this_month"))
         .withSubAnalysis(new SubAnalysis("label_for_count", QueryType.COUNT))
         .withSubAnalysis(new SubAnalysis("sum_analysis_label", QueryType.SUM, "property_to_sum"))
@@ -407,7 +407,7 @@ if (result instanceof MultiAnalysisResult) {
 ```
 The ```MultiAnalysis.Builder``` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no SubAnalysis instances set.
 
-Funnel analysis can similarly be perfomed using the `Funnel.Builder`. As with multi-analysis, some parameter checking is done to ensure a required parameters are at least provided. The result of a funnel analysis is a `FunnelResult`, on which a `ListResult` containing the results of the funnel are available through `getFunnelResult()`, and if actor values were requested, their results will be available through `getActorsResult()`. `FunnelStep`s are required to provide a collection name, an actor property name, and a `Timeframe` instance unless one is provided for the entire funnel using `Funnel.Builder.withTimeframe()`. Additional optional parameters are available for specifying a list of `Filter`s for each step and the special parameters `inverted`, `optional`, and `withActors`.
+Funnel analysis can similarly be perfomed using the `Funnel.Builder`. As with multi-analysis, some parameter checking is done to ensure required parameters are at least provided. The result of a funnel analysis is a `FunnelResult`, on which a `ListResult` containing the results of the funnel are available through `getFunnelResult()`, and if actor values were requested, their results will be available through `getActorsResult()`. `FunnelStep`s are required to provide a collection name, an actor property name, and a `Timeframe` instance unless one is provided for the entire funnel using `Funnel.Builder.withTimeframe()`. Additional optional parameters are available for specifying a list of `Filter`s for each step and the special parameters `inverted`, `optional`, and `withActors`.
 
 ``` java
 final Funnel funnel = new Funnel.Builder()
@@ -630,7 +630,7 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
-##### 5.1.1
+##### 5.1.0
 
 + Add Multi-Analysis and Funnel capabilities to KeenQueryClient.
 + Multi-Analysis support includes MultiAnalysis, a Builder, SubAnalysis and MultiAnalysisResult.
