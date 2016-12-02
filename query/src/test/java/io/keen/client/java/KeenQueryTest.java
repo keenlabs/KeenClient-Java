@@ -461,6 +461,40 @@ public class KeenQueryTest {
 
         QueryResult result = queryClient.execute(queryParams);
     }
+    
+    @Test
+    public void testBuilderGetFilters() throws Exception {
+        
+        Query.Builder builder = new Query.Builder(QueryType.COUNT)
+                    .withEventCollection(TEST_EVENT_COLLECTION)
+                    .withFilter(TEST_TARGET_PROPERTY, FilterOperator.LESS_THAN, 5)
+                    .withFilter(TEST_TARGET_PROPERTY, FilterOperator.GREATER_THAN, 1);
+        
+        List<Map<String, Object>> filters = builder.getFilters();
+        
+        ensureFilterMapHasExpectedPropertyValues(
+                filters.get(0),
+                5,
+                TEST_TARGET_PROPERTY,
+                FilterOperator.LESS_THAN.toString());
+        ensureFilterMapHasExpectedPropertyValues(
+                filters.get(1),
+                1,
+                TEST_TARGET_PROPERTY,
+                FilterOperator.GREATER_THAN.toString());
+    }
+    
+    private void ensureFilterMapHasExpectedPropertyValues(
+            Map<String, Object> filterMap,
+            int propertyValue,
+            String propertyName,
+            String operatorValue
+            ) {
+        
+        assertEquals(filterMap.get(KeenQueryConstants.PROPERTY_VALUE), propertyValue);
+        assertEquals(filterMap.get(KeenQueryConstants.PROPERTY_NAME), propertyName);
+        assertEquals(filterMap.get(KeenQueryConstants.OPERATOR), operatorValue);
+    }
 
     @Test
     public void testAbsoluteTimeframe() throws Exception  {

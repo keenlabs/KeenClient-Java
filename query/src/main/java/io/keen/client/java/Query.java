@@ -204,7 +204,19 @@ public class Query extends KeenQueryRequest {
          *
          * @return a collection of filters.
          */
-        public Collection<Filter> getFilters() { return filters; }
+        public List<Map<String, Object>> getFilters() {
+            
+            RequestParameterCollection<Filter> requestFilterCollection = new RequestParameterCollection<Filter>(filters);
+            
+            Collection<Object> requestObjects = requestFilterCollection.constructParameterRequestArgs();
+            
+            List<Map<String, Object>> result = new LinkedList<Map<String, Object>>();
+            for (Object object : requestObjects) {
+                result.add((Map<String, Object>)object);
+            }
+            
+            return result;
+        }
 
         /**
          * Set the list of filters. Existing filters will be discarded.
