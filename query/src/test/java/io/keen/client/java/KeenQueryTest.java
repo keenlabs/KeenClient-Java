@@ -477,18 +477,18 @@ public class KeenQueryTest {
         String requestString = mockCaptureCountQueryRequest(queryParams);
 
         JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
         JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
-        
+
         assertTrue(timeframeNode.has(KeenQueryConstants.START));
         JsonNode startTimeNode = timeframeNode.get(KeenQueryConstants.START);
         assertEquals(startTime, startTimeNode.asText());
-        
+
         assertTrue(timeframeNode.has(KeenQueryConstants.END));
         JsonNode endTimeNode = timeframeNode.get(KeenQueryConstants.END);
         assertEquals(endTime, endTimeNode.asText());
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
         JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
         assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
@@ -504,18 +504,18 @@ public class KeenQueryTest {
                 .withTimeframe(timeframe)
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-        
+
         JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
         JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
         assertEquals(timeframeText, timeframeNode.asText());
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
         JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
         assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
     }
-    
+
     @Test
     public void testRelativeTimeframeWithTimezone() throws Exception {
         setMockResponse(200, "{\"result\": 2}");
@@ -527,17 +527,17 @@ public class KeenQueryTest {
                 .withTimeframe(timeframe)
                 .build();
         String requestString = mockCaptureCountQueryRequest(queryParams);
-        
+
         JsonNode requestRootNode = OBJECT_MAPPER.readTree(requestString);
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.TIMEFRAME));
         JsonNode timeframeNode = requestRootNode.get(KeenQueryConstants.TIMEFRAME);
         assertEquals(timeframeText, timeframeNode.asText());
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.TIMEZONE));
         JsonNode timezoneNode = requestRootNode.get(KeenQueryConstants.TIMEZONE);
         assertEquals(timezoneText, timezoneNode.asText());
-        
+
         assertTrue(requestRootNode.has(KeenQueryConstants.EVENT_COLLECTION));
         JsonNode eventCollectionNode = requestRootNode.get(KeenQueryConstants.EVENT_COLLECTION);
         assertEquals(TEST_EVENT_COLLECTION, eventCollectionNode.asText());
@@ -612,35 +612,35 @@ public class KeenQueryTest {
                 .build();
         mockCaptureCountQueryRequest(queryParams);
     }
-    
+
     private FilterOperator stringToFilterOperator(String operator) {
         FilterOperator result = null;
-        
+
         if (0 == operator.compareTo("eq")) {
             result = FilterOperator.EQUAL_TO;
         } else {
             throw new IllegalStateException("Unimplemented string to FilterOperator value");
         }
-        
+
         return result;
     }
-    
+
     private List<FunnelStep> buildFunnelStepsFromRequestJson(JsonNode requestJson) {
-        
+
         JsonNode stepsJson = requestJson.findValue("steps");
-        
+
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = new ArrayList<FunnelStep>();
         Iterator<JsonNode> stepsIterator = stepsJson.iterator();
         while (stepsIterator.hasNext()) {
             JsonNode stepJson = stepsIterator.next();
-            
+
             Timeframe timeframe = null;
             List<Filter> filters = null;
             Boolean inverted = null;
             Boolean optional = null;
             Boolean withActors = null;
-            
+
             if (stepJson.has(KeenQueryConstants.TIMEFRAME) &&
                 stepJson.has(KeenQueryConstants.TIMEZONE)) {
                 timeframe = new RelativeTimeframe(
@@ -655,7 +655,7 @@ public class KeenQueryTest {
                             "Building absolute timeframes isn't supported by this method.");
                 }
             }
-            
+
             if (stepJson.has(KeenQueryConstants.FILTERS)) {
                 JsonNode filterListJson = stepJson.get(KeenQueryConstants.FILTERS);
                 Iterator<JsonNode> filterJsonIterator = filterListJson.iterator();
@@ -673,19 +673,19 @@ public class KeenQueryTest {
                     );
                 }
             }
-            
+
             if (stepJson.has(KeenQueryConstants.INVERTED)) {
                 inverted = stepJson.get(KeenQueryConstants.INVERTED).asBoolean();
             }
-            
+
             if (stepJson.has(KeenQueryConstants.OPTIONAL)) {
                 optional = stepJson.get(KeenQueryConstants.OPTIONAL).asBoolean();
             }
-            
+
             if (stepJson.has(KeenQueryConstants.WITH_ACTORS)) {
                 withActors = stepJson.get(KeenQueryConstants.WITH_ACTORS).asBoolean();
             }
-            
+
             FunnelStep step = new FunnelStep(
                     stepJson.get(KeenQueryConstants.EVENT_COLLECTION).asText(),
                     stepJson.get(KeenQueryConstants.ACTOR_PROPERTY).asText(),
@@ -695,38 +695,38 @@ public class KeenQueryTest {
                     optional,
                     withActors
             );
-            
+
             funnelSteps.add(step);
         }
-        
+
         return funnelSteps;
     }
-    
+
     @Test
     public void testFunnelWithOnlyRequiredParameters() throws Exception {
-        
+
         JsonNode expectedRequest = OBJECT_MAPPER.readTree(
             "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
           + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
           + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
         );
- 
+
         // Build the mock response based on provided data
         String mockResponse =
                   "{\"result\": [3,1,0],\"steps\":"
                 + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
-                + "}";          
+                + "}";
         setMockResponse(200, mockResponse);
 
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
-        
+
         Funnel funnel = new Funnel.Builder()
                 .withStep(funnelSteps.get(0))
                 .withStep(funnelSteps.get(1))
                 .withStep(funnelSteps.get(2))
                 .build();
-        
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
         assertTrue(result instanceof FunnelResult);
@@ -739,11 +739,11 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        
+
         // Validate request
         JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
         assertTrue(expectedRequest.equals(requestNode));
-        
+
         // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
@@ -752,30 +752,30 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
     }
-    
+
     @Test
     public void testFunnelBuilderNonFluent() throws Exception {
-        
+
         JsonNode expectedRequest = OBJECT_MAPPER.readTree(
             "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
           + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
           + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
         );
- 
+
         // Build the mock response based on provided data
         String mockResponse =
                   "{\"result\": [3,1,0],\"steps\":"
                 + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
-                + "}";          
+                + "}";
         setMockResponse(200, mockResponse);
 
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
-        
+
         Funnel.Builder builder = new Funnel.Builder();
         builder.setSteps(funnelSteps);
         Funnel funnel = builder.build();
-        
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
         assertTrue(result instanceof FunnelResult);
@@ -788,11 +788,11 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        
+
         // Validate request
         JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
         assertTrue(expectedRequest.equals(requestNode));
-        
+
         // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
@@ -801,36 +801,36 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
     }
-    
+
     @Test
     public void testFunnelWithOnlyRootTimeframe() throws Exception {
-        
+
         String rootTimeframeString = "this_7_days";
-        
+
         JsonNode expectedRequest = OBJECT_MAPPER.readTree(
             "{\"timeframe\":\"" + rootTimeframeString + "\",\"steps\":["
           + "{\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\"},"
           + "{\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\"},"
           + "{\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
         );
- 
+
         // Build the mock response based on provided data
         String mockResponse =
                   "{\"result\": [3,1,0],\"timeframe\":\"" + rootTimeframeString + "\",\"steps\":"
                 + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
-                + "}";          
+                + "}";
         setMockResponse(200, mockResponse);
 
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
-    
+
         Funnel funnel = new Funnel.Builder()
                 .withTimeframe(new RelativeTimeframe(rootTimeframeString))
                 .withStep(funnelSteps.get(0))
                 .withStep(funnelSteps.get(1))
                 .withStep(funnelSteps.get(2))
                 .build();
-        
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
         assertTrue(result instanceof FunnelResult);
@@ -843,11 +843,11 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        
+
         // Validate request
         JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
         assertTrue(expectedRequest.equals(requestNode));
-        
+
         // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
@@ -856,39 +856,39 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
     }
-    
+
     @Test
     public void testFunnelWithSpecialParameters() throws Exception {
-        
+
         List<String> actorValues = new ArrayList<String>();
         actorValues.add("f9332409s0");
         actorValues.add("b7732409s0");
         actorValues.add("k22315b211");
-        
+
         JsonNode expectedRequest = OBJECT_MAPPER.readTree(
             "{\"steps\":["
           + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\",\"event_collection\":\"signed up\",\"with_actors\":true},"
           + "{\"timeframe\":\"this_7_days\",\"actor_property\":\"user.guid\",\"event_collection\":\"completed profile\",\"inverted\":true},"
           + "{\"timeframe\":\"this_7_days\",\"timezone\":\"UTC\",\"optional\":true,\"actor_property\":\"user.guid\",\"event_collection\":\"referred user\"}]}"
         );
- 
+
         // Build the mock response based on provided data
         String mockResponse =
                   "{\"result\": [3,2,1],"
                 + "\"actors\": [" + OBJECT_MAPPER.writeValueAsString(actorValues) + ", null, null],"
                 + "\"steps\":" + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
-                + "}";          
+                + "}";
         setMockResponse(200, mockResponse);
-        
+
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
-    
+
         Funnel funnel = new Funnel.Builder()
                 .withStep(funnelSteps.get(0))
                 .withStep(funnelSteps.get(1))
                 .withStep(funnelSteps.get(2))
                 .build();
-        
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         QueryResult result = queryClient.execute(funnel);
         assertTrue(result instanceof FunnelResult);
@@ -901,11 +901,11 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        
+
         // Validate request
         JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
         assertTrue(expectedRequest.equals(requestNode));
-        
+
         // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
@@ -924,7 +924,7 @@ public class KeenQueryTest {
 
     @Test
     public void testFunnelWithFilters() throws Exception {
-        
+
         JsonNode expectedRequest = OBJECT_MAPPER.readTree(
                 "{\"steps\":[{\"timeframe\":\"this_7_days\",\"actor_property\":\"visitor.guid\","
               + "\"filters\":[{\"property_value\":\"some_value\",\"operator\":\"eq\","
@@ -934,17 +934,17 @@ public class KeenQueryTest {
               + "\"timezone\":\"UTC\",\"actor_property\":\"user.guid\",\"event_collection\":"
               + "\"referred user\"}]}"
         );
- 
+
         // Build the mock response based on provided data
         String mockResponse =
                   "{\"result\": [3,1,0],\"steps\":"
                 + OBJECT_MAPPER.writeValueAsString(expectedRequest.findValue("steps"))
-                + "}";          
+                + "}";
         setMockResponse(200, mockResponse);
-        
+
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = buildFunnelStepsFromRequestJson(expectedRequest);
-        
+
         Funnel funnel = new Funnel.Builder()
                 .withStep(funnelSteps.get(0))
                 .withStep(funnelSteps.get(1))
@@ -963,11 +963,11 @@ public class KeenQueryTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
         String requestBody = outputStream.toString(ENCODING);
-        
+
         // Validate request
         JsonNode requestNode = OBJECT_MAPPER.readTree(requestBody);
         assertTrue(expectedRequest.equals(requestNode));
-        
+
         // Validate result
         ListResult funnelValues = funnelResult.getFunnelResult();
         List<QueryResult> funnelResultData = funnelValues.getListResults();
@@ -976,10 +976,10 @@ public class KeenQueryTest {
         assertTrue("Unexpected result value.", 0 == funnelResultData.get(2).longValue());
         assertTrue("Should not have actors result.", null == funnelResult.getActorsResult());
     }
-    
+
     @Rule
     public final ExpectedException exception = ExpectedException.none();
-    
+
     @Test
     public void testFunnelWithInvalidTimeframeConfiguration() throws Exception {
         exception.expect(IllegalArgumentException.class);
@@ -1038,7 +1038,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .build();
@@ -1074,7 +1074,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis(
                         "the_average",
@@ -1128,7 +1128,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withGroupBy("category")
@@ -1172,7 +1172,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withGroupBy("category")
@@ -1223,7 +1223,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withInterval("daily")
@@ -1255,7 +1255,7 @@ public class KeenQueryTest {
 
         // This analysis has two sub-analyses, an interval, and two group by parameters.
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withSubAnalysis(new SubAnalysis("total_cost", QueryType.SUM, "price"))
@@ -1306,7 +1306,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .build();
@@ -1335,7 +1335,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withGroupBy("category")
@@ -1389,7 +1389,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withSubAnalysis(new SubAnalysis("total_cost", QueryType.SUM, "price"))
@@ -1456,7 +1456,7 @@ public class KeenQueryTest {
                 "}");
 
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withInterval("daily")
@@ -1544,7 +1544,7 @@ public class KeenQueryTest {
 
         // This analysis has two sub-analyses, an interval, and two group by parameters.
         MultiAnalysis multiAnalysisParams = new MultiAnalysis.Builder()
-                .withCollectionName(TEST_EVENT_COLLECTION)
+                .withEventCollection(TEST_EVENT_COLLECTION)
                 .withTimeframe(new RelativeTimeframe("this_8_hours"))
                 .withSubAnalysis(new SubAnalysis("plain_old_count", QueryType.COUNT))
                 .withSubAnalysis(new SubAnalysis("total_cost", QueryType.SUM, "price"))

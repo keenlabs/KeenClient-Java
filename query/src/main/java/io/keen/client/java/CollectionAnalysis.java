@@ -11,7 +11,7 @@ import io.keen.client.java.exceptions.KeenQueryClientException;
 /**
  * Represents the types of analyses that target a single event collection. Single Analysis and
  * Multi-Analysis are examples of this, whereas Funnel is not.
- * 
+ *
  * @author masojus
  */
 abstract class CollectionAnalysis extends KeenQueryRequest {
@@ -190,7 +190,7 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
          * @param collectionName The event collection's name.
          * @return This instance (for method chaining).
          */
-        public ChainT withCollectionName(String collectionName) {
+        public ChainT withEventCollection(String collectionName) {
             if (null != this.collectionName) {
                 throw new IllegalArgumentException("Attempting to set the 'collectionName' " +
                         "parameter for this analysis multiple times, but there can be only one.");
