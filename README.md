@@ -553,6 +553,10 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.0.2
+
++ Add "Keen-Sdk" header for version tracking.
+
 ##### 5.0.1
 
 + Fixed bug in packaging; artifacts now correctly include transitive dependencies.
