@@ -12,6 +12,32 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
 }
 
+// Build up a KeenVersion.java akin to the Android BuildConfig.java, but available in all projects.
+// We set Implementation-Version on the Manifest, but reading Package.getImplementationVersion()
+// on the core Package seems return null in the Android client, so instead generate this. Also, the
+// Manifest info isn't set for unit tests.
+task generateVersionFile {
+    def outputDir = file("$buildDir/generated/source")
+    outputs.dir outputDir
+
+    doFirst {
+        def srcFile = new File(outputDir, "io/keen/client/java/KeenVersion.java")
+        srcFile.parentFile.mkdirs()
+        srcFile.write("""
+            package io.keen.client.java;
+            public class KeenVersion {
+                private static final String SDK_VERSION = "$project.version";
+
+                private KeenVersion() {}
+                public static String getSdkVersion() { return SDK_VERSION; }
+            }
+        """)
+    }
+}
+
+compileJava.dependsOn generateVersionFile
+compileJava.source generateVersionFile.outputs.files, sourceSets.main.java
+
 dependencies {
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
     testCompile 'commons-io:commons-io:2.4'
