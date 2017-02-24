@@ -71,7 +71,7 @@ public class UrlConnectionHttpHandler implements HttpHandler {
         // If a different HttpHandler is used, we won't get this header. We would need to refactor
         // to a delegation pattern to give the client code's HttpHandler a chance to process the
         // Request first, then attach our custom headers, which would likely be a breaking change.
-        connection.setRequestProperty("Keen-Sdk", KeenVersion.getSdkVersion());
+        connection.setRequestProperty("Keen-Sdk", "java-" + KeenVersion.getSdkVersion());
 
         // If the request has a body, send it. Otherwise just connect.
         if (request.body != null) {
