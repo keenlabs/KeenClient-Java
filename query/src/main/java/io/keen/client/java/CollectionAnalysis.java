@@ -152,7 +152,7 @@ abstract class CollectionAnalysis extends KeenQueryRequest {
      * @param <ChainT> The type to return from fluent methods for chaining. Likely a derived builder
      *                 type so as to continue chaining with the full capabilities of the subclass.
      */
-    protected abstract static class Builder <ChainT> {
+    protected abstract static class Builder <ChainT extends Builder<ChainT>> {
         // required
         private String collectionName;
         private Timeframe timeframe;

@@ -29,12 +29,13 @@ public class Query extends KeenQueryRequest {
 
     // optional
     private final RequestParameterCollection<Filter> filters;
-    private final String interval;    // requires timeframe to be set
+    private final String interval; // requires timeframe to be set
+    private final String timezone;
     private final List<String> groupBy;
     private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
     // required by the Percentile query
-    private final Double percentile;  // 0-100 with two decimal places of precision for example, 99.99
+    private final Double percentile; // 0-100 with two decimal places of precision for example, 99.99
 
     /**
      * Constructs the map to pass to the JSON handler, so that the proper required
@@ -52,6 +53,12 @@ public class Query extends KeenQueryRequest {
 
         if (interval != null) {
             queryArgs.put(KeenQueryConstants.INTERVAL, interval);
+        }
+
+        // This will be overwritten by the timeframe if provided. Timezone is only applicable for
+        // a relative timeframe, and so this property will go away in the future.
+        if (timezone != null) {
+            queryArgs.put(KeenQueryConstants.TIMEZONE, timezone);
         }
 
         if (groupBy != null) {
@@ -137,6 +144,7 @@ public class Query extends KeenQueryRequest {
         this.eventCollection = builder.eventCollection;
         this.targetProperty = builder.targetProperty;
         this.interval = builder.interval;
+        this.timezone = builder.timezone;
         this.groupBy = builder.groupBy;
         this.maxAge = builder.maxAge;
         this.percentile = builder.percentile;
@@ -187,11 +195,12 @@ public class Query extends KeenQueryRequest {
         private String targetProperty;
 
         // required by the Percentile query
-        private Double percentile;    // 0-100 with two decimal places of precision for example, 99.99
+        private Double percentile;    // 0-100, two decimal places of precision for example, 99.99
 
         // optional
         private Collection<Filter> filters;
         private String interval;
+        private String timezone;
         private List<String> groupBy;
         private Integer maxAge;
 
@@ -205,16 +214,14 @@ public class Query extends KeenQueryRequest {
          * @return a collection of filters.
          */
         public List<Map<String, Object>> getFilters() {
-            
             RequestParameterCollection<Filter> requestFilterCollection = new RequestParameterCollection<Filter>(filters);
-            
             Collection<Object> requestObjects = requestFilterCollection.constructParameterRequestArgs();
-            
             List<Map<String, Object>> result = new LinkedList<Map<String, Object>>();
+
             for (Object object : requestObjects) {
                 result.add((Map<String, Object>)object);
             }
-            
+
             return result;
         }
 
@@ -223,12 +230,31 @@ public class Query extends KeenQueryRequest {
          *
          * @param filters the filter arguments.
          */
-        public void setFilters(Collection<? extends Filter> filters) {
+        public void setFilters(Collection<? extends Map<String, Object>> filters) {
             this.filters = null;
 
             // Client code may just be clearing all the filters.
             if (null != filters) {
-                withFilters(filters);  // Shallow copy the list of steps
+                // Shallow copy the list of filters
+                for (Map<String, Object> filter : filters) {
+                    // Extract filter info from the Map.
+                    String propertyName = (String)filter.get(KeenQueryConstants.PROPERTY_NAME);
+
+                    FilterOperator filterOperator = null;
+                    Object rawFilterOperator = filter.get(KeenQueryConstants.OPERATOR);
+
+                    if (rawFilterOperator instanceof FilterOperator) {
+                        filterOperator = (FilterOperator)rawFilterOperator;
+                    } else if (rawFilterOperator instanceof String) {
+                        filterOperator = FilterOperator.valueOf((String)rawFilterOperator);
+                    } else {
+                        throw new KeenQueryClientException("Incorrect type for filter operator.");
+                    }
+
+                    Object propertyValue = filter.get(KeenQueryConstants.PROPERTY_VALUE);
+
+                    addFilter(propertyName, filterOperator, propertyValue);
+                }
             }
         }
 
@@ -238,13 +264,8 @@ public class Query extends KeenQueryRequest {
          * @param filters the filter arguments.
          * @return This instance (for method chaining).
          */
-        public Builder withFilters(Collection<? extends Filter> filters) {
-            // Add each filter to the list of filters, appending to anything
-            // that already exists.
-            for (Filter filter : filters) {
-                addFilter(filter);
-            }
-
+        public Builder withFilters(Collection<? extends Map<String, Object>> filters) {
+            setFilters(filters);
             return this;
         }
 
@@ -366,6 +387,28 @@ public class Query extends KeenQueryRequest {
          */
         public Builder withInterval(String interval) {
             setInterval(interval);
+            return this;
+        }
+
+        /**
+        * get timezone
+        * @return the timezone.
+        */
+        public String getTimezone() { return timezone; }
+
+        /**
+        * Set timezone
+        * @param timezone the timezone.
+        */
+        public void setTimezone(String timezone) { this.timezone = timezone; }
+
+        /**
+        * Set timezone
+        * @param timezone the timezone.
+        * @return This instance (for method chaining).
+        */
+        public Builder withTimezone(String timezone) {
+            setTimezone(timezone);
             return this;
         }
 

@@ -91,7 +91,9 @@ public class MultiAnalysis extends CollectionAnalysis {
 
             // Client code may just be clearing all the analyses.
             if (null != subAnalyses) {
-                withSubAnalyses(subAnalyses);
+                for (SubAnalysis subAnalysis : subAnalyses) {
+                    addSubAnalysis(subAnalysis);
+                }
             }
         }
 
@@ -106,10 +108,7 @@ public class MultiAnalysis extends CollectionAnalysis {
                 throw new IllegalArgumentException("The 'subAnalyses' parameter cannot be null.");
             }
 
-            // Add each sub-analysis to the list, appending to anything that already exists.
-            for (SubAnalysis subAnalysis : subAnalyses) {
-                addSubAnalysis(subAnalysis);
-            }
+            setSubAnalyses(subAnalyses);
 
             return this;
         }
@@ -136,13 +135,9 @@ public class MultiAnalysis extends CollectionAnalysis {
             }
 
             if (null == this.subAnalyses) {
-                // No point in specifying one twice. Though obviously for now, since SubAnalysis
-                // has no custom equality, this won't prevent the user from specifying two different
-                // instances representing the exact same analysis. That said, even if the JSON
-                // implementation allowed two sub-analyses with the same key name, the back end will
-                // just return one, and that'd be pointless anyway. Ideally this builder could warn
-                // the client dev in validateParams() that one of their sub-analyses will be
-                // ignored, which likely highlights an error in client code.
+                // Use a HashSet to only allow a single occurrence of a given sub-analysis. For now,
+                // this isn't fully functional because SubAnalysis has no custom equality. Going
+                // forward, we can add custom equality and warn client code of repeats.
                 this.subAnalyses = new HashSet<SubAnalysis>();
             }
 
