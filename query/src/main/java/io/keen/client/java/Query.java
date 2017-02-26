@@ -35,7 +35,7 @@ public class Query extends KeenQueryRequest {
     private final Integer maxAge; // integer greater than 30 seconds: https://keen.io/docs/data-analysis/caching/
 
     // required by the Percentile query
-    private final Double percentile; // 0-100 with two decimal places of precision for example, 99.99
+    private final Double percentile; // 0-100, two decimal places of precision, e.g. 99.99
 
     /**
      * Constructs the map to pass to the JSON handler, so that the proper required
@@ -195,7 +195,7 @@ public class Query extends KeenQueryRequest {
         private String targetProperty;
 
         // required by the Percentile query
-        private Double percentile;    // 0-100, two decimal places of precision for example, 99.99
+        private Double percentile; // 0-100, two decimal places of precision, e.g. 99.99
 
         // optional
         private Collection<Filter> filters;
