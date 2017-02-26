@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -841,4 +842,12 @@ public class KeenClientTest {
         assertEquals(0, handleMap.size());
     }
 
+    @Test
+    public void testSdkVersion() {
+        String sdkVersion = KeenVersion.getSdkVersion();
+
+        assertNotNull(sdkVersion);
+        assertTrue(!sdkVersion.trim().isEmpty());
+        assertTrue(sdkVersion.matches("^(\\d+.\\d+.\\d+)"));
+    }
 }

@@ -553,6 +553,12 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.0.2
+
++ Add "Keen-Sdk" header for version tracking.
++ At merge time, an issue with Travis CI downloading Gradle over HTTPS caused
+  the CI build to fail on openjdk6, but those tests were run and do pass.
+
 ##### 5.0.1
 
 + Fixed bug in packaging; artifacts now correctly include transitive dependencies.
