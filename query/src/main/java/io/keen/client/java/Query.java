@@ -235,7 +235,7 @@ public class Query extends KeenQueryRequest {
 
             // Client code may just be clearing all the filters.
             if (null != filters) {
-                // Shallow copy the list of filters
+                // Grab individual properties out of the Map and construct the filters.
                 for (Map<String, Object> filter : filters) {
                     // Extract filter info from the Map.
                     String propertyName = (String)filter.get(KeenQueryConstants.PROPERTY_NAME);
@@ -308,11 +308,11 @@ public class Query extends KeenQueryRequest {
          * @param filter the filter to add to the list of filters.
          */
         public void addFilter(Filter filter) {
-            if (filters == null) {
-                filters = new LinkedList<Filter>();
+            if (this.filters == null) {
+                this.filters = new LinkedList<Filter>();
             }
 
-            filters.add(filter);
+            this.filters.add(filter);
         }
 
         /**
