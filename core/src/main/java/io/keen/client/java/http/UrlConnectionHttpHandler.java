@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 
 import io.keen.client.java.KeenUtils;
+import io.keen.client.java.KeenVersion;
 
 /**
  * This class provides a default implementation of {@link HttpHandler} using
@@ -66,6 +67,11 @@ public class UrlConnectionHttpHandler implements HttpHandler {
         connection.setRequestMethod(request.method);
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Authorization", request.authorization);
+
+        // If a different HttpHandler is used, we won't get this header. We would need to refactor
+        // to a delegation pattern to give the client code's HttpHandler a chance to process the
+        // Request first, then attach our custom headers, which would likely be a breaking change.
+        connection.setRequestProperty("Keen-Sdk", "java-" + KeenVersion.getSdkVersion());
 
         // If the request has a body, send it. Otherwise just connect.
         if (request.body != null) {

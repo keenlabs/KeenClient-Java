@@ -19,6 +19,7 @@ class KeenQueryConstants {
     static final String SUM = "sum";
     static final String SELECT_UNIQUE = "select_unique";
     static final String FUNNEL = "funnel";
+    static final String MULTI_ANALYSIS = "multi_analysis";
 
     // Query parameters
     static final String EVENT_COLLECTION = "event_collection";
@@ -58,7 +59,6 @@ class KeenQueryConstants {
     static final String ACTORS = "actors";
 
     // multi-analysis
-    static final String MULTI_ANALYSIS = "multi_analysis";
     static final String ANALYSES = "analyses";
     static final String ANALYSIS_TYPE = "analysis_type";
 

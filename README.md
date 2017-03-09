@@ -638,7 +638,13 @@ client.addEvent("collection-name", event, keenProperties);
 + SingleAnalysis does not yet replace the Query class, but will soon.
 + Timezone parameter is now built into RelativeTimeframe.
 + Query filters are now an unordered collection of instances of the new Filter class.
-+ Query.Builder.setFilters() now shallow copies the given collection of filters.
++ Query.Builder.setFilters() now copies the given Maps into a collection of Filter instances.
+
+##### 5.0.2
+
++ Add "Keen-Sdk" header for version tracking.
++ At merge time, an issue with Travis CI downloading Gradle over HTTPS caused
+  the CI build to fail on openjdk6, but those tests were run and do pass.
 
 ##### 5.0.1
 
