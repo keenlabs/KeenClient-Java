@@ -3,10 +3,10 @@ package io.keen.client.java;
 /**
  * Commonly used constants in the HTTP query request
  *
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0, 05/18/15
  */
-public class KeenQueryConstants {
+class KeenQueryConstants {
 
     // Query names
     static final String COUNT = "count";
@@ -18,6 +18,8 @@ public class KeenQueryConstants {
     static final String PERCENTILE_RESOURCE = "percentile";
     static final String SUM = "sum";
     static final String SELECT_UNIQUE = "select_unique";
+    static final String FUNNEL = "funnel";
+    static final String MULTI_ANALYSIS = "multi_analysis";
 
     // Query parameters
     static final String EVENT_COLLECTION = "event_collection";
@@ -47,6 +49,18 @@ public class KeenQueryConstants {
     static final String CONTAINS = "contains";
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
+    
+    // funnel
+    static final String ACTOR_PROPERTY = "actor_property";
+    static final String STEPS = "steps";
+    static final String INVERTED = "inverted";
+    static final String OPTIONAL = "optional";
+    static final String WITH_ACTORS = "with_actors";
+    static final String ACTORS = "actors";
+
+    // multi-analysis
+    static final String ANALYSES = "analyses";
+    static final String ANALYSIS_TYPE = "analysis_type";
 
     // return
     static final String RESULT = "result";

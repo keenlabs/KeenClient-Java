@@ -35,4 +35,27 @@ public enum FilterOperator {
     public String toString() {
         return text;
     }
+
+    /**
+     * Provides the FilterOperator enum constant that corresponds to the given operator string. This
+     * is useful because the text representation, such as is provided by the overridden toString(),
+     * is different from the enum constant's name. e.g. - The text representation for GREATER_THAN
+     * is "gt".
+     *
+     * Also : FilterOperator.valueOf(FilterOperator.GREATER_THAN.name()) ==
+     *        FilterOperator.fromString(FilterOperator.GREATER_THAN.toString()) ==
+     *        FilterOperator.GREATER_THAN
+     *
+     * @param operator The string describing the filter operator, e.g. "ne" or "exists".
+     * @return The corresponding FilterOperator.
+     */
+    public static FilterOperator fromString(final String operator) {
+        for (FilterOperator op : FilterOperator.values()) {
+            if (op.toString().equals(operator)) {
+                return op;
+            }
+        }
+
+        return null;
+    }
 }

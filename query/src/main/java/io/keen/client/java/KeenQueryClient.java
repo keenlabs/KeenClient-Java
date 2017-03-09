@@ -7,6 +7,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -20,30 +22,32 @@ import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
 import io.keen.client.java.http.UrlConnectionHttpHandler;
 import io.keen.client.java.result.DoubleResult;
+import io.keen.client.java.result.FunnelResult;
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
 import io.keen.client.java.result.IntervalResultValue;
 import io.keen.client.java.result.ListResult;
 import io.keen.client.java.result.LongResult;
+import io.keen.client.java.result.MultiAnalysisResult;
 import io.keen.client.java.result.QueryResult;
 import io.keen.client.java.result.StringResult;
 
 /**
  * <p>
  * KeenQueryClient provides all of the functionality required to execute the basic queries
- * supported by the Data Analysis API: https://keen.io/docs/data-analysis/
- * <p> This include Count, Count Unique, Sum, Average, Maxiumum, Minimum, Median,
- * Percentile, and Select Unique. It does not include Extractions, Multi-Analysis, and Funnels.
+ * supported by the <a href="https://keen.io/docs/api/#analyses">Data Analysis API</a>.
+ * <p> This includes Count, Count Unique, Sum, Average, Maximum, Minimum, Median, Percentile,
+ * Select Unique, Funnel and Multi-Analysis. It does not include Extractions, Saved Queries or
+ * Query Caching.
  *
- * @author claireyoung
+ * @author claireyoung, baumatron, masojus
  * @since 1.0.0
  */
 public class KeenQueryClient {
-
     private static final String ENCODING = "UTF-8";
     private final KeenJsonHandler jsonHandler;
-    private final String baseUrl;
+    private final RequestUrlBuilder requestUrlBuilder;
     private final KeenProject project;
     private final HttpHandler httpHandler;
 
@@ -249,29 +253,59 @@ public class KeenQueryClient {
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *
-     * @param params     The {@link Query} information, including {@link QueryType}, required args, and any optional args.
+     * @param request     The {@link KeenQueryRequest} to be executed.
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public QueryResult execute(Query params) throws IOException {
+    public QueryResult execute(KeenQueryRequest request) throws IOException {
+        Map<String, Object> queryArgs = request.constructRequestArgs();
+        URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
 
-        // check parameters are valid
-        if (!params.areParamsValid()) {
-            throw new IllegalArgumentException("Keen Query parameters are insufficient. Please check Query API docs for required arguments.");
+        Map<String, Object> postResponse = postRequest(project, url, queryArgs);
+
+        QueryResult result = null;
+        boolean isFunnel = request instanceof Funnel;
+        boolean isMultiAnalysis = request instanceof MultiAnalysis;
+
+        // If the request was a funnel, construct the appropriate response including
+        // other response data that might be included, such as the 'actors' key.
+        if (isFunnel) {
+            result = constructFunnelResult(postResponse);
+        } else {
+            final Collection<String> groupByParams = request.groupedResponseExpected() ?
+                    request.getGroupByParams() : Collections.<String>emptyList();
+
+            // Construct a response for more generic query responses that
+            // don't include anything more of interest than the 'result'
+            // key
+            result = constructQueryResult(
+                    postResponse.get(KeenQueryConstants.RESULT),
+                    request.groupedResponseExpected(),
+                    request.intervalResponseExpected(),
+                    isMultiAnalysis,
+                    groupByParams);
         }
 
-        // Construct Query parameter args and URL string.
-        Map<String, Object> allQueryArgs = params.constructQueryArgs();
-        String urlString = formatBaseURL(params.getQueryType().toString());
-        URL url = new URL(urlString);
-
-        // post request and construct QueryResult.
-        Object postResult = postRequest(project, url, allQueryArgs);
-        return constructQueryResult(postResult, params.hasGroupBy(), params.hasInterval());
+        return result;
     }
 
-    private static QueryResult constructQueryResult(Object input, boolean isGroupBy, boolean isInterval) {
+    private static QueryResult constructQueryResult(Object input,
+                                                    boolean isGroupBy,
+                                                    boolean isInterval) {
+        return constructQueryResult(input, isGroupBy, isInterval, false, Collections.<String>emptyList());
+    }
+
+    private static QueryResult constructQueryResult(Object input,
+                                                    boolean isGroupBy,
+                                                    boolean isInterval,
+                                                    boolean isMultiAnalysis,
+                                                    Collection<String> groupByParams) {
+        if (isGroupBy && (null == groupByParams || groupByParams.isEmpty())) {
+            throw new IllegalArgumentException(
+                    "If we expect a GroupByResult, then 'groupByParams' are required.");
+        }
+
         QueryResult result = null;
 
         // below code determines what type of object QueryResult holds.
@@ -284,101 +318,246 @@ public class KeenQueryClient {
             result = new DoubleResult((Double) input);
         } else if (input instanceof String) {
             result = new StringResult((String) input);
+        } else if (input instanceof Map) {
+            if (!isMultiAnalysis) {
+                throw new IllegalStateException("Received a JSON dictionary result when not " +
+                        "expecting a MultiAnalysisResult.");
+            }
+
+            result = constructMultiAnalysisResult(input);
         } else if (input instanceof List) {
 
-            // recursively construct the children of this...
-            List<Object> listInput = (ArrayList<Object>)input;
-
-            // if this is an IntervalResult, construct the IntervalResult object.
-            if (isInterval) {
-                result = constructIntervalResult(listInput, isGroupBy);
-            } else if (isGroupBy) {
-                // if this is a GroupByResult, construct the GroupByResult object.
-                // Note that if this is both an Interval and GroupBy, the GroupBy
-                // code will be called later from within constructIntervalResult()
-                result = constructGroupByResult(listInput);
-            } else {
-
-                // else if this is just a List of QueryResult objects - for example,
-                // Select Unique query returns a list of unique objects.
-                List<QueryResult> listOutput = new ArrayList<QueryResult>();
-                for (Object child : listInput) {
-                    QueryResult resultItem = constructQueryResult(child, false, false);
-                    listOutput.add(resultItem);
-                }
-                result = new ListResult(listOutput);
-            }
+            result = constructListResult(
+                    input,
+                    isGroupBy,
+                    isInterval,
+                    isMultiAnalysis,
+                    groupByParams
+            );
         }
 
         return result;
     }
 
-    private static IntervalResult constructIntervalResult(List<Object> intervals, boolean isGroupBy) {
+    private static QueryResult constructMultiAnalysisResult(Object input) {
+        // Multi-Analysis results:
+        // - Simple: just a single JSON object with each key matching the label of a
+        // sub-analysis that was specified in the 'analyses' field of the request.
+        // - Group By: a list of JSON objects, each of which has all the sub-analysis keys just
+        // like the simple result, plus a key(s) with the name(s) of the 'group_by'(s) as
+        // specified in the request. There is *not* a 'result' key here.
+        // - Interval : a list of interval results ('timeframe' and 'value' keys) where the
+        // 'value' is a JSON object just like a simple result.
+        // - Interval + Group By: a list of interval results ('timeframe' and 'value' keys)
+        // where the 'value' is a list of JSON objects just like a group by result.
+        Map<?, ?> inputMap = (Map)input;
+        Map<String, QueryResult> subAnalysesResults =
+                new HashMap<String, QueryResult>(inputMap.size());
+
+        for (Map.Entry<?, ?> entry : inputMap.entrySet()) {
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (!(key instanceof String)) {
+                throw new IllegalStateException("Somehow a parsed JSON key was not a String.");
+            }
+
+            if (value instanceof Map) {
+                throw new IllegalStateException("Somehow a parsed JSON value for a simple " +
+                        "MultiAnalysis result was a nested JSON dictionary.");
+            }
+
+            subAnalysesResults.put((String)key, constructQueryResult(value, false, false));
+        }
+
+        return new MultiAnalysisResult(subAnalysesResults);
+    }
+
+    private static QueryResult constructListResult(
+            Object input,
+            boolean isGroupBy,
+            boolean isInterval,
+            boolean isMultiAnalysis,
+            Collection<String> groupByParams) {
+
+        QueryResult result = null;
+        // recursively construct the children of this...
+        List<Object> listInput = (ArrayList<Object>)input;
+
+        // if this is an IntervalResult, construct the IntervalResult object.
+        if (isInterval) {
+            result = constructIntervalResult(
+                    listInput,
+                    isGroupBy,
+                    isMultiAnalysis,
+                    groupByParams
+            );
+        } else if (isGroupBy) {
+            // if this is a GroupByResult, construct the GroupByResult object.
+            // Note that if this is both an Interval and GroupBy, the GroupBy
+            // code will be called later from within constructIntervalResult()
+            result = constructGroupByResult(listInput, groupByParams, isMultiAnalysis);
+        } else {
+            // else if this is just a List of QueryResult objects - for example,
+            // Select Unique query returns a list of unique objects.
+            List<QueryResult> listOutput = new ArrayList<QueryResult>();
+            for (Object child : listInput) {
+                // We don't expect this list to contain nested GroupByResults.
+                QueryResult resultItem = constructQueryResult(child, false, false);
+                listOutput.add(resultItem);
+            }
+            result = new ListResult(listOutput);
+        }
+
+        return result;
+    }
+
+    private static IntervalResult constructIntervalResult(List<Object> intervals,
+                                                          boolean isGroupBy,
+                                                          boolean isMultiAnalysis,
+                                                          Collection<String> groupByParams) {
         List<IntervalResultValue> intervalResult = new ArrayList<IntervalResultValue>();
 
         for (Object child : intervals) {
             if (child instanceof Map) {
                 Map<String, Object> inputMap = (HashMap<String, Object>) child;
+
                 // If this is an interval, it should have keys "timeframe" and "value"
-                if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME) && (inputMap.containsKey(KeenQueryConstants.VALUE))) {
+                if (inputMap.containsKey(KeenQueryConstants.TIMEFRAME)
+                        && (inputMap.containsKey(KeenQueryConstants.VALUE))) {
                     AbsoluteTimeframe absoluteTimeframe;
                     Object timeframe = inputMap.get(KeenQueryConstants.TIMEFRAME);
+
                     if (timeframe instanceof Map) {
                         Map<String, String> hashTimeframe = (HashMap<String, String>) timeframe;
                         String start = hashTimeframe.get(KeenQueryConstants.START);
                         String end = hashTimeframe.get(KeenQueryConstants.END);
                         absoluteTimeframe = new AbsoluteTimeframe(start, end);
                     } else {
-                        throw new IllegalStateException("IntervalResult Timeframe should be instanceof Map. Instead, it is " + timeframe.getClass().getCanonicalName() + ".");
+                        throw new IllegalStateException("IntervalResult Timeframe should be" +
+                                "instanceof Map. Instead, it is " +
+                                timeframe.getClass().getCanonicalName() + ".");
                     }
 
                     Object value = inputMap.get(KeenQueryConstants.VALUE);
-                    QueryResult queryResultValue = constructQueryResult(value, isGroupBy, false);
+                    QueryResult queryResultValue =
+                            constructQueryResult(value, isGroupBy, false, isMultiAnalysis, groupByParams);
 
-                    intervalResult.add(new IntervalResultValue(absoluteTimeframe, queryResultValue));
+                    intervalResult.add(
+                            new IntervalResultValue(absoluteTimeframe, queryResultValue));
                 } else {
-                    throw new IllegalStateException("IntervalResult is missing \"" + KeenQueryConstants.TIMEFRAME + "\" and \"" + KeenQueryConstants.VALUE + "\" keys.");
+                    throw new IllegalStateException("IntervalResult is missing \"" +
+                            KeenQueryConstants.TIMEFRAME + "\" and \"" +
+                            KeenQueryConstants.VALUE + "\" keys.");
                 }
             } else {
-                throw new IllegalStateException("IntervalResult should be instanceof Map. Instead, it is " + child.getClass().getCanonicalName() + ".");
+                throw new IllegalStateException("IntervalResult should be instanceof Map. " +
+                        "Instead, it is " + child.getClass().getCanonicalName() + ".");
             }
         }
 
         return new IntervalResult(intervalResult);
     }
 
-    private static GroupByResult constructGroupByResult(List<Object> groups) {
+    private static GroupByResult constructGroupByResult(List<Object> groups,
+                                                        Collection<String> groupByParams,
+                                                        boolean isMultiAnalysis) {
         Map<Group, QueryResult> groupByResult = new HashMap<Group, QueryResult>();
 
         for (Object child : groups) {
             if (child instanceof Map) {
                 Map<String, Object> inputMap = (HashMap<String, Object>) child;
 
-                // If this is a GroupByResult, it should have key "result", along with properties to group by.
-                if (inputMap.containsKey(KeenQueryConstants.RESULT)) {
-                    QueryResult result = null;
-                    Map<String, Object> properties = new HashMap<String, Object>();
-                    for (String key : inputMap.keySet()) {
-                        if (key.equals(KeenQueryConstants.RESULT)) {
-                            // there should not be intervals nested inside GroupByResult's; only
-                            // the other way around.
-                            result = constructQueryResult(inputMap.get(key), false, false);
-                        } else {
-                            properties.put(key, inputMap.get(key));
-                        }
+                // Multi-Analysis group by results don't have a 'result' key. What's more, one
+                // can label a sub-analysis 'result' so instead of looking for the 'result' key
+                // just parse the entries into disjoint sets, one withs keys in the set of
+                // 'group_by' parameters that were in the request, which will be the Group
+                // properties, and the rest as the result(s) set.
+                Map<String, Object> properties = new HashMap<String, Object>();
+                Map<String, Object> results = new HashMap<String, Object>();
+
+                for (Map.Entry<String, Object> entry : inputMap.entrySet()) {
+                    if (groupByParams.contains(entry.getKey())) {
+                        properties.put(entry.getKey(), entry.getValue());
+                    } else {
+                        results.put(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                // In either case there should not be intervals or groups nested inside
+                // GroupByResults but GroupByResults *can* be nested inside IntervalResults.
+                QueryResult result;
+
+                if (0 == results.size()) {
+                    throw new IllegalStateException("There were no results in the GroupBy result.");
+                } else if (isMultiAnalysis) {
+                    // For Multi-Analysis, pass the entire dictionary of sub-analyses results.
+                    result = constructQueryResult(
+                            results,
+                            false,
+                            false,
+                            isMultiAnalysis,
+                            groupByParams);
+                } else {
+                    if (!results.containsKey(KeenQueryConstants.RESULT)) {
+                        throw new IllegalStateException("Single Analysis GroupBy result is " +
+                                "missing \"" + KeenQueryConstants.RESULT + "\" key.");
                     }
 
-                    Group groupBy = new Group(properties);
-                    groupByResult.put(groupBy, result);
-                } else {
-                    throw new IllegalStateException("GroupBy result is missing \"" + KeenQueryConstants.RESULT + "\" key.");
+                    // For Single Analysis, peel out the 'result' key's value and put that in the
+                    // GroupByResult.
+                    result = constructQueryResult(
+                            results.get(KeenQueryConstants.RESULT), false, false);
                 }
+
+                Group groupBy = new Group(properties);
+                groupByResult.put(groupBy, result);
             } else {
-                throw new IllegalStateException("GroupBy result should be instanceof Map. Instead, it is " + child.getClass().getCanonicalName() + ".");
+                throw new IllegalStateException("GroupBy result should be instanceof Map. " +
+                        "Instead, it is " + child.getClass().getCanonicalName() + ".");
             }
         }
 
         return new GroupByResult(groupByResult);
+    }
+
+    /**
+     * Constructs a FunnelResult from a response object map. This map should include
+     * a 'result' key and may include an optional 'actors' key as well.
+     *
+     * @param responseMap The server response, deserialized to a Map<String, Object>
+     * @return A FunnelResult instance.
+     */
+    private static FunnelResult constructFunnelResult(Map<String, Object> responseMap) {
+
+        // Create a result for the 'result' field of the funnel response. FunnelResult won't contain
+        // intervals or groups, as those parameters aren't supported for Funnel.
+        QueryResult funnelResult = constructQueryResult(
+            responseMap.get(KeenQueryConstants.RESULT),
+            false,
+            false);
+
+        if (!(funnelResult instanceof ListResult)) {
+            throw new KeenQueryClientException("'result' property of response contained data of an unexpected format.");
+        }
+
+        ListResult actorsResult = null;
+        // Check for any additional result data that has been returned and include it with the result.
+        if (responseMap.containsKey(KeenQueryConstants.ACTORS))
+        {
+            QueryResult genericActorsResult = constructQueryResult(
+                responseMap.get(KeenQueryConstants.ACTORS),
+                false,
+                false);
+
+            if (!(genericActorsResult instanceof ListResult)) {
+                throw new KeenQueryClientException("'actors' property of response contained data of an unexpected format.");
+            }
+
+            actorsResult = (ListResult)genericActorsResult;
+        }
+
+        return new FunnelResult((ListResult)funnelResult, actorsResult);
     }
 
     /**
@@ -394,7 +573,7 @@ public class KeenQueryClient {
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server.
      */
-    private Object postRequest(KeenProject project, URL url,
+    private Map<String, Object> postRequest(KeenProject project, URL url,
                                final Map<String, ?> requestData) throws IOException {
 
         // Build an output source which simply writes the serialized JSON to the output.
@@ -438,9 +617,8 @@ public class KeenQueryClient {
         Map<String, Object> responseMap;
         responseMap = this.jsonHandler.readJson(reader);
 
-        // Get the result object.
-        Object result = responseMap.get(KeenQueryConstants.RESULT);
-        if (result == null) {
+        // Check for an error code if no result was provided.
+        if (null == responseMap.get(KeenQueryConstants.RESULT)) {
             // double check if result is null because there's an error (shouldn't happen but let's check)
             if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
                 String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
@@ -458,16 +636,8 @@ public class KeenQueryClient {
             }
         }
 
-        return result;
-    }
-
-    private String formatBaseURL(String queryName) {
-        return String.format(Locale.US, "%s/%s/projects/%s/queries/%s",
-                baseUrl,
-                KeenConstants.API_VERSION,
-                project.getProjectId(),
-                queryName        // query name
-        );
+        // Return the entire response map
+        return responseMap;
     }
 
     private long queryResultToLong(QueryResult result) throws KeenQueryClientException {
@@ -505,7 +675,7 @@ public class KeenQueryClient {
         // Initialize final properties using the builder.
         this.httpHandler = builder.httpHandler;
         this.jsonHandler = builder.jsonHandler;
-        this.baseUrl = builder.baseUrl;
+        this.requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
         this.project = builder.project;
     }
 
@@ -521,7 +691,6 @@ public class KeenQueryClient {
      * @since 1.0.0
      */
     public static class Builder {
-
         private HttpHandler httpHandler;
         private KeenJsonHandler jsonHandler;
         private String baseUrl;
@@ -668,10 +837,9 @@ public class KeenQueryClient {
          * have been specified.
          *
          * @return A newly constructed Keen client.
-         *  @throws IllegalArgumentException when the project is null.
+         * @throws IllegalArgumentException when the project is null.
          */
         public KeenQueryClient build() {
-
             try {
                 if (httpHandler == null) {
                     httpHandler = getDefaultHttpHandler();
@@ -695,15 +863,16 @@ public class KeenQueryClient {
             if (baseUrl == null) {
                 baseUrl = KeenConstants.SERVER_ADDRESS;
             }
+
             return buildInstance();
         }
 
         /**
          * Builds an instance based on this builder.
+         * @return The new KeenQueryClient instance.
          */
         protected KeenQueryClient buildInstance() {
             return new KeenQueryClient(this);
         }
-
     }
 }

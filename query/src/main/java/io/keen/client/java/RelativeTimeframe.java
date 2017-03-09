@@ -13,14 +13,35 @@ import java.util.Map;
 public class RelativeTimeframe implements Timeframe {
 
     private final String relativeTimeframe;
+    private final String timezone;
 
     /**
-     * Construct an AbsoluteTimeframe with a specified start and end date/time.
+     * Construct a RelativeTimeframe with a specified relative time window.
      * @param relativeTimeframe the relative timeframe string, as specified by the API docs.
      *                          For example, "this_minute", "this_month", "this_year", etc.
      */
     public RelativeTimeframe(String relativeTimeframe) {
+        this(relativeTimeframe, null);
+    }
+
+    /**
+     * Construct a RelativeTimeframe with a specified relative time window, along with a
+     * timezone to use as an offset.
+     * @param relativeTimeframe the relative timeframe string, as specified by the API docs.
+     *                          For example, "this_minute", "this_month", "this_year", etc.
+     * @param timezone the timezone offset to use with the relative timeframe
+     */
+    public RelativeTimeframe(final String relativeTimeframe, final String timezone) {
+        if (null == relativeTimeframe || relativeTimeframe.trim().isEmpty()) {
+            throw new IllegalArgumentException("'relativeTimeframe' argument must be specified and not empty.");
+        }
+
         this.relativeTimeframe = relativeTimeframe;
+        if (null != timezone && !timezone.trim().isEmpty()) {
+            this.timezone = timezone;
+        } else {
+            this.timezone = null;
+        }
     }
 
     /**
@@ -29,7 +50,7 @@ public class RelativeTimeframe implements Timeframe {
      * @return  the relative timeframe.
      */
     public String getTimeframe() {
-        return relativeTimeframe;
+        return this.relativeTimeframe;
     }
 
     /**
@@ -39,12 +60,16 @@ public class RelativeTimeframe implements Timeframe {
      */
     @Override
     public Map<String, Object> constructTimeframeArgs() {
-        Map timeframe = new HashMap<String, Object>();
-        if (relativeTimeframe != null) {
-            timeframe.put(KeenQueryConstants.TIMEFRAME, relativeTimeframe);
-            return timeframe;
+        Map<String, Object> timeframe = new HashMap<String, Object>(3);
+
+        if (null != this.relativeTimeframe) {
+            timeframe.put(KeenQueryConstants.TIMEFRAME, this.relativeTimeframe);
         }
 
-        return null;
+        if (null != this.timezone) {
+            timeframe.put(KeenQueryConstants.TIMEZONE, this.timezone);
+        }
+
+        return timeframe;
     }
 }

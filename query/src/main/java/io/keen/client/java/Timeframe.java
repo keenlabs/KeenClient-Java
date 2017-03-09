@@ -20,5 +20,4 @@ public interface Timeframe {
      * @return  the Timeframe Json map to send in the query.
      */
     Map<String, Object> constructTimeframeArgs();
-
 }

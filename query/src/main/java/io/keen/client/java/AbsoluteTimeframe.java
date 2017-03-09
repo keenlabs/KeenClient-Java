@@ -46,16 +46,20 @@ public class AbsoluteTimeframe implements Timeframe {
      */
     @Override
     public Map<String, Object> constructTimeframeArgs() {
-        Map timeframe = null;
+        Map<String, Object> timeframe = null;
+
         if (start != null && end != null) {
-            Map absoluteTimeframe = new HashMap<String, Object>();
+            Map<String, Object> absoluteTimeframe = new HashMap<String, Object>(3);
+
             absoluteTimeframe.put(KeenQueryConstants.START, start);
             absoluteTimeframe.put(KeenQueryConstants.END, end);
 
-            timeframe = new HashMap<String, Object>();
+            timeframe = new HashMap<String, Object>(2);
             timeframe.put(KeenQueryConstants.TIMEFRAME, absoluteTimeframe);
+
             return timeframe;
         }
+
         return timeframe;
     }
 }

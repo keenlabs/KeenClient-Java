@@ -21,3 +21,10 @@ classes
 
 # configuration
 local.properties
+/.nb-gradle/
+
+# VS Code
+.browse.VC.db
+
+# NetBeans
+.nb-gradle-properties
