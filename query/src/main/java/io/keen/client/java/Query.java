@@ -236,6 +236,7 @@ public class Query extends KeenQueryRequest {
             // Client code may just be clearing all the filters.
             if (null != filters) {
                 // Grab individual properties out of the Map and construct the filters.
+                // Going forward, fully embrace the Filter abstraction and this won't be needed.
                 for (Map<String, Object> filter : filters) {
                     // Extract filter info from the Map.
                     String propertyName = (String)filter.get(KeenQueryConstants.PROPERTY_NAME);
@@ -246,7 +247,9 @@ public class Query extends KeenQueryRequest {
                     if (rawFilterOperator instanceof FilterOperator) {
                         filterOperator = (FilterOperator)rawFilterOperator;
                     } else if (rawFilterOperator instanceof String) {
-                        filterOperator = FilterOperator.valueOf((String)rawFilterOperator);
+                        // Use the custom fromString() instead of valueOf() since the filter strings
+                        // don't match the enum constant names.
+                        filterOperator = FilterOperator.fromString((String)rawFilterOperator);
                     } else {
                         throw new KeenQueryClientException("Incorrect type for filter operator.");
                     }
