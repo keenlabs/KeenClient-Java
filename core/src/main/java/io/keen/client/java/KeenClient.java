@@ -152,6 +152,12 @@ public class KeenClient {
             		new IllegalStateException("No project specified, but no default project found"));
             return;
         }
+
+        if (isDryRun) { // If dry run mode is on, we fake the event successful sending
+           handleSuccess(callback, project, eventCollection, event, keenProperties);
+           return;
+        }
+
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
@@ -661,6 +667,29 @@ public class KeenClient {
     }
 
     /**
+     * Gets whether or not the client is in the dry run mode.
+     *
+     * If true, all code will run normally, but no requests will be made to the server
+     *
+     * @return {@code true} if the client is in dry run mode; {@code false} if not.
+     */
+    public boolean isDryRun() {
+        return isDryRun;
+    }
+
+    /**
+     * Sets whether or not the client is in dry run mode.
+     *
+     * When in dry run mode, all requests to the server will be faked and treated as a success
+     *
+     * @param isDryRun {@code true} to make the dry run mode active, or {@code false} to make it
+     *                 inactive.
+     */
+    public void setDryRun(boolean isDryRun) {
+        this.isDryRun = isDryRun;
+    }
+
+    /**
       * Sets an HTTP proxy server configuration for this client.
       *
       * @param proxyHost The proxy hostname or IP address.
@@ -1158,6 +1187,7 @@ public class KeenClient {
     private final KeenNetworkStatusHandler networkStatusHandler;
     private final Object attemptsLock = new Object();
 
+    private boolean isDryRun = false;
     private boolean isActive = true;
     private boolean isDebugMode;
     private int maxAttempts = KeenConstants.DEFAULT_MAX_ATTEMPTS;
