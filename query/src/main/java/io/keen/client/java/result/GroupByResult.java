@@ -15,7 +15,6 @@ import java.util.Map;
  * @since 1.0.0, 07/06/15
  */
 public class GroupByResult extends QueryResult {
-
     private final Map<Group, QueryResult> results;
 
     /**

@@ -6,7 +6,6 @@ package io.keen.client.java;
  * @since 1.0.0
  */
 class Environment {
-
     /**
      * Gets the Keen Project ID from the system environment.
      *
@@ -43,5 +42,4 @@ class Environment {
     private String getValue(String name) {
         return System.getenv().get(name);
     }
-
 }

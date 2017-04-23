@@ -10,7 +10,6 @@ import java.util.List;
  * @since 1.0.0, 07/06/15
  */
 public class ListResult extends QueryResult {
-
     private final List<QueryResult> results;
 
     /**

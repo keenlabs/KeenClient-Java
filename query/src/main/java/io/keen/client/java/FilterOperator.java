@@ -3,11 +3,10 @@ package io.keen.client.java;
 /**
  * FilterOperator specifies the operator for the query filter.
  *
- * @author claireyoung
+ * @author claireyoung, masojus
  * @since 1.0.0, 07/24/15
  */
 public enum FilterOperator {
-
     EQUAL_TO(KeenQueryConstants.EQUAL_TO),
     NOT_EQUAL(KeenQueryConstants.NOT_EQUAL),
     LESS_THAN(KeenQueryConstants.LESS_THAN),
@@ -22,7 +21,7 @@ public enum FilterOperator {
 
     private final String text;
 
-    private FilterOperator(final String text) {
+    FilterOperator(final String text) {
         this.text = text;
     }
 

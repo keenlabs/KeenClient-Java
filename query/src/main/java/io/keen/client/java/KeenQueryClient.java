@@ -57,7 +57,7 @@ public class KeenQueryClient {
      * @return The {@link KeenProject}.
      */
     public KeenProject getProject() {
-        return this.project;
+        return project;
     }
 
     /**
@@ -132,7 +132,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double maximum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.MAXIMUM)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -153,7 +153,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double average(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.AVERAGE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -174,7 +174,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double median(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.MEDIAN)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -196,7 +196,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException  {
+    public double percentile(String eventCollection, String targetProperty, Double percentile, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.PERCENTILE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -218,7 +218,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public double sum(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.SUM)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -239,7 +239,7 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public QueryResult selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException  {
+    public QueryResult selectUnique(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
         Query queryParams = new Query.Builder(QueryType.SELECT_UNIQUE)
                 .withEventCollection(eventCollection)
                 .withTargetProperty(targetProperty)
@@ -326,7 +326,6 @@ public class KeenQueryClient {
 
             result = constructMultiAnalysisResult(input);
         } else if (input instanceof List) {
-
             result = constructListResult(
                     input,
                     isGroupBy,
@@ -373,12 +372,11 @@ public class KeenQueryClient {
         return new MultiAnalysisResult(subAnalysesResults);
     }
 
-    private static QueryResult constructListResult(
-            Object input,
-            boolean isGroupBy,
-            boolean isInterval,
-            boolean isMultiAnalysis,
-            Collection<String> groupByParams) {
+    private static QueryResult constructListResult(Object input,
+                                                   boolean isGroupBy,
+                                                   boolean isInterval,
+                                                   boolean isMultiAnalysis,
+                                                   Collection<String> groupByParams) {
 
         QueryResult result = null;
         // recursively construct the children of this...
@@ -673,10 +671,10 @@ public class KeenQueryClient {
      */
     protected KeenQueryClient(Builder builder) {
         // Initialize final properties using the builder.
-        this.httpHandler = builder.httpHandler;
-        this.jsonHandler = builder.jsonHandler;
-        this.requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
-        this.project = builder.project;
+        httpHandler = builder.httpHandler;
+        jsonHandler = builder.jsonHandler;
+        requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
+        project = builder.project;
     }
 
     /**
@@ -697,7 +695,7 @@ public class KeenQueryClient {
         private KeenProject project;
 
         /**
-         * Builder to create a KeenQueryClient with {@link KeenProject} .
+         * Builder to create a KeenQueryClient with {@link KeenProject}.
          *
          * @param project The {@link KeenProject} to use.
          */
@@ -797,7 +795,7 @@ public class KeenQueryClient {
          *
          * @return The base URL to use.
          */
-        public String getBaseURL() { return this.baseUrl; }
+        public String getBaseURL() { return baseUrl; }
 
         /**
          * Sets the Base URL to use for queries.
@@ -822,7 +820,7 @@ public class KeenQueryClient {
          *
          * @return The {@link KeenProject}.
          */
-        public KeenProject getKeenProject() { return this.project; }
+        public KeenProject getKeenProject() { return project; }
 
         /**
          * Sets the {@link KeenProject} to use for queries.

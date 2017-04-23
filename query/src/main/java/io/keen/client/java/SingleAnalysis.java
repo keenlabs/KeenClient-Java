@@ -80,7 +80,7 @@ public class SingleAnalysis extends CollectionAnalysis {
 
     /**
     * This builder class helps configure the required and optional parameters that are appropriate
-    * for a MultiAnalysis.
+    * for a SingleAnalysis.
     */
     public static class Builder extends CollectionAnalysis.Builder<Builder> {
         // required

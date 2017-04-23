@@ -72,5 +72,4 @@ public class KeenUtils {
 
         return new String(hexChars);
     }
-
 }

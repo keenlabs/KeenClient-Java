@@ -98,7 +98,7 @@ public class SubAnalysis extends RequestParameter<Map<String, Object>> {
     @Override
     Map<String, Object> constructParameterRequestArgs() {
         // The label needs to be the key and this object is the value. Unfortunately that means
-        // whatever parent object calls this needs to know to use this label is the key.
+        // whatever parent object calls this needs to know to use this label as the key.
         // We could fix this by changing RequestParameter's interface to take the outer Map<> as a
         // parameter, and then each RequestParameter would know whether to add a Map<> or a
         // Collection<> or just add a (K, V).

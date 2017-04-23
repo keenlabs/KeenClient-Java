@@ -7,7 +7,6 @@ package io.keen.client.java;
  * @since 1.0.0, 05/18/15
  */
 class KeenQueryConstants {
-
     // Query names
     static final String COUNT = "count";
     static final String COUNT_UNIQUE = "count_unique";
@@ -49,7 +48,7 @@ class KeenQueryConstants {
     static final String CONTAINS = "contains";
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
-    
+
     // funnel
     static final String ACTOR_PROPERTY = "actor_property";
     static final String STEPS = "steps";

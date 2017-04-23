@@ -14,16 +14,15 @@ import io.keen.client.java.exceptions.KeenQueryClientException;
  * @author baumatron
  */
 public class Funnel extends KeenQueryRequest {
-
     // Required parameters
     private final RequestParameterCollection<FunnelStep> steps;
-    
+
     // Optional parameters
     // Timeframe must be specified either on the Funnel, or for each
-    // FunnelStep. If specified for the Funnel, it can be overriden
+    // FunnelStep. If specified for the Funnel, it can be overridden
     // in the FunnelSteps
     private final Timeframe timeframe;
-    
+
     /**
      * Private constructor for a Funnel, called by Funnel.Builder. To create a
      * funnel, use an instance of the Funnel.Builder class.
@@ -34,7 +33,7 @@ public class Funnel extends KeenQueryRequest {
         if (null == builder.steps || builder.steps.isEmpty()) {
             throw new IllegalArgumentException("Funnel parameter builder.steps must be provided.");
         }
-        
+
         if (null != builder.timeframe) {
             this.timeframe = builder.timeframe;
         } else {
@@ -49,7 +48,7 @@ public class Funnel extends KeenQueryRequest {
                 }
             }
         }
-        
+
         // Validate step properties that cannot be true for the first funnel step
         FunnelStep firstStep = builder.steps.get(0);
         
@@ -58,13 +57,13 @@ public class Funnel extends KeenQueryRequest {
             throw new IllegalArgumentException(
                 "First step in funnel cannot have special parameter 'inverted' set to true.");
         }
-        
+
         if (null != firstStep.getOptional() &&
             true == firstStep.getOptional()) {
             throw new IllegalArgumentException(
                 "First step in funnel cannot have special parameter 'optional' set to true.");
         }
-        
+
         // The steps in the Builder are ordered, so the request params will be too.
         this.steps = new RequestParameterCollection<FunnelStep>(builder.steps);
     }
@@ -78,7 +77,8 @@ public class Funnel extends KeenQueryRequest {
      * @throws KeenQueryClientException Thrown if there are errors formatting the URL.
      */
     @Override
-    URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
+    URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId)
+            throws KeenQueryClientException {
         return urlBuilder.getAnalysisUrl(projectId, KeenQueryConstants.FUNNEL);
     }
 
@@ -90,13 +90,13 @@ public class Funnel extends KeenQueryRequest {
     @Override
     Map<String, Object> constructRequestArgs() {
         Map<String, Object> args = new HashMap<String, Object>();
-        
+
         args.put(KeenQueryConstants.STEPS, this.steps.constructParameterRequestArgs());
-        
+
         if (null != this.timeframe) {
             args.putAll(timeframe.constructTimeframeArgs());
         }
-        
+
         return args;
     }
 
@@ -105,14 +105,14 @@ public class Funnel extends KeenQueryRequest {
 
     @Override
     boolean intervalResponseExpected() { return false; }
-    
+
     /**
      * Builder for creating a Funnel query.
      */
     public static class Builder {
         private List<FunnelStep> steps;
         private Timeframe timeframe;
-        
+
         /**
          * Set the list of funnel steps. Existing steps will be lost.
          * 
@@ -182,7 +182,7 @@ public class Funnel extends KeenQueryRequest {
             if (null == this.steps) {
                 this.steps = new ArrayList<FunnelStep>();
             }
-            
+
             this.steps.add(step);
         }
         
@@ -208,9 +208,10 @@ public class Funnel extends KeenQueryRequest {
          */
         public Builder withTimeframe(Timeframe timeframe) {
             if (null != this.timeframe) {
-                throw new IllegalStateException("'withTimeframe' called, but a Timeframe instance has already been set.");
+                throw new IllegalStateException("'withTimeframe' called, but a Timeframe " +
+                                                "instance has already been set.");
             }
-            
+
             setTimeframe(timeframe);
             return this;
         }

@@ -15,9 +15,9 @@ abstract class KeenQueryRequest {
     abstract URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException;
     
     abstract Map<String, Object> constructRequestArgs();
-    
+
     abstract boolean groupedResponseExpected();
-    
+
     abstract boolean intervalResponseExpected();
 
     Collection<String> getGroupByParams() {

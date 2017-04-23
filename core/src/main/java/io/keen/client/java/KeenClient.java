@@ -148,8 +148,12 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties,
-            		new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException("No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -212,14 +216,19 @@ public class KeenClient {
                               final Map<String, Object> event,
                               final Map<String, Object> keenProperties,
                               final KeenCallback callback) {
-
         if (!isActive) {
             handleLibraryInactive(callback);
             return;
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException(
+                                  "No project specified, but no default project found"));
             return;
         }
         final KeenProject useProject = (project == null ? defaultProject : project);
@@ -289,7 +298,13 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException(
+                                  "No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -1549,13 +1564,19 @@ public class KeenClient {
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
      *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
-    private void handleSuccess(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
-			Map<String, Object> keenProperties) {
-    	handleSuccess(callback);
+    private void handleSuccess(KeenCallback callback,
+                               KeenProject project,
+                               String eventCollection,
+                               Map<String, Object> event,
+                               Map<String, Object> keenProperties) {
+        handleSuccess(callback);
         if (callback != null) {
             try {
                 if(callback instanceof KeenDetailedCallback){
-                	((KeenDetailedCallback)callback).onSuccess(project, eventCollection, event, keenProperties);
+                    ((KeenDetailedCallback)callback).onSuccess(project,
+                                                               eventCollection,
+                                                               event,
+                                                               keenProperties);
                 }
             } catch (Exception userException) {
                 // Do nothing.
@@ -1590,7 +1611,7 @@ public class KeenClient {
             }
         }
     }
-    
+
     /**
      * Handles a failure in the Keen library. If the client is running in debug mode, this will
      * immediately throw a runtime exception. Otherwise, this will log an error message and, if the
@@ -1608,8 +1629,12 @@ public class KeenClient {
      *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param e        The exception which caused the failure.
      */
-    private void handleFailure(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
-    			Map<String, Object> keenProperties, Exception e) {
+    private void handleFailure(KeenCallback callback,
+                               KeenProject project,
+                               String eventCollection,
+                               Map<String, Object> event,
+                               Map<String, Object> keenProperties,
+                               Exception e) {
         if (isDebugMode) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -1617,13 +1642,17 @@ public class KeenClient {
                 throw new RuntimeException(e);
             }
         } else {
-        	handleFailure(callback, e);
-        	
+            handleFailure(callback, e);
+
             KeenLogging.log("Encountered error: " + e.getMessage());
             if (callback != null) {
                 try {
                     if(callback instanceof KeenDetailedCallback){
-                    	((KeenDetailedCallback)callback).onFailure(project, eventCollection, event, keenProperties, e);
+                        ((KeenDetailedCallback)callback).onFailure(project,
+                                                                   eventCollection,
+                                                                   event,
+                                                                   keenProperties,
+                                                                   e);
                     }
                 } catch (Exception userException) {
                     // Do nothing.
@@ -1660,7 +1689,7 @@ public class KeenClient {
         KeenUtils.closeQuietly(reader);
         return event;
     }
-    
+
     /**
      * Gets the map of attempt counts from the eventStore
      *
