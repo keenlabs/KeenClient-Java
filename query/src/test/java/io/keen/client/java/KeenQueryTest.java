@@ -382,7 +382,7 @@ public class KeenQueryTest extends KeenQueryTestBase {
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.WITHIN, "INVALID")
                 .build();
 
-        QueryResult result = queryClient.execute(queryParams);
+        queryClient.execute(queryParams);
     }
 
     @Test(expected=ServerException.class)
@@ -394,7 +394,7 @@ public class KeenQueryTest extends KeenQueryTestBase {
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.WITHIN, "INVALID")
                 .build();
 
-        QueryResult result = queryClient.execute(queryParams);
+        queryClient.execute(queryParams);
     }
     
     @Test

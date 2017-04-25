@@ -14,7 +14,6 @@ import java.io.IOException;
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
-import io.keen.client.java.result.QueryResult;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * TODO : Fill in comments in this file
+ * Base class for tests in the 'query' module.
  *
  * @author masojus
  */
@@ -76,7 +75,7 @@ public class KeenQueryTestBase {
 
     String mockCaptureCountQueryRequest(KeenQueryRequest inputParams) throws Exception {
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        QueryResult result = queryClient.execute(inputParams);
+        queryClient.execute(inputParams);
 
         verify(mockHttpHandler).execute(capturedRequest.capture());
         Request request = capturedRequest.getValue();

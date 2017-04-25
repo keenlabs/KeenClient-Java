@@ -9,7 +9,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,16 +23,14 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 
 /**
- * TODO : Fill in comments in this file
+ * Test the Funnel query functionality.
  *
  * @author baumatron, masojus
  */
 public class FunnelTest extends KeenQueryTestBase {
 
     private FilterOperator stringToFilterOperator(String operator) {
-        FilterOperator result = FilterOperator.fromString(operator);
-
-        return result;
+        return FilterOperator.fromString(operator);
     }
 
     private List<FunnelStep> buildFunnelStepsFromRequestJson(JsonNode requestJson) {
@@ -42,10 +39,8 @@ public class FunnelTest extends KeenQueryTestBase {
 
         // Construct a list of funnel steps based on provided data
         List<FunnelStep> funnelSteps = new ArrayList<FunnelStep>();
-        Iterator<JsonNode> stepsIterator = stepsJson.iterator();
-        while (stepsIterator.hasNext()) {
-            JsonNode stepJson = stepsIterator.next();
 
+        for (JsonNode stepJson : stepsJson) {
             Timeframe timeframe = null;
             List<Filter> filters = null;
             Boolean inverted = null;
@@ -69,9 +64,8 @@ public class FunnelTest extends KeenQueryTestBase {
 
             if (stepJson.has(KeenQueryConstants.FILTERS)) {
                 JsonNode filterListJson = stepJson.get(KeenQueryConstants.FILTERS);
-                Iterator<JsonNode> filterJsonIterator = filterListJson.iterator();
-                while (filterJsonIterator.hasNext()) {
-                    JsonNode filterJson = filterJsonIterator.next();
+
+                for (JsonNode filterJson : filterListJson) {
                     if (null == filters) {
                         filters = new LinkedList<Filter>();
                     }
@@ -285,7 +279,7 @@ public class FunnelTest extends KeenQueryTestBase {
 
         boolean threwCorrectExceptionType = false;
         try {
-            Funnel funnel = new Funnel.Builder()
+            new Funnel.Builder()
                     .withStep(funnelSteps.get(0))
                     .withSteps(funnelSteps)
                     .build();
@@ -293,6 +287,8 @@ public class FunnelTest extends KeenQueryTestBase {
                          "combined with withSteps.");
         } catch (KeenQueryClientException keenException) {
             threwCorrectExceptionType = true;
+        } catch (Exception e) {
+            threwCorrectExceptionType = false;
         }
         assertTrue(threwCorrectExceptionType);
     }
@@ -423,7 +419,7 @@ public class FunnelTest extends KeenQueryTestBase {
     @Test
     public void testFunnelWithInvalidTimeframeConfiguration() throws Exception {
         exception.expect(IllegalArgumentException.class);
-        Funnel funnel = new Funnel.Builder()
+        new Funnel.Builder()
                 .withStep(new FunnelStep("signed up", "visitor.guid"))
                 .withStep(new FunnelStep("completed profile", "user.guid"))
                 .withStep(new FunnelStep("referred user", "user.guid"))
@@ -433,7 +429,7 @@ public class FunnelTest extends KeenQueryTestBase {
     @Test
     public void testFunnelWithInvalidInvertedSpecialParameter() throws Exception {
         exception.expect(IllegalArgumentException.class);
-        Funnel funnel = new Funnel.Builder()
+        new Funnel.Builder()
                 .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days"), null, true, null, null))
                 .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")))
                 .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))
@@ -443,7 +439,7 @@ public class FunnelTest extends KeenQueryTestBase {
     @Test
     public void testFunnelWithInvalidOptionalSpecialParameter() throws Exception {
         exception.expect(IllegalArgumentException.class);
-        Funnel funnel = new Funnel.Builder()
+        new Funnel.Builder()
                 .withStep(new FunnelStep("signed up", "visitor.guid", new RelativeTimeframe("this_7_days"), null, null, true, null))
                 .withStep(new FunnelStep("completed profile", "user.guid", new RelativeTimeframe("this_7_days")))
                 .withStep(new FunnelStep("referred user", "user.guid", new RelativeTimeframe("this_7_days", "UTC")))

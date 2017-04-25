@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * TODO : Fill in comments in this file
+ * Test the MultiAnalysis query functionality.
  *
  * @author masojus
  */
