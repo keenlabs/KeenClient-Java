@@ -41,7 +41,7 @@ public class KeenQueryTestBase {
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key>");
+        TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key>", "<master key>");
     }
 
     @AfterClass

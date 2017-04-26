@@ -20,6 +20,11 @@ abstract class KeenQueryRequest {
     String getHttpMethod() {
         return HttpMethods.POST;
     }
+
+    String getAuthKey(KeenProject project) {
+        return project.getReadKey();
+    }
+
     abstract Map<String, Object> constructRequestArgs();
 
     abstract boolean groupedResponseExpected();

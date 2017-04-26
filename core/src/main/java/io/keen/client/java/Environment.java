@@ -1,8 +1,10 @@
 package io.keen.client.java;
 
 /**
- * Exists solely to provide an abstraction around environment variables so we can actually test them.
+ * Exists solely to provide an abstraction around environment variables so we can actually test
+ * them.
  *
+ * @author Kevin Litwack, masojus
  * @since 1.0.0
  */
 class Environment {
@@ -31,6 +33,15 @@ class Environment {
      */
     public String getKeenReadKey() {
         return getValue("KEEN_READ_KEY");
+    }
+
+    /**
+     * Gets the Keen read key from the system environment.
+     *
+     * @return The Keen read key.
+     */
+    public String getKeenMasterKey() {
+        return getValue("KEEN_MASTER_KEY");
     }
 
     /**
