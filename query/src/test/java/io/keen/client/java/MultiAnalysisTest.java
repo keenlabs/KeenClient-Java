@@ -625,6 +625,8 @@ public class MultiAnalysisTest extends KeenQueryTestBase {
     private ObjectNode getMultiAnalysisRequestNode(MultiAnalysis multiAnalysisParams)
             throws Exception {
         String requestString = mockCaptureCountQueryRequest(multiAnalysisParams);
+
+        // TODO : If we abstract this functionality out, maybe JsonNode is more appropriate.
         ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
 
         validateMultiAnalysisRequiredFields(requestNode);

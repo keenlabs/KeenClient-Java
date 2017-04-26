@@ -34,22 +34,22 @@ class RequestUrlBuilder {
     }
 
     /**
-     * Get a format URL for an analysis request.
+     * Get a formatted URL for an analysis request.
      * 
      * @param projectId The project id
-     * @param analysisName The analysis name
+     * @param analysisPath The analysis url sub-path
+     *
      * @return The complete URL.
      * @throws KeenQueryClientException
      */
-    URL getAnalysisUrl(String projectId, String analysisName) throws KeenQueryClientException {
+    URL getAnalysisUrl(String projectId, String analysisPath) throws KeenQueryClientException {
         try {
-            return new URL(String.format(
-                    Locale.US,
-                    "%s/%s/projects/%s/queries/%s",
-                    this.baseUrl,
-                    this.apiVersion,
-                    projectId,
-                    analysisName
+            return new URL(String.format(Locale.US,
+                                         "%s/%s/projects/%s/queries/%s",
+                                         this.baseUrl,
+                                         this.apiVersion,
+                                         projectId,
+                                         analysisPath
             ));
         } catch (MalformedURLException ex) {
             Logger.getLogger(RequestUrlBuilder.class.getName()).log(Level.SEVERE,

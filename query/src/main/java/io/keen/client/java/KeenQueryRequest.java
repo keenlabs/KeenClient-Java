@@ -25,6 +25,8 @@ abstract class KeenQueryRequest {
         return project.getReadKey();
     }
 
+    abstract String getAnalysisType();
+
     abstract Map<String, Object> constructRequestArgs();
 
     abstract boolean groupedResponseExpected();

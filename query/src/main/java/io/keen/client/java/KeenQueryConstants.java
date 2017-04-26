@@ -70,4 +70,13 @@ class KeenQueryConstants {
     // absolute timeframe
     static final String START = "start";
     static final String END = "end";
+
+    // Meta queries
+    static final String SAVED = "saved";
+    static final String DATASETS = "datasets";
+    static final String QUERY = "query";
+    static final String REFRESH_RATE = "refresh_rate";
+    static final String METADATA = "metadata";
+    static final String DISPLAY_NAME = "display_name";
+    static final String QUERY_NAME = "query_name";
 }

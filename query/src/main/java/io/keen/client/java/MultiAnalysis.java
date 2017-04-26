@@ -29,7 +29,12 @@ public class MultiAnalysis extends CollectionAnalysis {
     @Override
     URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId)
             throws KeenQueryClientException {
-        return urlBuilder.getAnalysisUrl(projectId, KeenQueryConstants.MULTI_ANALYSIS);
+        return urlBuilder.getAnalysisUrl(projectId, getAnalysisType());
+    }
+
+    @Override
+    String getAnalysisType() {
+        return KeenQueryConstants.MULTI_ANALYSIS;
     }
 
     @Override

@@ -34,7 +34,12 @@ public class SingleAnalysis extends CollectionAnalysis {
     @Override
     URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId)
             throws KeenQueryClientException {
-        return urlBuilder.getAnalysisUrl(projectId, this.queryType.toString());
+        return urlBuilder.getAnalysisUrl(projectId, getAnalysisType());
+    }
+
+    @Override
+    String getAnalysisType() {
+        return queryType.toString();
     }
 
     @Override

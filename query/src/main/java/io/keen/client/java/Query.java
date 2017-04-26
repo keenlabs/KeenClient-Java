@@ -159,10 +159,14 @@ public class Query extends KeenQueryRequest {
     }
 
     @Override
-    URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
-        return urlBuilder.getAnalysisUrl(
-            projectId,
-            this.queryType.toString());
+    URL getRequestURL(RequestUrlBuilder urlBuilder,
+                      String projectId) throws KeenQueryClientException {
+        return urlBuilder.getAnalysisUrl(projectId, getAnalysisType());
+    }
+
+    @Override
+    String getAnalysisType() {
+        return queryType.toString();
     }
 
     @Override

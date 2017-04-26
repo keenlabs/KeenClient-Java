@@ -255,18 +255,28 @@ public class KeenQueryClient {
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *
-     * @param request     The {@link KeenQueryRequest} to be executed.
+     * @param request The {@link KeenQueryRequest} to be executed.
      * @return The {@link QueryResult} result.
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public QueryResult execute(final KeenQueryRequest request) throws IOException {
+    public QueryResult execute(KeenQueryRequest request) throws IOException {
         Map<String, Object> response = getMapResponse(request);
 
         return rawMapResponseToQueryResult(request, response);
     }
 
-    Map<String, Object> getMapResponse(final KeenQueryRequest request) throws IOException {
+    /**
+     * Provides an implementation of {@link SavedQueries} for performing operations against
+     * the <a href="https://keen.io/docs/api/#saved-queries">Saved/Cached Query API</a> endpoints.
+     *
+     * @return The SavedQueries implementation.
+     */
+    public SavedQueries getSavedQueriesInterface() {
+        return new SavedQueriesImpl(this);
+    }
+
+    Map<String, Object> getMapResponse(KeenQueryRequest request) throws IOException {
         // Throw are runtime if the return type isn't as expected.
         // TODO : Throw a more specific exception
         @SuppressWarnings("unchecked")
@@ -275,7 +285,7 @@ public class KeenQueryClient {
         return response;
     }
 
-    List<Object> getListResponse(final KeenQueryRequest request) throws IOException {
+    List<Object> getListResponse(KeenQueryRequest request) throws IOException {
         // Throw are runtime if the return type isn't as expected.
         // TODO : Throw a more specific exception
         @SuppressWarnings("unchecked")
@@ -284,7 +294,7 @@ public class KeenQueryClient {
         return response;
     }
 
-    private <T> T getResponse(Class<T> containerType, final KeenQueryRequest request) throws IOException {
+    private <T> T getResponse(Class<T> containerType, KeenQueryRequest request) throws IOException {
         Object response = getResponse(request);
 
         if (!containerType.isAssignableFrom(response.getClass())) {
@@ -294,37 +304,53 @@ public class KeenQueryClient {
         return containerType.cast(response);
     }
 
-    QueryResult rawMapResponseToQueryResult(final KeenQueryRequest request,
-                                            final Map<String, Object> response) {
-        // TODO : Eventually moving it out of this class too might be a good plan, like Brian
-        // and I have previously discussed.
+    private QueryResult rawMapResponseToQueryResult(KeenQueryRequest request,
+                                                    Map<String, Object> response) {
+        // TODO : Eventually moving result parsing out of this class might be a good plan, like
+        // @baumatron and I have previously discussed.
 
-        QueryResult result;
-        boolean isFunnel = request instanceof Funnel;
+        boolean isGroupBy = request.groupedResponseExpected();
+        boolean isInterval = request.intervalResponseExpected();
         boolean isMultiAnalysis = request instanceof MultiAnalysis;
+        boolean isFunnel = request instanceof Funnel;
+
+        final Collection<String> groupByParams = request.groupedResponseExpected() ?
+                request.getGroupByParams() : Collections.<String>emptyList();
+
+        return rawMapResponseToQueryResult(response,
+                                           isGroupBy,
+                                           isInterval,
+                                           isMultiAnalysis,
+                                           isFunnel,
+                                           groupByParams);
+    }
+
+    QueryResult rawMapResponseToQueryResult(Map<String, Object> response,
+                                            boolean isGroupBy,
+                                            boolean isInterval,
+                                            boolean isMultiAnalysis,
+                                            boolean isFunnel,
+                                            Collection<String> groupByParams) {
+        QueryResult result;
 
         // If the request was a funnel, construct the appropriate response including
         // other response data that might be included, such as the 'actors' key.
         if (isFunnel) {
             result = constructFunnelResult(response);
         } else {
-            final Collection<String> groupByParams = request.groupedResponseExpected() ?
-                    request.getGroupByParams() : Collections.<String>emptyList();
-
             // Construct a response for more generic query responses that don't include anything
             // more of interest than the 'result' key
-            result = constructQueryResult(
-                    response.get(KeenQueryConstants.RESULT),
-                    request.groupedResponseExpected(),
-                    request.intervalResponseExpected(),
-                    isMultiAnalysis,
-                    groupByParams);
+            result = constructQueryResult(response.get(KeenQueryConstants.RESULT),
+                                          isGroupBy,
+                                          isInterval,
+                                          isMultiAnalysis,
+                                          groupByParams);
         }
 
         return result;
     }
 
-    private Object getResponse(final KeenQueryRequest request) throws IOException {
+    private Object getResponse(KeenQueryRequest request) throws IOException {
         Map<String, Object> queryArgs = request.constructRequestArgs();
         URL url = request.getRequestURL(requestUrlBuilder, project.getProjectId());
 
@@ -333,6 +359,7 @@ public class KeenQueryClient {
         Map<String, Object> wrappedResponse = sendRequest(url, httpMethod, authKey, queryArgs);
         Object response = wrappedResponse;
 
+        // TODO : Put this string somewhere shared like KeenJsonHandler/KeenUtils/KeenConstants.
         if (wrappedResponse.containsKey("io.keen.client.java.__fake_root")) {
             response = wrappedResponse.get("io.keen.client.java.__fake_root");
         }
