@@ -25,6 +25,7 @@ import io.keen.client.java.exceptions.InvalidEventException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.HttpMethods;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
@@ -1431,7 +1432,7 @@ public class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        Request request = new Request(url, "POST", writeKey, source, proxy);
+        Request request = new Request(url, HttpMethods.POST, writeKey, source, proxy);
         Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.

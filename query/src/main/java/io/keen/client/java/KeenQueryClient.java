@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +18,7 @@ import java.util.Map;
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.HttpMethods;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
@@ -258,29 +260,61 @@ public class KeenQueryClient {
      * @throws IOException If there was an error communicating with the server or
      * an error message received from the server.
      */
-    public QueryResult execute(KeenQueryRequest request) throws IOException {
-        Map<String, Object> queryArgs = request.constructRequestArgs();
-        URL url = request.getRequestURL(this.requestUrlBuilder, this.project.getProjectId());
+    public QueryResult execute(final KeenQueryRequest request) throws IOException {
+        Map<String, Object> response = getMapResponse(request);
 
-        Map<String, Object> postResponse = postRequest(project, url, queryArgs);
+        return rawMapResponseToQueryResult(request, response);
+    }
 
-        QueryResult result = null;
+    Map<String, Object> getMapResponse(final KeenQueryRequest request) throws IOException {
+        // Throw are runtime if the return type isn't as expected.
+        // TODO : Throw a more specific exception
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = getResponse(Map.class, request);
+
+        return response;
+    }
+
+    List<Object> getListResponse(final KeenQueryRequest request) throws IOException {
+        // Throw are runtime if the return type isn't as expected.
+        // TODO : Throw a more specific exception
+        @SuppressWarnings("unchecked")
+        List<Object> response = getResponse(List.class, request);
+
+        return response;
+    }
+
+    private <T> T getResponse(Class<T> containerType, final KeenQueryRequest request) throws IOException {
+        Object response = getResponse(request);
+
+        if (!containerType.isAssignableFrom(response.getClass())) {
+            throw new RuntimeException(); // TODO : More specific
+        }
+
+        return containerType.cast(response);
+    }
+
+    QueryResult rawMapResponseToQueryResult(final KeenQueryRequest request,
+                                            final Map<String, Object> response) {
+        // TODO : Eventually moving it out of this class too might be a good plan, like Brian
+        // and I have previously discussed.
+
+        QueryResult result;
         boolean isFunnel = request instanceof Funnel;
         boolean isMultiAnalysis = request instanceof MultiAnalysis;
 
         // If the request was a funnel, construct the appropriate response including
         // other response data that might be included, such as the 'actors' key.
         if (isFunnel) {
-            result = constructFunnelResult(postResponse);
+            result = constructFunnelResult(response);
         } else {
             final Collection<String> groupByParams = request.groupedResponseExpected() ?
                     request.getGroupByParams() : Collections.<String>emptyList();
 
-            // Construct a response for more generic query responses that
-            // don't include anything more of interest than the 'result'
-            // key
+            // Construct a response for more generic query responses that don't include anything
+            // more of interest than the 'result' key
             result = constructQueryResult(
-                    postResponse.get(KeenQueryConstants.RESULT),
+                    response.get(KeenQueryConstants.RESULT),
                     request.groupedResponseExpected(),
                     request.intervalResponseExpected(),
                     isMultiAnalysis,
@@ -290,10 +324,30 @@ public class KeenQueryClient {
         return result;
     }
 
+    private Object getResponse(final KeenQueryRequest request) throws IOException {
+        Map<String, Object> queryArgs = request.constructRequestArgs();
+        URL url = request.getRequestURL(requestUrlBuilder, project.getProjectId());
+
+        String httpMethod = request.getHttpMethod();
+        String authKey = request.getAuthKey(project);
+        Map<String, Object> wrappedResponse = sendRequest(url, httpMethod, authKey, queryArgs);
+        Object response = wrappedResponse;
+
+        if (wrappedResponse.containsKey("io.keen.client.java.__fake_root")) {
+            response = wrappedResponse.get("io.keen.client.java.__fake_root");
+        }
+
+        return response;
+    }
+
     private static QueryResult constructQueryResult(Object input,
                                                     boolean isGroupBy,
                                                     boolean isInterval) {
-        return constructQueryResult(input, isGroupBy, isInterval, false, Collections.<String>emptyList());
+        return constructQueryResult(input,
+                                    isGroupBy,
+                                    isInterval,
+                                    false,
+                                    Collections.<String>emptyList());
     }
 
     private static QueryResult constructQueryResult(Object input,
@@ -377,7 +431,6 @@ public class KeenQueryClient {
                                                    boolean isInterval,
                                                    boolean isMultiAnalysis,
                                                    Collection<String> groupByParams) {
-
         QueryResult result = null;
         // recursively construct the children of this...
         List<Object> listInput = (ArrayList<Object>)input;
@@ -468,7 +521,7 @@ public class KeenQueryClient {
 
                 // Multi-Analysis group by results don't have a 'result' key. What's more, one
                 // can label a sub-analysis 'result' so instead of looking for the 'result' key
-                // just parse the entries into disjoint sets, one withs keys in the set of
+                // just parse the entries into disjoint sets, one with keys in the set of
                 // 'group_by' parameters that were in the request, which will be the Group
                 // properties, and the rest as the result(s) set.
                 Map<String, Object> properties = new HashMap<String, Object>();
@@ -527,7 +580,6 @@ public class KeenQueryClient {
      * @return A FunnelResult instance.
      */
     private static FunnelResult constructFunnelResult(Map<String, Object> responseMap) {
-
         // Create a result for the 'result' field of the funnel response. FunnelResult won't contain
         // intervals or groups, as those parameters aren't supported for Funnel.
         QueryResult funnelResult = constructQueryResult(
@@ -559,69 +611,104 @@ public class KeenQueryClient {
     }
 
     /**
-     * Posts a request to the server in the specified project, using the given URL and request data.
+     * Sends a request to the server in this client's project, using the given URL and request
+     * data via the given HTTP method and authenticated with the given key.
+     *
      * The request data will be serialized into JSON using the client's
      * {@link io.keen.client.java.KeenJsonHandler}.
      *
-     * @param project     The project in which the event(s) will be published; this is used to
-     *                    determine the read key to use for authentication.
-     * @param url         The URL to which the POST should be sent.
+     * @param url         The URL to which the given data should be sent.
+     * @param method      The HTTP Method to use.
+     * @param authKey     The key to use for authentication of this request.
      * @param requestData The request data, which will be serialized into JSON and sent in the
      *                    request body.
+     *
      * @return The response from the server in the "result" map.
      * @throws IOException If there was an error communicating with the server.
      */
-    private Map<String, Object> postRequest(KeenProject project, URL url,
-                               final Map<String, ?> requestData) throws IOException {
+    private Map<String, Object> sendRequest(final URL url,
+                                            final String method,
+                                            final String authKey,
+                                            final Map<String, ?> requestData)
+            throws IOException {
+        boolean useOutputSource = true;
+
+        if (HttpMethods.GET.equals(method) || HttpMethods.DELETE.equals(method)) {
+            if (null != requestData && !requestData.isEmpty()) {
+                throw new IllegalStateException("Trying to send a GET request with a request " +
+                                                "body, which would result in sending a POST.");
+            }
+
+            useOutputSource = false;
+        }
 
         // Build an output source which simply writes the serialized JSON to the output.
-        OutputSource source = new OutputSource() {
+        OutputSource source = (!useOutputSource ? null : new OutputSource() {
             @Override
             public void writeTo(OutputStream out) throws IOException {
                 OutputStreamWriter writer = new OutputStreamWriter(out, ENCODING);
 
                 // in queries, requestData may be null.
-                if (requestData != null && requestData.size() != 0) {
+                if (requestData != null && !requestData.isEmpty()) {
                     jsonHandler.writeJson(writer, requestData);
                 }
             }
-        };
+        });
 
         // If logging is enabled, log the request being sent.
         if (KeenLogging.isLoggingEnabled()) {
             try {
-                StringWriter writer = new StringWriter();
-                jsonHandler.writeJson(writer, requestData);
-                String request = writer.toString();
-                KeenLogging.log(String.format(Locale.US, "Sent request '%s' to URL '%s'",
-                        request, url.toString()));
+                String request = "";
+
+                if (requestData != null && !requestData.isEmpty()) {
+                    StringWriter writer = new StringWriter();
+                    jsonHandler.writeJson(writer, requestData);
+                    request = writer.toString();
+                }
+
+                KeenLogging.log(String.format(Locale.US,
+                                              "Sent '%s' request '%s' to URL '%s'",
+                                              method,
+                                              request,
+                                              url.toString()));
             } catch (IOException e) {
-                KeenLogging.log("Couldn't log event written to file: ");
+                KeenLogging.log("Couldn't log request written to file: ");
                 e.printStackTrace();
             }
         }
 
         // Send the request.
-        String readkey = project.getReadKey();
-        Request request = new Request(url, "POST", readkey, source, null);
+        Request request = new Request(url, method, authKey, source, null);
         Response response = httpHandler.execute(request);
 
         if (!response.isSuccess()) {
             throw new ServerException(response.body);
         }
 
-        // Parse the response into a map.
-        StringReader reader = new StringReader(response.body);
+        if ((null == response.body || response.body.trim().isEmpty()) &&
+            HttpURLConnection.HTTP_NO_CONTENT != response.statusCode) {
+            throw new ServerException("Empty response when response was expected.");
+        }
+
         Map<String, Object> responseMap;
-        responseMap = this.jsonHandler.readJson(reader);
+
+        if (HttpURLConnection.HTTP_NO_CONTENT == response.statusCode) {
+            responseMap = Collections.emptyMap();
+        } else {
+            // Parse the response into a map.
+            StringReader reader = new StringReader(response.body);
+            responseMap = jsonHandler.readJson(reader);
+        }
 
         // Check for an error code if no result was provided.
         if (null == responseMap.get(KeenQueryConstants.RESULT)) {
-            // double check if result is null because there's an error (shouldn't happen but let's check)
+            // double check if result is null because there's an error (shouldn't happen)
             if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
                 String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
                 String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
 
+                // TODO : How could errorCode or message be null? The toString() calls would have
+                // thrown, plus the containsKey() would have return false in the case of errorCode.
                 String errorMessage = "Error response received from server";
                 if (errorCode != null) {
                     errorMessage += " " + errorCode;

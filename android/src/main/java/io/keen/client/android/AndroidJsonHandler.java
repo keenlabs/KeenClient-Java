@@ -41,6 +41,11 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         String json = readerToString(reader);
         try {
             JSONObject jsonObject = new JSONObject(json);
+
+            // TODO : Use fromJson() and check if instanceof Map or List, but then what should the
+            // return value be? Technically it could be a List or Map, so it should be Object, then
+            // client code would need to do the instanceof check. For now, so as to not break the
+            // KeenJsonHandler interface, we can stick a dummy "root" key in the map we pass back.
             return JsonHelper.toMap(jsonObject);
         } catch (JSONException e) {
             throw new IOException(e);
