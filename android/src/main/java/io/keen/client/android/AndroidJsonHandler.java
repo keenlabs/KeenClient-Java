@@ -14,15 +14,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import io.keen.client.java.KeenConstants;
 import io.keen.client.java.KeenJsonHandler;
 
 /**
  * Implementation of the {@link io.keen.client.java.KeenJsonHandler} interface using the built-in
  * Android JSON library ({@link org.json.JSONObject}).
  *
- * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @author Kevin Litwack (kevin@kevinlitwack.com), masojus
  * @since 2.0.0
  */
 public class AndroidJsonHandler implements KeenJsonHandler {
@@ -42,11 +45,25 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         try {
             JSONObject jsonObject = new JSONObject(json);
 
-            // TODO : Use fromJson() and check if instanceof Map or List, but then what should the
-            // return value be? Technically it could be a List or Map, so it should be Object, then
-            // client code would need to do the instanceof check. For now, so as to not break the
-            // KeenJsonHandler interface, we can stick a dummy "root" key in the map we pass back.
-            return JsonHelper.toMap(jsonObject);
+            // TODO : What should the return value be? Technically it could be a List or Map, so it
+            // should be Object, then client code would need to do the instanceof check. For now,
+            // so as to not break the KeenJsonHandler interface, we can stick a dummy "root" key in
+            // the map we pass back.
+
+            Object rootNode = JsonHelper.fromJson(jsonObject);
+            Map<String, Object> rootMap = null;
+
+            if (null == rootNode) {
+                throw new IllegalArgumentException("Empty reader or ill-formatted JSON " +
+                                                   "encountered.");
+            } else if (rootNode instanceof Map) {
+                rootMap = (Map)rootNode;
+            } else if (rootNode instanceof List) {
+                rootMap = new LinkedHashMap<String, Object>();
+                rootMap.put(KeenConstants.KEEN_FAKE_JSON_ROOT, rootNode);
+            }
+
+            return rootMap;
         } catch (JSONException e) {
             throw new IOException(e);
         }

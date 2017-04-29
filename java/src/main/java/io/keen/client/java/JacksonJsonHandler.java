@@ -60,7 +60,7 @@ public class JacksonJsonHandler implements KeenJsonHandler {
             throw new IllegalArgumentException("Empty reader or ill-formatted JSON encountered.");
         } else if (rootNode.isArray()) {
             rootMap = new LinkedHashMap<String, Object>();
-            rootMap.put("io.keen.client.java.__fake_root",
+            rootMap.put(KeenConstants.KEEN_FAKE_JSON_ROOT,
                         mapper.readValue(rootNode.traverse(), COLLECTION_TYPE));
         } else if (rootNode.isObject()) {
             rootMap = mapper.readValue(rootNode.traverse(), MAP_TYPE);

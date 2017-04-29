@@ -57,7 +57,7 @@ class JsonHelper {
         return map;
     }
 
-    public static List toList(JSONArray array) throws JSONException {
+    public static List<Object> toList(JSONArray array) throws JSONException {
         List<Object> list = new ArrayList<Object>();
         for (int i = 0; i < array.length(); i++) {
             list.add(fromJson(array.get(i)));
@@ -65,7 +65,7 @@ class JsonHelper {
         return list;
     }
 
-    private static Object fromJson(Object json) throws JSONException {
+    static Object fromJson(Object json) throws JSONException {
         if (json == JSONObject.NULL) {
             return null;
         } else if (json instanceof JSONObject) {

@@ -359,9 +359,8 @@ public class KeenQueryClient {
         Map<String, Object> wrappedResponse = sendRequest(url, httpMethod, authKey, queryArgs);
         Object response = wrappedResponse;
 
-        // TODO : Put this string somewhere shared like KeenJsonHandler/KeenUtils/KeenConstants.
-        if (wrappedResponse.containsKey("io.keen.client.java.__fake_root")) {
-            response = wrappedResponse.get("io.keen.client.java.__fake_root");
+        if (wrappedResponse.containsKey(KeenConstants.KEEN_FAKE_JSON_ROOT)) {
+            response = wrappedResponse.get(KeenConstants.KEEN_FAKE_JSON_ROOT);
         }
 
         return response;

@@ -249,6 +249,11 @@ final class SavedQueriesImpl implements SavedQueries {
         // First get the existing query definition, which hits the network.
         Map<String, Object> oldFullDef = getDefinition(queryName);
 
+        if (null == oldFullDef || oldFullDef.isEmpty()) {
+            throw new ServerException("The existing Saved/Cached query definition found was null " +
+                                      "or empty.");
+        }
+
         // Create a new query def to send back. We cannot send values for some attributes like
         // "urls", "last_modified_date", "run_information", etc.
         Map<String, Object> newFullDef = new HashMap<String, Object>();
