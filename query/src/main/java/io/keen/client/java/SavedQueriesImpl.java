@@ -10,11 +10,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import io.keen.client.java.exceptions.KeenException;
 import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpMethods;
 import io.keen.client.java.result.QueryResult;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 /**
@@ -219,8 +217,8 @@ final class SavedQueriesImpl implements SavedQueries {
         Object resultObj = response.get(KeenQueryConstants.RESULT);
         Map<String, Object> result;
 
-        // TODO : Is (isFunnel == (!isMultiAnalysis && resultObj instanceof Map)) or are there other
-        // cases when the result is a Map?
+        // It may be the case that (isFunnel == (!isMultiAnalysis && resultObj instanceof Map)), but
+        // this here we're being clear about when we expect result to be a Map?
         if (!isMultiAnalysis && resultObj instanceof Map) {
             result = (Map)resultObj;
         } else {
@@ -230,9 +228,6 @@ final class SavedQueriesImpl implements SavedQueries {
             // parsing code.
             result = new HashMap<String, Object>();
             result.put(KeenQueryConstants.RESULT, resultObj);
-
-            // TODO : Make sure this is the right thing for ListResults and Multi-Analysis, if it
-            // turns out we can even have Save/Cached Queries that are Multi-Analysis type.
         }
 
         return queryClient.rawMapResponseToQueryResult(result,
@@ -322,39 +317,65 @@ final class SavedQueriesImpl implements SavedQueries {
             Object updateValue = entry.getValue();
 
             if (updateValue instanceof Map) {
-                // If map doesn't have this key, create a sub-map for it
-                if (!map.containsKey(updateKey)) {
-                    map.put(updateKey, new HashMap<String, Object>());
-                }
+                if (map.containsKey(updateKey)) {
+                    Object existingValue = map.get(updateKey);
 
-                Object existingValue = map.get(updateKey);
-
-                if (existingValue instanceof Map) {
-                    SavedQueriesImpl.deepUpdate((Map) existingValue,
-                                                (Map) updateValue);
-                    map.put(updateKey, existingValue);
-                } else {
-                    map.put(updateKey, updateValue);
+                    if (existingValue instanceof Map) {
+                        SavedQueriesImpl.deepUpdate((Map) existingValue, (Map) updateValue);
+                    }
                 }
-            } else {
-                map.put(updateKey, updateValue);
             }
+
+            map.put(updateKey, updateValue);
         }
     }
 
-    // TODO : Add to SavedQueries interface? Is this function useful in this SDK?
-    public Map<String, Object> updateQueryFull(String queryName,
-                                               Map<String, Object> fullDefinition)
+    @Override
+    public Map<String, Object> updateQueryFull(String queryName, Map<String, Object> fullDefinition)
             throws IOException {
-        throw new NotImplementedException(); // TODO : Do it?
+        // Push the new full definition as provided by client code. Technically this would also work
+        // as a raw create method.
+        PersistentAnalysis redefinedSavedQueryRequest = new SavedQueryPut(queryName, fullDefinition);
+
+        return queryClient.getMapResponse(redefinedSavedQueryRequest);
     }
 
     @Override
-    public Map<String, Object> deleteQuery(String queryName) throws IOException {
+    public void deleteQuery(String queryName) throws IOException {
         PersistentAnalysis deleteQueryRequest = new SavedQueryRequest(HttpMethods.DELETE,
                                                                       true /* needsMasterKey */,
                                                                       queryName);
 
-        return queryClient.getMapResponse(deleteQueryRequest);
+        queryClient.getMapResponse(deleteQueryRequest);
+    }
+
+    @Override
+    public Map<String, Object> setQueryName(String queryName, String newQueryName)
+            throws IOException {
+        Map<String, Object> updates = new HashMap<String, Object>();
+        updates.put(KeenQueryConstants.QUERY_NAME, newQueryName);
+
+        return updateQuery(queryName, updates);
+    }
+
+    @Override
+    public Map<String, Object> setRefreshRate(String queryName, int refreshRate)
+            throws IOException {
+        Map<String, Object> updates = new HashMap<String, Object>();
+        updates.put(KeenQueryConstants.REFRESH_RATE, refreshRate);
+
+        return updateQuery(queryName, updates);
+    }
+
+    @Override
+    public Map<String, Object> setDisplayName(String queryName, String displayName)
+            throws IOException {
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put(KeenQueryConstants.DISPLAY_NAME, displayName);
+
+        Map<String, Object> updates = new HashMap<String, Object>();
+        updates.put(KeenQueryConstants.METADATA, metadata);
+
+        return updateQuery(queryName, updates);
     }
 }
