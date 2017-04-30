@@ -22,9 +22,8 @@ import io.keen.client.java.result.QueryResult;
  * @author masojus
  */
 final class SavedQueriesImpl implements SavedQueries {
-    private static final int NO_CACHING_REFRESH_RATE = 0;
-
     private final KeenQueryClient queryClient;
+
 
     SavedQueriesImpl(KeenQueryClient queryClient) {
         this.queryClient = queryClient;
@@ -37,7 +36,7 @@ final class SavedQueriesImpl implements SavedQueries {
                 new SavedQueryPut(queryName,
                                   null /* displayName */,
                                   query,
-                                  SavedQueriesImpl.NO_CACHING_REFRESH_RATE,
+                                  RefreshRate.NO_CACHING,
                                   null /* miscProperties */);
 
 
@@ -53,7 +52,7 @@ final class SavedQueriesImpl implements SavedQueries {
                 new SavedQueryPut(queryName,
                                   displayName,
                                   query,
-                                  SavedQueriesImpl.NO_CACHING_REFRESH_RATE,
+                                  RefreshRate.NO_CACHING,
                                   null /* miscProperties */);
 
 
@@ -62,8 +61,8 @@ final class SavedQueriesImpl implements SavedQueries {
 
     @Override
     public Map<String, Object> createCachedQuery(String queryName,
-                                                  KeenQueryRequest query,
-                                                  int refreshRate) throws IOException {
+                                                 KeenQueryRequest query,
+                                                 int refreshRate) throws IOException {
         PersistentAnalysis newCachedQueryRequest =
                 new SavedQueryPut(queryName,
                                   null /* displayName */,
@@ -94,6 +93,10 @@ final class SavedQueriesImpl implements SavedQueries {
         PersistentAnalysis getDefRequest = new SavedQueryRequest(HttpMethods.GET,
                                                                  true /* needsMasterKey */,
                                                                  queryName);
+        if (null == queryName) {
+            // Note that the PersistentAnalysis class will further validate queryName.
+            throw new IllegalArgumentException("A query name is required.");
+        }
 
         // When retrieving a single query definition, we expect a single JSON Object and just
         // hand it back instead of wrapping in QueryResult.
@@ -124,6 +127,11 @@ final class SavedQueriesImpl implements SavedQueries {
 
     @Override
     public QueryResult getResult(String queryName) throws IOException {
+        if (null == queryName) {
+            // Note that the PersistentAnalysis class will further validate queryName.
+            throw new IllegalArgumentException("A query name is required.");
+        }
+
         PersistentAnalysis getResultRequest =
                 new SavedQueryRequest(HttpMethods.GET,
                                       false /* needsMasterKey */,
@@ -335,7 +343,8 @@ final class SavedQueriesImpl implements SavedQueries {
             throws IOException {
         // Push the new full definition as provided by client code. Technically this would also work
         // as a raw create method.
-        PersistentAnalysis redefinedSavedQueryRequest = new SavedQueryPut(queryName, fullDefinition);
+        PersistentAnalysis redefinedSavedQueryRequest = new SavedQueryPut(queryName,
+                                                                          fullDefinition);
 
         return queryClient.getMapResponse(redefinedSavedQueryRequest);
     }
@@ -352,6 +361,8 @@ final class SavedQueriesImpl implements SavedQueries {
     @Override
     public Map<String, Object> setQueryName(String queryName, String newQueryName)
             throws IOException {
+        PersistentAnalysis.validateResourceName(newQueryName);
+
         Map<String, Object> updates = new HashMap<String, Object>();
         updates.put(KeenQueryConstants.QUERY_NAME, newQueryName);
 
@@ -361,6 +372,8 @@ final class SavedQueriesImpl implements SavedQueries {
     @Override
     public Map<String, Object> setRefreshRate(String queryName, int refreshRate)
             throws IOException {
+        RefreshRate.validateRefreshRate(refreshRate);
+
         Map<String, Object> updates = new HashMap<String, Object>();
         updates.put(KeenQueryConstants.REFRESH_RATE, refreshRate);
 
@@ -370,6 +383,8 @@ final class SavedQueriesImpl implements SavedQueries {
     @Override
     public Map<String, Object> setDisplayName(String queryName, String displayName)
             throws IOException {
+        PersistentAnalysis.validateDisplayName(displayName);
+
         Map<String, Object> metadata = new HashMap<String, Object>();
         metadata.put(KeenQueryConstants.DISPLAY_NAME, displayName);
 

@@ -122,7 +122,7 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
                 .build();
 
         String queryName = "sum_FromJavaSDK_withDisplayName_Cached_1";
-        int refreshRate = (7 * 3600); // 7 hrs
+        int refreshRate = RefreshRate.fromHours(7); // 7 hrs
         String displayName = "From Java SDK (Cached) 1";
         Map<String, Object> createdQuery = savedQueryApi.createCachedQuery(queryName,
                                                                            sum,

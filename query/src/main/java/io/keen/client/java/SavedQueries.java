@@ -134,7 +134,8 @@ public interface SavedQueries {
                                         Map<String, Object> fullDefinition) throws IOException;
 
     /**
-     * Delete the query stored at the given resource name. This returns HTTP 204 - No Content.
+     * Delete the query stored at the given resource name. Upon success the server returns
+     * HTTP 204 - No Content, so this method returns void and throws upon error.
      *
      * @param queryName The resource name for the query to be deleted.
      * @throws IOException
@@ -152,8 +153,7 @@ public interface SavedQueries {
      *         Saved/Cached Query definition with auditing like created/updated/run information.
      * @throws IOException
      */
-    Map<String, Object> setQueryName(String queryName, String newQueryName)
-            throws IOException;
+    Map<String, Object> setQueryName(String queryName, String newQueryName) throws IOException;
 
     /**
      * Perform an update to change the refresh rate to the desired value. Take into account that
@@ -171,15 +171,15 @@ public interface SavedQueries {
 
     /**
      * Sets the display_name field of the metadata object, which is currently undocumented and
-     * therefore subject to change.
+     * therefore subject to change. This field governs how the Explorer UI shows the name of the
+     * query.
      *
      * @param queryName The resource name for the query to be updated.
-     * @param displayName he display name to be used for this resource.
+     * @param displayName The display name to be used for this resource.
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
      * @throws IOException
      */
-    Map<String, Object> setDisplayName(String queryName, String displayName)
-            throws IOException;
+    Map<String, Object> setDisplayName(String queryName, String displayName) throws IOException;
 }

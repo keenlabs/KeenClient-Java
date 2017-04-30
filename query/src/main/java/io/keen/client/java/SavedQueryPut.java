@@ -1,6 +1,7 @@
 package io.keen.client.java;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import io.keen.client.java.http.HttpMethods;
@@ -14,7 +15,8 @@ class SavedQueryPut extends SavedQueryRequest {
     private final KeenQueryRequest query;
     private final int refreshRate;
 
-    private Map<String, Object> miscProperties; // TODO : final, or will we create/set on demand?
+    private final Map<String, Object> miscProperties;
+
 
     SavedQueryPut(String queryName,
                   String displayName,
@@ -23,14 +25,20 @@ class SavedQueryPut extends SavedQueryRequest {
                   Map<String, ?> miscProperties) {
         super(HttpMethods.PUT, true /* needsMasterKey */, queryName, displayName);
 
-        // TODO : Validate somehow?? For PUT it should generally be non-null, but maybe not if we
-        // end up using miscProperties to send a full update.
+        if (null == query && (null == miscProperties || miscProperties.isEmpty())) {
+            throw new IllegalArgumentException("If a query definition is not provided, then " +
+                                               "miscProperties should define the Saved/Cached " +
+                                               "Query.");
+        }
+
         this.query = query;
 
-        // TODO : Validate refreshRate range. Empirically [14400, 86400] seconds, inclusive at
-        // both boundaries. Recall that the docs on the website are wrong as of 3/14/17, as I
-        // reported. Can also be 0 in order to turn off caching. We can use -1 as unset since
-        // negative values aren't valid.
+        // Validate refreshRate range. We can use -1 to indicate it is unset since negative values
+        // aren't valid.
+        if (0 < refreshRate) {
+            RefreshRate.validateRefreshRate(refreshRate);
+        }
+
         this.refreshRate = refreshRate;
         this.miscProperties = (null == miscProperties ?
                 new HashMap<String, Object>() : new HashMap<String, Object>(miscProperties));
@@ -38,23 +46,22 @@ class SavedQueryPut extends SavedQueryRequest {
 
     // For updates, mostly, or special super advanced usage.
     SavedQueryPut(String queryName, Map<String, ?> miscProperties) {
-        super(HttpMethods.PUT, true /* needsMasterKey */, queryName);
-
-        this.query = null;
-        this.refreshRate = -1;
-        this.miscProperties = new HashMap<String, Object>(miscProperties); // TODO : can't be null?
+        this(queryName, null, null, -1, miscProperties);
     }
 
     @Override
     Map<String, Object> constructRequestArgs() {
         Map<String, Object> requestArgs = super.constructRequestArgs();
 
-        // TODO : We expect requestArgs to be non-null. Validate??
+        if (null == requestArgs) {
+            throw new IllegalStateException("Request args should not be null.");
+        }
 
         // If there isn't a KeenQueryRequest then hopefully this is an update and the entire
         // new query definition had better be in miscProperties.
         if (null != query) {
-            // TODO : Make sure there isn't already a "query" key
+            //Make sure there isn't already a "query" key
+            SavedQueryPut.expectNotContainsKey(requestArgs, KeenQueryConstants.QUERY);
             Map<String, Object> queryArgs = query.constructRequestArgs();
 
             // TODO : Does the analysis_type go here, like the docs say?
@@ -67,7 +74,8 @@ class SavedQueryPut extends SavedQueryRequest {
         }
 
         if (0 <= refreshRate) {
-            // TODO : Make sure there isn't already a "refresh_rate" key first
+            // Make sure there isn't already a "refresh_rate" key first
+            SavedQueryPut.expectNotContainsKey(requestArgs, KeenQueryConstants.REFRESH_RATE);
             requestArgs.put(KeenQueryConstants.REFRESH_RATE, refreshRate);
         }
 
@@ -75,16 +83,29 @@ class SavedQueryPut extends SavedQueryRequest {
 
         // NOTE : For now, metadata and therefore display_name is undocumented for Saved Queries.
         if (null != displayName) {
-            // TODO : Make sure metadata and metadata.display_name aren't already there
+            // Make sure there isn't already a "metadata" key
+            SavedQueryPut.expectNotContainsKey(requestArgs, KeenQueryConstants.METADATA);
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put(KeenQueryConstants.DISPLAY_NAME, displayName);
 
             requestArgs.put(KeenQueryConstants.METADATA, metadata);
         }
 
-        // TODO : Make sure this won't overwrite any keys? Or just let it?
+        // Make sure miscProperties wouldn't overwrite any of the other properties.
+        for (String key : miscProperties.keySet()) {
+            SavedQueryPut.expectNotContainsKey(requestArgs, key);
+        }
+
         requestArgs.putAll(miscProperties);
 
         return requestArgs;
+    }
+
+    private static void expectNotContainsKey(Map<?, ?> map, Object key) {
+        if (map.containsKey(key)) {
+            throw new IllegalStateException(String.format(Locale.US,
+                                                          "The key '%s' already exists.",
+                                                          key));
+        }
     }
 }
