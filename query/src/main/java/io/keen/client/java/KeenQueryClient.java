@@ -734,7 +734,7 @@ public class KeenQueryClient {
                 String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
 
                 // TODO : How could errorCode or message be null? The toString() calls would have
-                // thrown, plus the containsKey() would have return false in the case of errorCode.
+                // thrown, plus the containsKey() would have returned false for errorCode.
                 String errorMessage = "Error response received from server";
                 if (errorCode != null) {
                     errorMessage += " " + errorCode;

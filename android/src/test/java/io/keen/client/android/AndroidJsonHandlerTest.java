@@ -2,7 +2,9 @@ package io.keen.client.android;
 
 
 import org.hamcrest.Matchers;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,30 +13,39 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.keen.client.java.KeenConstants;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests the AndroidJsonHandler class.
  *
- * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @author Kevin Litwack (kevin@kevinlitwack.com), masojus
  * @since 2.0.2
  */
 public class AndroidJsonHandlerTest {
-
     private AndroidJsonHandler handler;
 
     @Mock
@@ -45,6 +56,7 @@ public class AndroidJsonHandlerTest {
 
     @Captor
     private ArgumentCaptor<Collection<?>> collectionArgumentCaptor;
+
 
     @Before
     public void createJsonHandler() {
@@ -57,6 +69,54 @@ public class AndroidJsonHandlerTest {
     @After
     public void cleanupJsonHandler() {
         handler = null;
+    }
+
+    @Test
+    public void readSimpleMap() throws Exception {
+        JSONObject mockJsonObject = mock(JSONObject.class);
+        List<String> keys = Arrays.asList("result");
+        when(mockJsonObject.keys()).thenReturn(keys.iterator());
+        when(mockJsonObject.get("result")).thenReturn("dummyResult");
+
+        JSONTokener mockJsonTokener = mock(JSONTokener.class);
+        when(mockJsonTokener.nextValue()).thenReturn(mockJsonObject);
+        when(mockJsonObjectManager.newTokener(anyString())).thenReturn(mockJsonTokener);
+
+        // This string doesn't matter, but it's what we mimic with the mocks.
+        String mapResponse = "{\"result\": \"dummyResult\"}";
+        StringReader reader = new StringReader(mapResponse);
+        Map<String, Object> map = handler.readJson(reader);
+        assertNotNull(map);
+        assertEquals(1, map.size());
+        assertTrue(map.containsKey("result"));
+        assertEquals("dummyResult", map.get("result"));
+    }
+
+    @Test
+    public void readSimpleList() throws Exception {
+        JSONArray mockJsonArray = mock(JSONArray.class);
+        when(mockJsonArray.length()).thenReturn(1);
+        when(mockJsonArray.get(0)).thenReturn("dummyResult");
+
+        JSONTokener mockJsonTokener = mock(JSONTokener.class);
+        when(mockJsonTokener.nextValue()).thenReturn(mockJsonArray);
+        when(mockJsonObjectManager.newTokener(anyString())).thenReturn(mockJsonTokener);
+
+        // This string doesn't matter, but it's what we mimic with the mocks.
+        String listResponse = "[\"dummyResult\"]";
+        StringReader reader = new StringReader(listResponse);
+        Map<String, Object> map = handler.readJson(reader);
+        assertNotNull(map);
+        assertEquals(1, map.size());
+
+        // Validate that the raw JSON Array was wrapped in the fake root object. This behavior
+        // should change as soon as we can release a major version update to not do this dance.
+        assertTrue(map.containsKey(KeenConstants.KEEN_FAKE_JSON_ROOT));
+        Object jsonArrayObj = map.get(KeenConstants.KEEN_FAKE_JSON_ROOT);
+        assertNotNull(jsonArrayObj);
+        assertTrue(jsonArrayObj instanceof List);
+        assertEquals(1, ((List)jsonArrayObj).size());
+        assertEquals("dummyResult", ((List)jsonArrayObj).get(0));
     }
 
     @Test
@@ -284,5 +344,4 @@ public class AndroidJsonHandlerTest {
         writer.close();
         return result;
     }
-
 }

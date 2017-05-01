@@ -5,6 +5,7 @@ import android.os.Build;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -43,14 +44,14 @@ public class AndroidJsonHandler implements KeenJsonHandler {
 
         String json = readerToString(reader);
         try {
-            JSONObject jsonObject = new JSONObject(json);
+            Object jsonObjOrArray = getJsonObjectManager().newTokener(json).nextValue();
 
             // TODO : What should the return value be? Technically it could be a List or Map, so it
             // should be Object, then client code would need to do the instanceof check. For now,
             // so as to not break the KeenJsonHandler interface, we can stick a dummy "root" key in
             // the map we pass back.
 
-            Object rootNode = JsonHelper.fromJson(jsonObject);
+            Object rootNode = JsonHelper.fromJson(jsonObjOrArray);
             Map<String, Object> rootMap = null;
 
             if (null == rootNode) {
@@ -122,6 +123,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
     protected interface JsonObjectManager {
         String stringify(JSONObject object);
         JSONObject newObject(Map<String, ?> map);
+        JSONTokener newTokener(String json);
         JSONArray newArray(Collection<?> collection);
     }
 
@@ -137,6 +139,11 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         @Override
         public JSONObject newObject(Map<String, ?> map) {
             return new JSONObject(map);
+        }
+
+        @Override
+        public JSONTokener newTokener(String json) {
+            return new JSONTokener(json);
         }
 
         @Override
