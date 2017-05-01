@@ -1,15 +1,19 @@
 package io.keen.client.java;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
@@ -29,6 +33,7 @@ public class KeenQueryTestBase {
     static KeenProject TEST_PROJECT;
     static final String TEST_EVENT_COLLECTION = "android-sample-button-clicks";
     static final String TEST_TARGET_PROPERTY = "click-number";
+    static final Timeframe TEST_RELATIVE_TIMEFRAME = new RelativeTimeframe("this_2_months");
     static final float DOUBLE_CMP_DELTA = 0.0f;
 
     static final String ENCODING = "UTF-8";
@@ -52,6 +57,8 @@ public class KeenQueryTestBase {
 
     @Before
     public void setup() throws IOException {
+        MockitoAnnotations.initMocks(this);
+
         // Set up a mock HTTP handler.
         mockHttpHandler = mock(HttpHandler.class);
         setMockResponse(500, "Unexpected HTTP request");
@@ -73,15 +80,52 @@ public class KeenQueryTestBase {
         when(mockHttpHandler.execute(any(Request.class))).thenReturn(response);
     }
 
-    String mockCaptureCountQueryRequest(KeenQueryRequest inputParams) throws Exception {
-        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
-        queryClient.execute(inputParams);
+    @Captor
+    private ArgumentCaptor<Request> requestArgumentCaptor;
 
-        verify(mockHttpHandler).execute(capturedRequest.capture());
-        Request request = capturedRequest.getValue();
+    String mockCaptureCountQueryRequest(KeenQueryRequest inputParams) throws Exception {
+        executeRequest(inputParams);
+
+        return executeCapturedRequest();
+    }
+
+    String executeCapturedRequest() throws IOException {
+        verify(mockHttpHandler).execute(requestArgumentCaptor.capture());
+
+        return requestToString(requestArgumentCaptor.getValue());
+    }
+
+    String requestToString(Request request) throws IOException {
+        // For GET requests the body might be null.
+        if (null == request.body) {
+            return "";
+        }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         request.body.writeTo(outputStream);
+
         return outputStream.toString(ENCODING);
     }
+
+    // Override this to change how this gets dispatched.
+    void executeRequest(KeenQueryRequest requestParams) throws IOException {
+        queryClient.execute(requestParams);
+    }
+
+    ObjectNode getRequestNode(KeenQueryRequest requestParams) throws Exception {
+        String requestString = mockCaptureCountQueryRequest(requestParams);
+
+        return stringToRequestNode(requestString);
+    }
+
+    ObjectNode stringToRequestNode(String requestString) throws IOException {
+        if (null == requestString || requestString.trim().isEmpty()) {
+            return null;
+        }
+
+        // TODO : At some point, maybe JsonNode will be more appropriate.
+        return (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+    }
+
+    // TODO : We should add some verification of the actual URL produced in the Request
 }
