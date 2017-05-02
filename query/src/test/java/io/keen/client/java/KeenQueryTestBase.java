@@ -13,7 +13,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.List;
 
 import io.keen.client.java.http.HttpHandler;
 import io.keen.client.java.http.Request;
@@ -21,6 +21,7 @@ import io.keen.client.java.http.Response;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,15 +74,34 @@ public class KeenQueryTestBase {
     @After
     public void cleanUp() {
         queryClient = null;
-    }
-
-    void setMockResponse(int statusCode, String body) throws IOException {
-        Response response = new Response(statusCode, body);
-        when(mockHttpHandler.execute(any(Request.class))).thenReturn(response);
+        numExecuteCalls = 0;
     }
 
     @Captor
     private ArgumentCaptor<Request> requestArgumentCaptor;
+    private int numExecuteCalls = 0;
+
+    void setMockResponse(int statusCode, String body) throws IOException {
+        Response response = new Response(statusCode, body);
+        when(mockHttpHandler.execute(any(Request.class))).thenReturn(response);
+        numExecuteCalls = 1;
+    }
+
+    // Set responses such that that number of requests are expected and fulfilled with the
+    // responses in the order given.
+    void setMockResponses(List<Response> responses) throws IOException {
+        numExecuteCalls = responses.size();
+
+        if (numExecuteCalls < 2) {
+            throw new IllegalArgumentException("Should have at least 2 responses.");
+        }
+
+        List<Response> remaining = responses.subList(1, numExecuteCalls);
+        Response[] responsesArray = remaining.toArray(new Response[numExecuteCalls - 1]);
+
+        Response r = responses.get(0);
+        when(mockHttpHandler.execute(any(Request.class))).thenReturn(r, responsesArray);
+    }
 
     String mockCaptureCountQueryRequest(KeenQueryRequest inputParams) throws Exception {
         executeRequest(inputParams);
@@ -90,8 +110,10 @@ public class KeenQueryTestBase {
     }
 
     String executeCapturedRequest() throws IOException {
-        verify(mockHttpHandler).execute(requestArgumentCaptor.capture());
+        verify(mockHttpHandler, times(numExecuteCalls)).execute(requestArgumentCaptor.capture());
 
+        // We're only returning the most recently captured Request. If we ever want to get all the
+        // Requests for all invocations, we'll need to refactor a bit.
         return requestToString(requestArgumentCaptor.getValue());
     }
 
@@ -123,9 +145,10 @@ public class KeenQueryTestBase {
             return null;
         }
 
-        // TODO : At some point, maybe JsonNode will be more appropriate.
+        // At some point, maybe JsonNode will be more appropriate.
         return (ObjectNode) OBJECT_MAPPER.readTree(requestString);
     }
 
     // TODO : We should add some verification of the actual URL produced in the Request
+    // the way we do in some of the tests in KeenQueryTest.
 }

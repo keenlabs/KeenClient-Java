@@ -226,7 +226,7 @@ final class SavedQueriesImpl implements SavedQueries {
         Map<String, Object> result;
 
         // It may be the case that (isFunnel == (!isMultiAnalysis && resultObj instanceof Map)), but
-        // this here we're being clear about when we expect result to be a Map?
+        // this way we're being clear about when we expect result to be a Map.
         if (!isMultiAnalysis && resultObj instanceof Map) {
             result = (Map)resultObj;
         } else {

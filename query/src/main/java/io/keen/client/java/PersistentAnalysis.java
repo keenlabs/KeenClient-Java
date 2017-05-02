@@ -19,12 +19,9 @@ abstract class PersistentAnalysis extends KeenQueryRequest {
     // encoding to use from the page itself, but at least via the Explorer UI, giving a query a
     // display name of "Can has diacritics Ñüáúéíó üöäñ çàèìòù ãõ" yields a url as follows:
     // "https://...?saved_query=can-has-diacritics----". So two questions remain:
-    // 1) Can the API handle a queryName with non-ASCII?
-    // 2) Does this regex in Java match non-ASCII word characters or only ASCII? Or do we need to
-    //    use something like \p{L}\p{M}*+ to match any letter character and something else to match
-    //    numbers like [\p{Alphabetic}\p{GC=Number}] if it turns out the API supports it? It's also
-    //    possible the "\w" already matches underscore, so test that too.
-    private static final String RESOURCE_NAME_REGEX = "^[\\w_-]*$";
+    // 1) Can the API handle a queryName with non-ASCII? Should we allow ?
+    // 2) This regex does not match strings like "árbol π" so we only accept ASCII
+    private static final String RESOURCE_NAME_REGEX = "^[\\w-]*$";
 
     private final String httpMethod;
     private final boolean needsMasterKey;

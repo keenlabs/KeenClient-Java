@@ -8,10 +8,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.keen.client.java.http.Response;
+import io.keen.client.java.result.FunnelResult;
 import io.keen.client.java.result.MultiAnalysisResult;
 import io.keen.client.java.result.QueryResult;
 
@@ -19,6 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test the Persistent Analysis query functionality, which should include Saved/Cached Queries and
@@ -42,21 +48,37 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
     }
 
     // Make sure result, if provided, is wrapped in root object/array brackets, if not scalar.
-    private String getFakeSavedQueryDefinition(String result) {
-        // A few of the keys one would get back. We don't really check the return values in these
-        // tests because we aren't parsing them for the most part, except the query result.
+    private String getFakeSavedQueryDefinition(String result, boolean isGroupBy, boolean isInterval, boolean isMultiAnalysis, boolean isFunnel) {
+        // A few of the keys one would get back. We don't really check the return values in most of
+        // these tests because we aren't parsing them for the most part, except the query result.
+        String analysisType;
+
+        if (isMultiAnalysis) {
+            analysisType = "multi_analysis";
+        } else if (isFunnel) {
+            analysisType = "funnel";
+        } else {
+            analysisType = "sum";
+        }
+
         String definition = "{" +
                     "\"query_name\": \"" + TEST_RESOURCE_NAME + "\"," +
                     "\"refresh_rate\": 0," +
                     "\"query\": {" +
-                        "\"analysis_type\": \"sum\"," +
+                        "\"analysis_type\": \"" + analysisType + "\"," +
                         "\"target_property\": \"someProp\"," +
-                        "\"timeframe\": \"this_month\"" +
+                        "\"timeframe\": \"this_month\"" + (!isGroupBy ? "" : ", " +
+                        "\"group_by\": [\"category\"]") + (!isInterval ? "" : ", " +
+                        "\"interval\": \"daily\"") +
                     "}" + (null == result ? "" : ", " +
                     "\"result\": " + result) +
                 "}";
 
         return definition;
+    }
+
+    private String getFakeSavedQueryDefinition(String result) {
+        return getFakeSavedQueryDefinition(result, false, false, false, false);
     }
 
     private static void validatePersistentAnalysisRequiredFields(ObjectNode requestNode) {
@@ -95,14 +117,19 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         return sum;
     }
 
-    private ObjectNode verifyCreated(Map<String, Object> createdQueryResponse, String displayName)
+    private ObjectNode verifyPut(Map<String, Object> putResponse, String displayName, int numExtraFields)
             throws IOException {
-        assertNotNull(createdQueryResponse);
-        assertTrue(!createdQueryResponse.isEmpty());
-        assertEquals(TEST_RESOURCE_NAME, createdQueryResponse.get(KeenQueryConstants.QUERY_NAME));
+        assertNotNull(putResponse);
+        assertTrue(!putResponse.isEmpty());
+        // Even when we change the "query_name" the canned responses return the original name. But
+        // we're not testing that the back end actually changes things, but rather that we parse
+        // correctly.
+        assertEquals(TEST_RESOURCE_NAME, putResponse.get(KeenQueryConstants.QUERY_NAME));
 
         ObjectNode requestNode = getPersistentAnalysisRequestNode();
-        assertEquals((null != displayName ? 3 : 2), requestNode.size());
+        // Normally "refresh_rate" and "query" are in the request, but if "display_name" or updates
+        // like "query_name" are in the PUT, there'll be more top-level nodes.
+        assertEquals((null != displayName ? 3 : 2) + numExtraFields, requestNode.size());
 
         if (null != displayName) {
             // Verify we added a "metadata" node.
@@ -115,6 +142,15 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         return requestNode;
     }
 
+    private ObjectNode verifyPut(Map<String, Object> putResponse, String displayName)
+            throws IOException {
+        return verifyPut(putResponse, displayName, 0);
+    }
+
+    private ObjectNode verifyPut(Map<String, Object> putResponse) throws IOException {
+        return verifyPut(putResponse, null, 0);
+    }
+
     @Test
     public void testSavedQuery_Create_Simple() throws IOException {
         setMockResponse(200, getFakeSavedQueryDefinition(null));
@@ -122,7 +158,59 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         KeenQueryRequest sum = getSimpleRequest();
         Map<String, Object> createdQuery = savedQueryApi.createSavedQuery(TEST_RESOURCE_NAME, sum);
 
-        verifyCreated(createdQuery, null);
+        verifyPut(createdQuery);
+    }
+
+    @Test
+    public void testSavedQuery_Create_OkNames() throws IOException {
+        Map<String, Object> emptyResponse = new HashMap<String, Object>();
+
+        KeenQueryClient mockQueryClient = mock(KeenQueryClient.class);
+        when(mockQueryClient.getMapResponse(any(KeenQueryRequest.class))).thenReturn(emptyResponse);
+        savedQueryApi = new SavedQueriesImpl(mockQueryClient);
+
+        KeenQueryRequest sum = getSimpleRequest();
+
+        // Make sure names with alphanumerics, dashes and hyphens are OK
+        savedQueryApi.createSavedQuery("stuffAndThings", sum);
+        savedQueryApi.createSavedQuery("stuffAndThings123", sum);
+        savedQueryApi.createSavedQuery("987stuffAndThings", sum);
+        savedQueryApi.createSavedQuery("987stuff0And0Things456", sum);
+
+        savedQueryApi.createSavedQuery("_stuffAndThings", sum);
+        savedQueryApi.createSavedQuery("stuffAndThings_", sum);
+        savedQueryApi.createSavedQuery("stuff_and_things", sum);
+        savedQueryApi.createSavedQuery("stuff_and_things_", sum);
+        savedQueryApi.createSavedQuery("_stuff_and_things", sum);
+        savedQueryApi.createSavedQuery("_stuff_and_things_", sum);
+
+        savedQueryApi.createSavedQuery("-stuffAndThings", sum);
+        savedQueryApi.createSavedQuery("stuffAndThings-", sum);
+        savedQueryApi.createSavedQuery("stuff-and-things", sum);
+        savedQueryApi.createSavedQuery("stuff-and-things-", sum);
+        savedQueryApi.createSavedQuery("-stuff-and-things", sum);
+        savedQueryApi.createSavedQuery("-stuff-and-things-", sum);
+
+        savedQueryApi.createSavedQuery("__--123--__", sum);
+        savedQueryApi.createSavedQuery("0-_s5TuFf1-3a9nd7-thInGs___", sum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSavedQuery_Create_NullResourceName() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createSavedQuery(null, sum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSavedQuery_Create_BadResourceName() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createSavedQuery("@lph@numerics_and_numbers_only", sum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSavedQuery_Create_BadResourceNameUnicode() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createSavedQuery("\u00E0rbol \u03C0", sum);
     }
 
     @Test
@@ -135,13 +223,34 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
                                                                           sum,
                                                                           displayName);
 
-        verifyCreated(createdQuery, displayName);
+        verifyPut(createdQuery, displayName);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSavedQuery_Create_WithEmptyDisplayName() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createSavedQuery(TEST_RESOURCE_NAME, sum, "");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSavedQuery_Create_WithBlankDisplayName() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createSavedQuery(TEST_RESOURCE_NAME, sum, "   ");
     }
 
     @Test
     public void testSavedQuery_CreateFunnel_Simple() throws IOException {
-        // TODO : FINISH TESTING
-        // verifyCreated(createdQuery, null);
+        setMockResponse(200, getFakeSavedQueryDefinition(null));
+
+        Funnel funnelParams = new Funnel.Builder()
+                .withTimeframe(TEST_RELATIVE_TIMEFRAME)
+                .withStep(new FunnelStep(TEST_EVENT_COLLECTION, TEST_TARGET_PROPERTY))
+                .build();
+
+        Map<String, Object> funnelQuery = savedQueryApi.createSavedQuery(TEST_RESOURCE_NAME,
+                                                                         funnelParams);
+
+        verifyPut(funnelQuery);
     }
 
     @Test
@@ -157,7 +266,7 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         Map<String, Object> multiAnalysisQuery =
                 savedQueryApi.createSavedQuery(TEST_RESOURCE_NAME, multiAnalysisParams);
 
-        verifyCreated(multiAnalysisQuery, null);
+        verifyPut(multiAnalysisQuery);
     }
 
     @Test
@@ -170,7 +279,7 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
                                                                            sum,
                                                                            refreshRate);
 
-        ObjectNode requestNode = verifyCreated(createdQuery, null);
+        ObjectNode requestNode = verifyPut(createdQuery);
         assertEquals(refreshRate, requestNode.get(KeenQueryConstants.REFRESH_RATE).asInt());
     }
 
@@ -186,8 +295,16 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
                                                                            displayName,
                                                                            refreshRate);
 
-        ObjectNode requestNode = verifyCreated(createdQuery, displayName);
+        ObjectNode requestNode = verifyPut(createdQuery, displayName);
         assertEquals(refreshRate, requestNode.get(KeenQueryConstants.REFRESH_RATE).asInt());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCachedQuery_Create_BadRefreshRate() throws IOException {
+        KeenQueryRequest sum = getSimpleRequest();
+        savedQueryApi.createCachedQuery(TEST_RESOURCE_NAME,
+                                        sum,
+                                        RefreshRate.MAX + 1);
     }
 
     @Test
@@ -227,44 +344,200 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         assertNull(getPersistentAnalysisRequestNode()); // GET request should have no body
     }
 
-    @Test
-    public void testSavedQuery_GetResult_Simple() throws IOException {
-        // TODO : FINISH TESTING
-
-        QueryResult multiAnalysisResult = savedQueryApi.getResult("multi_FromJavaSDK_1");
-        assertTrue(multiAnalysisResult instanceof MultiAnalysisResult);
-
-        QueryResult result = savedQueryApi.getResult("saved-funnel");
-        System.out.println(result);
-
-        QueryResult sumResultSaved = savedQueryApi.getResult("sum_FromJavaSDK_3");
-        System.out.println(sumResultSaved);
-
-        QueryResult sumResultCached = savedQueryApi.getResult("sum_FromJavaSDK_Cached_1");
-        System.out.println(sumResultCached);
-
-        QueryResult selectUniqueResult = savedQueryApi.getResult("sum_FromJavaSDK_2");
-        assertTrue(selectUniqueResult.isListResult());
-
-        QueryResult groupByResult = savedQueryApi.getResult("sum_FromJavaSDK");
-        assertTrue(groupByResult.isGroupResult());
-
-        QueryResult intervalResult = savedQueryApi.getResult("sum_FromJavaSDK_withDisplayName");
-        assertTrue(intervalResult.isIntervalResult());
+    private void setResponseWithResult(String resultString) throws IOException {
+        setMockResponse(200, getFakeSavedQueryDefinition(resultString));
     }
 
-    // TODO : Add this check for requests that need the query_name included, like update() to rename
-    //assertTrue(requestNode.hasNonNull(KeenQueryConstants.QUERY_NAME));
+    private void setGroupResponseWithResult(String resultString) throws IOException {
+        setMockResponse(200, getFakeSavedQueryDefinition(resultString, true, false, false, false));
+    }
+
+    private void setIntervalResponseWithResult(String resultString) throws IOException {
+        setMockResponse(200, getFakeSavedQueryDefinition(resultString, false, true, false, false));
+    }
+
+    private void setMultiResponseWithResult(String resultString) throws IOException {
+        setMockResponse(200, getFakeSavedQueryDefinition(resultString, false, false, true, false));
+    }
+
+    private void setFunnelResponseWithResult(String resultString) throws IOException {
+        setMockResponse(200, getFakeSavedQueryDefinition(resultString, false, false, false, true));
+    }
+
+    @Test
+    public void testSavedQuery_GetResult_Simple() throws IOException {
+        // Just make sure that for each general type of QueryResult we can see, that we construct
+        // the right type. Actual parsing of all those result types and construction of the
+        // QueryResults of complex combinations of required and optional data is tested elsewhere.
+
+        // Set up a simple result like that which would come from a sum.
+        setResponseWithResult("65");
+
+        QueryResult sumResultSaved = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(sumResultSaved.isLong());
+
+        // Set up a list result like that which would be returned from select_unique.
+        setResponseWithResult("[0, 1, 2, 3, 4, 5, 6, 7, 8]");
+
+        QueryResult selectUniqueResult = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(selectUniqueResult.isListResult());
+
+        // Set up a simple group by response.
+        setGroupResponseWithResult("[{" +
+                    "\"category\": \"one\"," +
+                    "\"result\": 17" +
+                "}, {" +
+                    "\"category\": \"two\"," +
+                    "\"result\": 31" +
+                "}]");
+
+        QueryResult groupByResult = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(groupByResult.isGroupResult());
+
+        // Set up a simple interval response.
+        setIntervalResponseWithResult("[{" +
+                    "\"timeframe\": {" +
+                        "\"end\": \"2016-10-22T00:00:00.000Z\"," +
+                        "\"start\": \"2016-10-21T00:00:00.000Z\"" +
+                    "}," +
+                    "\"value\": 17" +
+                "}, {" +
+                    "\"timeframe\": {" +
+                        "\"end\": \"2016-10-23T00:00:00.000Z\"," +
+                        "\"start\": \"2016-10-22T00:00:00.000Z\"" +
+                    "}," +
+                    "\"value\": 31" +
+                "}]");
+
+        QueryResult intervalResult = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(intervalResult.isIntervalResult());
+
+        // Set a simple Multi-Analysis response.
+        setMultiResponseWithResult("{" +
+                        "\"plain_old_count\": 24" +
+                    "}");
+
+        QueryResult multiAnalysisResult = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(multiAnalysisResult instanceof MultiAnalysisResult);
+
+        // Set a simple Funnel response. We don't really parse the "steps" in the result, so this
+        // should be fine.
+        setFunnelResponseWithResult("{" +
+                    "\"steps\": []," +
+                    "\"result\": [3, 1, 0]," +
+                    "\"actors\": [[\"jeff\", \"jim\", \"joe\"], [\"sam\"], null]" +
+                "}");
+
+        QueryResult funnelResult = savedQueryApi.getResult(TEST_RESOURCE_NAME);
+        assertTrue(funnelResult instanceof FunnelResult);
+    }
+
+    private void setMockResponsesForUpdate() throws IOException {
+        // Makes sure we send two requests, one to get the definition and one to update.
+        List<Response> mockResponses = new ArrayList<Response>();
+        mockResponses.add(new Response(200, getFakeSavedQueryDefinition(null)));
+        mockResponses.add(new Response(200, getFakeSavedQueryDefinition(null)));
+
+        setMockResponses(mockResponses);
+    }
 
     @Test
     public void testSavedQuery_Update_Simple() throws IOException {
-        // TODO : FINISH TESTING
+        setMockResponsesForUpdate();
 
         Map<String, Object> updates = new HashMap<String, Object>();
-        updates.put(KeenQueryConstants.REFRESH_RATE, (6 * 3600)); // 6 hrs
+        int refreshRate = 6 * 3600; // 6 hrs
+        updates.put(KeenQueryConstants.REFRESH_RATE, refreshRate);
 
-        Map<String, Object> updateResponse = savedQueryApi.updateQuery("not-cached", updates);
-        assertNotNull(updateResponse);
+        Map<String, Object> updateResponse = savedQueryApi.updateQuery(TEST_RESOURCE_NAME, updates);
+        ObjectNode requestNode = verifyPut(updateResponse, null, 1);
+        assertTrue(requestNode.hasNonNull(KeenQueryConstants.REFRESH_RATE));
+        assertEquals(refreshRate, requestNode.get(KeenQueryConstants.REFRESH_RATE).asInt());
+    }
+
+    @Test
+    public void testSavedQuery_UpdateHelpers_QueryName() throws IOException {
+        setMockResponsesForUpdate();
+
+        String newQueryName = "new_name";
+        Map<String, Object> updateResponse = savedQueryApi.setQueryName(TEST_RESOURCE_NAME,
+                                                                        newQueryName);
+
+        ObjectNode requestNode = verifyPut(updateResponse, null, 1);
+        assertTrue(requestNode.hasNonNull(KeenQueryConstants.QUERY_NAME));
+        assertEquals(newQueryName, requestNode.get(KeenQueryConstants.QUERY_NAME).asText());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_Validation_TooLow() {
+        RefreshRate.validateRefreshRate(1000);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_Validation_Negative() {
+        RefreshRate.validateRefreshRate(-5);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_Validation_TooHigh() {
+        RefreshRate.validateRefreshRate(90000);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_FromHours_TooLow() {
+        RefreshRate.fromHours(2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_FromHours_Negative() {
+        RefreshRate.fromHours(-5);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRefreshRate_FromHours_TooHigh() {
+        RefreshRate.fromHours(25);
+    }
+
+    @Test
+    public void testRefreshRate_Success() {
+        RefreshRate.validateRefreshRate(0);
+        RefreshRate.validateRefreshRate(RefreshRate.NO_CACHING);
+
+        RefreshRate.validateRefreshRate(RefreshRate.MIN);
+        RefreshRate.validateRefreshRate(RefreshRate.MIN + 1);
+
+        RefreshRate.validateRefreshRate(RefreshRate.MAX);
+        RefreshRate.validateRefreshRate(RefreshRate.MAX - 1);
+
+        RefreshRate.fromHours(0);
+
+        RefreshRate.fromHours(4);
+        RefreshRate.fromHours(12);
+        RefreshRate.fromHours(24);
+    }
+
+    @Test
+    public void testSavedQuery_UpdateHelpers_RefreshRate() throws IOException {
+        setMockResponsesForUpdate();
+
+        int refreshRate = RefreshRate.fromHours(8);
+        Map<String, Object> updateResponse = savedQueryApi.setRefreshRate(TEST_RESOURCE_NAME,
+                                                                          refreshRate);
+
+        ObjectNode requestNode = verifyPut(updateResponse, null, 1);
+        assertTrue(requestNode.hasNonNull(KeenQueryConstants.REFRESH_RATE));
+        assertEquals(refreshRate, requestNode.get(KeenQueryConstants.REFRESH_RATE).asInt());
+    }
+
+    @Test
+    public void testSavedQuery_UpdateHelpers_DisplayName() throws IOException {
+        setMockResponsesForUpdate();
+
+        String newDisplayName = "new_display_name";
+        Map<String, Object> updateResponse = savedQueryApi.setDisplayName(TEST_RESOURCE_NAME,
+                                                                          newDisplayName);
+
+        verifyPut(updateResponse, newDisplayName, 1);
     }
 
     @Test
@@ -273,7 +546,8 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         savedQueryApi.deleteQuery("to-be-deleted");
 
         // TODO : Add a means to check more about the lower-level HTTP request, like the specific
-        // headers, URL, response codes, etc.
+        // headers, URL, response codes, etc. Both the DELETE and GET requests have no request body
+        // so everything is in the URL/headers. KeenQueryTest does this in some places.
 
         assertNull(getPersistentAnalysisRequestNode()); // GET request should have no body
     }

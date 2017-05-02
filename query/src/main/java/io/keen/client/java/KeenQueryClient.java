@@ -730,17 +730,15 @@ public class KeenQueryClient {
         if (null == responseMap.get(KeenQueryConstants.RESULT)) {
             // double check if result is null because there's an error (shouldn't happen)
             if (responseMap.containsKey(KeenQueryConstants.ERROR_CODE)) {
-                String errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE).toString();
-                String message = responseMap.get(KeenQueryConstants.MESSAGE).toString();
+                Object errorCode = responseMap.get(KeenQueryConstants.ERROR_CODE);
+                Object message = responseMap.get(KeenQueryConstants.MESSAGE);
 
-                // TODO : How could errorCode or message be null? The toString() calls would have
-                // thrown, plus the containsKey() would have returned false for errorCode.
                 String errorMessage = "Error response received from server";
                 if (errorCode != null) {
-                    errorMessage += " " + errorCode;
+                    errorMessage += " " + errorCode.toString();
                 }
                 if (message != null) {
-                    errorMessage += ": " + message;
+                    errorMessage += ": " + message.toString();
                 }
 
                 throw new KeenQueryClientException(errorMessage);
