@@ -96,11 +96,10 @@ public class KeenQueryTestBase {
             throw new IllegalArgumentException("Should have at least 2 responses.");
         }
 
-        List<Response> remaining = responses.subList(1, numExecuteCalls);
-        Response[] responsesArray = remaining.toArray(new Response[numExecuteCalls - 1]);
-
-        Response r = responses.get(0);
-        when(mockHttpHandler.execute(any(Request.class))).thenReturn(r, responsesArray);
+        List<Response> remainingResponses = responses.subList(1, numExecuteCalls);
+        Response[] remaining = remainingResponses.toArray(new Response[numExecuteCalls - 1]);
+        Response first = responses.get(0);
+        when(mockHttpHandler.execute(any(Request.class))).thenReturn(first, remaining);
     }
 
     String mockCaptureCountQueryRequest(KeenQueryRequest inputParams) throws Exception {
@@ -149,6 +148,6 @@ public class KeenQueryTestBase {
         return (ObjectNode) OBJECT_MAPPER.readTree(requestString);
     }
 
-    // TODO : We should add some verification of the actual URL produced in the Request
+    // Issue #100 : Add some verification of the actual URL produced in the Request
     // the way we do in some of the tests in KeenQueryTest.
 }

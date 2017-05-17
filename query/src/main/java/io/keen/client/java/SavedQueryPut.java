@@ -60,17 +60,14 @@ class SavedQueryPut extends SavedQueryRequest {
         // If there isn't a KeenQueryRequest then hopefully this is an update and the entire
         // new query definition had better be in miscProperties.
         if (null != query) {
-            //Make sure there isn't already a "query" key
+            // Make sure there isn't already a "query" key
             SavedQueryPut.expectNotContainsKey(requestArgs, KeenQueryConstants.QUERY);
             Map<String, Object> queryArgs = query.constructRequestArgs();
 
-            // TODO : Does the analysis_type go here, like the docs say?
+            // The "analysis_type" goes on the "query" object
             queryArgs.put(KeenQueryConstants.ANALYSIS_TYPE, query.getAnalysisType());
 
             requestArgs.put(KeenQueryConstants.QUERY, queryArgs);
-
-            // TODO : ... or does it go here? Seems like it works both ways :S
-            //requestArgs.put(KeenQueryConstants.ANALYSIS_TYPE, query.getAnalysisType());
         }
 
         if (0 <= refreshRate) {

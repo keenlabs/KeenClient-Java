@@ -14,13 +14,7 @@ import io.keen.client.java.http.HttpMethods;
  * @author masojus
  */
 abstract class PersistentAnalysis extends KeenQueryRequest {
-    // TODO : Does the API support unicode non-ASCII resource names? HTTP URIs can't technically
-    // contain non-ASCII, but browsers can choose to display URL-encoded characters and choose an
-    // encoding to use from the page itself, but at least via the Explorer UI, giving a query a
-    // display name of "Can has diacritics Ñüáúéíó üöäñ çàèìòù ãõ" yields a url as follows:
-    // "https://...?saved_query=can-has-diacritics----". So two questions remain:
-    // 1) Can the API handle a queryName with non-ASCII? Should we allow ?
-    // 2) This regex does not match strings like "árbol π" so we only accept ASCII
+    // This regex does not match strings like "árbol π" since the API only accepts ASCII in the URL.
     private static final String RESOURCE_NAME_REGEX = "^[\\w-]*$";
 
     private final String httpMethod;
@@ -108,7 +102,7 @@ abstract class PersistentAnalysis extends KeenQueryRequest {
     static void validateDisplayName(String displayName) {
         if (null == displayName || displayName.trim().isEmpty()) {
             throw new IllegalArgumentException("The display name cannot be null, empty or " +
-                                               "whitespace only");
+                                               "whitespace only.");
         }
     }
 }

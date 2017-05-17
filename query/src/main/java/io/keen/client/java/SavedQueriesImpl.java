@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -113,7 +112,9 @@ final class SavedQueriesImpl implements SavedQueries {
         // We expect a structure such that each entry in the list was a JSON Object representing a
         // query definition, and no entry should be a JSON Value.
         for (Object defObj : response) {
-            if (!(defObj instanceof LinkedHashMap)) {
+            if (!(defObj instanceof Map)) {
+                // Issue #101 : Are we using the appropriate exception type in the Saved/cached
+                // Query code, or should we add an exception type?
                 throw new ServerException("Expected list of definitions to be JSON Array of JSON " +
                                           "Objects, but encountered this: " + defObj.toString());
             }

@@ -68,7 +68,7 @@ public class KeenClientTest {
     @BeforeClass
     public static void classSetUp() {
         KeenLogging.enableLogging();
-        TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key");
+        TEST_PROJECT = new KeenProject("<project ID>", "<write key>", "<read key>");
         TEST_EVENTS = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < 10; i++) {
             Map<String, Object> event = new HashMap<String, Object>();
@@ -112,6 +112,7 @@ public class KeenClientTest {
         // Mock an environment with a project.
         Environment mockEnv = mock(Environment.class);
         when(mockEnv.getKeenProjectId()).thenReturn("<project ID>");
+        when(mockEnv.getKeenReadKey()).thenReturn("<read key>");
 
         // Make sure a new test client using the mock environment has the expected default project.
         testClient = new TestKeenClientBuilder(mockEnv).build();
@@ -242,7 +243,7 @@ public class KeenClientTest {
 
     @Test
     public void testAddEventNoWriteKey() throws KeenException, IOException {
-        client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, null));
+        client.setDefaultProject(new KeenProject("508339b0897a2c4282000000", null, "<read key>"));
         Map<String, Object> event = new HashMap<String, Object>();
         event.put("test key", "test value");
         try {

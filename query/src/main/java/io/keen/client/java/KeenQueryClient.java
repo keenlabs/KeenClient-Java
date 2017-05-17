@@ -277,8 +277,6 @@ public class KeenQueryClient {
     }
 
     Map<String, Object> getMapResponse(KeenQueryRequest request) throws IOException {
-        // Throw are runtime if the return type isn't as expected.
-        // TODO : Throw a more specific exception
         @SuppressWarnings("unchecked")
         Map<String, Object> response = getResponse(Map.class, request);
 
@@ -286,8 +284,6 @@ public class KeenQueryClient {
     }
 
     List<Object> getListResponse(KeenQueryRequest request) throws IOException {
-        // Throw are runtime if the return type isn't as expected.
-        // TODO : Throw a more specific exception
         @SuppressWarnings("unchecked")
         List<Object> response = getResponse(List.class, request);
 
@@ -297,8 +293,13 @@ public class KeenQueryClient {
     private <T> T getResponse(Class<T> containerType, KeenQueryRequest request) throws IOException {
         Object response = getResponse(request);
 
+        // Throw at runtime if the return type isn't as expected.
         if (!containerType.isAssignableFrom(response.getClass())) {
-            throw new RuntimeException(); // TODO : More specific
+            // Issue #101 : Is this the appropriate exception type?
+            throw new KeenQueryClientException(String.format(Locale.US,
+                                                             "Root of response was not a '%s' as " +
+                                                             "expected.",
+                                                             containerType.getSimpleName()));
         }
 
         return containerType.cast(response);
@@ -306,8 +307,7 @@ public class KeenQueryClient {
 
     private QueryResult rawMapResponseToQueryResult(KeenQueryRequest request,
                                                     Map<String, Object> response) {
-        // TODO : Eventually moving result parsing out of this class might be a good plan, like
-        // @baumatron and I have previously discussed.
+        // Issue #97 : Look at moving result parsing out of KeenQueryClient.
 
         boolean isGroupBy = request.groupedResponseExpected();
         boolean isInterval = request.intervalResponseExpected();
@@ -359,6 +359,7 @@ public class KeenQueryClient {
         Map<String, Object> wrappedResponse = sendRequest(url, httpMethod, authKey, queryArgs);
         Object response = wrappedResponse;
 
+        // Issue #99 : Take a look at better dealing with root Map<> vs root List<> in the response.
         if (wrappedResponse.containsKey(KeenConstants.KEEN_FAKE_JSON_ROOT)) {
             response = wrappedResponse.get(KeenConstants.KEEN_FAKE_JSON_ROOT);
         }

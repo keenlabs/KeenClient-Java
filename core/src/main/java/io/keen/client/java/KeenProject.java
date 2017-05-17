@@ -43,8 +43,15 @@ public class KeenProject {
      *                  functionality that requires such a key.
      */
     public KeenProject(String projectId, String writeKey, String readKey, String masterKey) {
-        if (projectId == null || projectId.trim().isEmpty()) {
+        if (null == projectId || projectId.trim().isEmpty()) {
             throw new IllegalArgumentException("Invalid project id specified: " + projectId);
+        }
+
+        if ((null == writeKey || writeKey.trim().isEmpty()) &&
+            (null == readKey || readKey.trim().isEmpty()) &&
+            (null == masterKey || masterKey.trim().isEmpty())) {
+            throw new IllegalArgumentException("At least one of the keys given must be non-null " +
+                                               "and non-empty.");
         }
 
         this.projectId = projectId;

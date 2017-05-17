@@ -21,7 +21,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error creating the Saved Query.
      */
     Map<String, Object> createSavedQuery(String queryName,
                                          KeenQueryRequest query) throws IOException;
@@ -35,7 +35,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error creating the Saved Query.
      */
     Map<String, Object> createSavedQuery(String queryName,
                                          KeenQueryRequest query,
@@ -51,7 +51,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error creating the Cached Query.
      */
     Map<String, Object> createCachedQuery(String queryName,
                                           KeenQueryRequest query,
@@ -68,7 +68,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error creating the Cached Query.
      */
     Map<String, Object> createCachedQuery(String queryName,
                                           KeenQueryRequest query,
@@ -81,7 +81,7 @@ public interface SavedQueries {
      * @param queryName The resource name for the query.
      *
      * @return The definition for the given query resource.
-     * @throws IOException
+     * @throws IOException If there is an error getting the Saved/Cached Query definition.
      */
     Map<String, Object> getDefinition(String queryName) throws IOException;
 
@@ -89,7 +89,7 @@ public interface SavedQueries {
      * Get all Saved/Cached Query definitions.
      *
      * @return All the Saved/Cached query definitions for this project.
-     * @throws IOException
+     * @throws IOException If there is an error getting the Saved/Cached Query definitions.
      */
     List<Map<String, Object>> getAllDefinitions() throws IOException;
 
@@ -99,7 +99,7 @@ public interface SavedQueries {
      * @param queryName The resource name for the query.
      *
      * @return The result of the Saved/Cached query.
-     * @throws IOException
+     * @throws IOException If there is an error getting the Saved/Cached Query result.
      */
     QueryResult getResult(String queryName) throws IOException;
 
@@ -114,7 +114,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> updateQuery(String queryName,
                                     Map<String, ?> updates) throws IOException;
@@ -129,6 +129,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
+     * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> updateQueryFull(String queryName,
                                         Map<String, Object> fullDefinition) throws IOException;
@@ -138,7 +139,7 @@ public interface SavedQueries {
      * HTTP 204 - No Content, so this method returns void and throws upon error.
      *
      * @param queryName The resource name for the query to be deleted.
-     * @throws IOException
+     * @throws IOException If there is an error deleting the Saved/Cached Query.
      */
     void deleteQuery(String queryName) throws IOException;
 
@@ -151,7 +152,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> setQueryName(String queryName, String newQueryName) throws IOException;
 
@@ -165,7 +166,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> setRefreshRate(String queryName, int refreshRate) throws IOException;
 
@@ -179,7 +180,7 @@ public interface SavedQueries {
      *
      * @return The raw return value of the PUT request as a Map containing the complete new
      *         Saved/Cached Query definition with auditing like created/updated/run information.
-     * @throws IOException
+     * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> setDisplayName(String queryName, String displayName) throws IOException;
 }

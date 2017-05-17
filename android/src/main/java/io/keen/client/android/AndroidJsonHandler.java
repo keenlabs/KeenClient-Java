@@ -46,10 +46,8 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         try {
             Object jsonObjOrArray = getJsonObjectManager().newTokener(json).nextValue();
 
-            // TODO : What should the return value be? Technically it could be a List or Map, so it
-            // should be Object, then client code would need to do the instanceof check. For now,
-            // so as to not break the KeenJsonHandler interface, we can stick a dummy "root" key in
-            // the map we pass back.
+            // Issue #99 : Take a look at better dealing with root Map<> vs root List<> in the
+            // response.
 
             Object rootNode = JsonHelper.fromJson(jsonObjOrArray);
             Map<String, Object> rootMap = null;

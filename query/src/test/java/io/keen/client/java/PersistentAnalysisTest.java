@@ -48,7 +48,11 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
     }
 
     // Make sure result, if provided, is wrapped in root object/array brackets, if not scalar.
-    private String getFakeSavedQueryDefinition(String result, boolean isGroupBy, boolean isInterval, boolean isMultiAnalysis, boolean isFunnel) {
+    private String getFakeSavedQueryDefinition(String result,
+                                               boolean isGroupBy,
+                                               boolean isInterval,
+                                               boolean isMultiAnalysis,
+                                               boolean isFunnel) {
         // A few of the keys one would get back. We don't really check the return values in most of
         // these tests because we aren't parsing them for the most part, except the query result.
         String analysisType;
@@ -545,7 +549,7 @@ public class PersistentAnalysisTest extends KeenQueryTestBase {
         setMockResponse(204, null);
         savedQueryApi.deleteQuery("to-be-deleted");
 
-        // TODO : Add a means to check more about the lower-level HTTP request, like the specific
+        // Issue #100 : Check more about the lower-level HTTP request, like the specific
         // headers, URL, response codes, etc. Both the DELETE and GET requests have no request body
         // so everything is in the URL/headers. KeenQueryTest does this in some places.
 

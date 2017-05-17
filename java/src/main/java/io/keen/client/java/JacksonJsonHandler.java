@@ -29,31 +29,11 @@ public class JacksonJsonHandler implements KeenJsonHandler {
      */
     @Override
     public Map<String, Object> readJson(Reader reader) throws IOException {
-        // TODO : We can't assume the top-level node is a JSON Object anymore, because parts of the
-        // API we access return a JSON Array as the root. So we need to detect the type and decide
-        // what to return, so we need a different return type. Technically it could be a List or
-        // Map, so it should be Object, then client code would need to do the instanceof check. For
-        // now, so as to not break the KeenJsonHandler interface, we can we can stick a dummy "root"
-        // key in the map we pass back.
+        // Issue #99 : Take a look at better dealing with root Map<> vs root List<> in the response.
 
         // We are expecting this isn't called on nested nodes in a recursive manner.
         JsonNode rootNode = mapper.readTree(reader);
         Map<String, Object> rootMap = null;
-
-        /*
-        TODO : Are the calls to traverse() here any better or worse than doing either of these?:
-
-        // Not specifically typed, but our parameter type is Object anyway. This also probably
-        // calls traverse() anyway.
-        mapper.treeToValue(rootNode, List.class)
-
-        // Precise type information, but potentially creating a new ObjectReader? Also ends up
-        // calling traverse() I think.
-        mapper.reader(COLLECTION_TYPE).readValue(rootNode)
-
-        // I read this was bad because it's a two-step conversion, but I'm not sure that's true.
-        mapper.convertValue(rootNode, COLLECTION_TYPE)
-        */
 
         // If we try to parse an empty string or invalid content, we could get null.
         if (null == rootNode) {

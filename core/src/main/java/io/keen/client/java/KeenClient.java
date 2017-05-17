@@ -1546,7 +1546,7 @@ public class KeenClient {
             try {
                 callback.onSuccess();
             } catch (Exception userException) {
-                // Do nothing.
+                // Do nothing. Issue #98
             }
         }
     }
@@ -1573,14 +1573,14 @@ public class KeenClient {
         handleSuccess(callback);
         if (callback != null) {
             try {
-                if(callback instanceof KeenDetailedCallback){
+                if (callback instanceof KeenDetailedCallback){
                     ((KeenDetailedCallback)callback).onSuccess(project,
                                                                eventCollection,
                                                                event,
                                                                keenProperties);
                 }
             } catch (Exception userException) {
-                // Do nothing.
+                // Do nothing. Issue #98
             }
         }
     }
@@ -1607,7 +1607,7 @@ public class KeenClient {
                 try {
                     callback.onFailure(e);
                 } catch (Exception userException) {
-                    // Do nothing.
+                    // Do nothing. Issue #98
                 }
             }
         }
@@ -1648,7 +1648,7 @@ public class KeenClient {
             KeenLogging.log("Encountered error: " + e.getMessage());
             if (callback != null) {
                 try {
-                    if(callback instanceof KeenDetailedCallback){
+                    if (callback instanceof KeenDetailedCallback){
                         ((KeenDetailedCallback)callback).onFailure(project,
                                                                    eventCollection,
                                                                    event,
@@ -1656,7 +1656,7 @@ public class KeenClient {
                                                                    e);
                     }
                 } catch (Exception userException) {
-                    // Do nothing.
+                    // Do nothing. Issue #98
                 }
             }
         }
