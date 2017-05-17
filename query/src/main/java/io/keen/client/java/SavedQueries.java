@@ -132,7 +132,7 @@ public interface SavedQueries {
      * @throws IOException If there is an error updating the Saved/Cached Query definition.
      */
     Map<String, Object> updateQueryFull(String queryName,
-                                        Map<String, Object> fullDefinition) throws IOException;
+                                        Map<String, ?> fullDefinition) throws IOException;
 
     /**
      * Delete the query stored at the given resource name. Upon success the server returns
