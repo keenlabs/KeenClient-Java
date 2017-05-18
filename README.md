@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:5.1.0'
+    compile 'io.keen:keen-client-api-java:5.2.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:5.1.0@aar'
+    compile 'io.keen:keen-client-api-android:5.2.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>5.1.0</version>
+  <version>5.2.0</version>
 </dependency>
 ```
 
@@ -265,7 +265,8 @@ The query capabilities within the Java Keen client enable you to send POST queri
 The Query Client is published into a separate artifact, since many applications only need event publishing. If you would like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. The instructions are the same as described above under [Installation](#installation), but with the artifact name `keen-client-api-query` (instead of `keen-client-api-java` or `keen-client-api-android`).
 
 #### Building a Keen Query Client
-You can build a KeenQueryClient by just providing a KeenProject. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same KeenProject will be used for publishing events as well.
+
+You can build a `KeenQueryClient` by just providing a `KeenProject`. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same `KeenProject` will be used for publishing events as well.
 ```java
 KeenProject queryProject = new KeenProject("<project id>", "<write key>", "<read key>");
 KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject).build();
@@ -273,13 +274,14 @@ KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject).build();
 Optionally, users can also specify a HTTP Handler, base URL, or JSON Handler:
 ```java
 KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
-		.withHttpHandler(httpHandler)
-		.withJsonHandler(jsonHandler)
-		.withBaseUrl(baseURL)
-		.build();
+        .withHttpHandler(httpHandler)
+        .withJsonHandler(jsonHandler)
+        .withBaseUrl(baseURL)
+        .build();
 ```
 #### Using the KeenQueryClient to send Queries
-The most simple way that users can use the KeenQueryClient to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO API.
+
+The most simple way that users can use the `KeenQueryClient` to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO API.
 ```java
 long count = queryClient.count("<event_collection>", new RelativeTimeframe("this_week"));
 long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2015-05-15T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
@@ -293,7 +295,8 @@ double sum = queryClient.sum("<event_collection>", "<target_property>", new Rela
 The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries. These queries are a little more complicated, and Extraction is currently not supported by the Keen Query Client.
 
 #### Advanced
-Alternatively, users can use optional parameters to send queries. The return type is a QueryResult object. The user is expected to verify the expected QueryResult subclass, given the parameters entered.
+
+Alternatively, users can use optional parameters to send queries. The return type is a `QueryResult` object. The user is expected to verify the expected `QueryResult` subclass, given the parameters entered.
 ```java
 Query query = new Query.Builder(QueryType.COUNT)
         .withEventCollection("<event_collection>")
@@ -301,14 +304,14 @@ Query query = new Query.Builder(QueryType.COUNT)
         .build();
 QueryResult result = queryClient.execute(query);
 if (result.isLong()) {
-	long countValue = result.longValue();
-	// do something with countValue
+    long countValue = result.longValue();
+    // do something with countValue
 }
 ```
 
 Some special cases are when "Group By" and "Interval" are specified, as well as the Select Unique query.
 
-Select Unique queries return a list of unique values, given the target property. Therefore, the QueryResult will be a list of unique property values. The QueryResult type only supports Integer, Double, String, and List values; therefore, if the property value is not one of the aforementioned types, then you may not be able to access that value.
+Select Unique queries return a list of unique values, given the target property. Therefore, the `QueryResult` will be a list of unique property values. The `QueryResult` type only supports Integer, Double, String, and List values; therefore, if the property value is not one of the aforementioned types, then you may not be able to access that value.
 
 ``` java
 Query query = new Query.Builder(QueryType.SELECT_UNIQUE)
@@ -318,12 +321,12 @@ Query query = new Query.Builder(QueryType.SELECT_UNIQUE)
         .build();
 QueryResult result = queryClient.execute(query);
 if (result.isListResult()) {
-	List<QueryResult> listResults = result.getListResults();
-	for (QueryResult item : listResults) {
-		if (item.isLong()) {
-			// do something with long value
-		}
-	}
+    List<QueryResult> listResults = result.getListResults();
+    for (QueryResult item : listResults) {
+        if (item.isLong()) {
+            // do something with long value
+        }
+    }
 }
 ```
 
@@ -337,14 +340,15 @@ Query query = new Query.Builder(QueryType.COUNT)
         .build();
 QueryResult result = queryClient.execute(query);
 if (result.isGroupResult()) {
-	for (Map.Entry<Group, QueryResult> groupResult : result.getGroupResults().entrySet()) {
-	    Map<String, Object> groupProperies = groupResult.getKey().getProperties();
-	    long groupCount = groupResult.getValue().longValue();
-	    // ... do something with the group properties and the count result
-	}
+    for (Map.Entry<Group, QueryResult> groupResult : result.getGroupResults().entrySet()) {
+        Map<String, Object> groupProperies = groupResult.getKey().getProperties();
+        long groupCount = groupResult.getValue().longValue();
+        // ... do something with the group properties and the count result
+    }
 }
 ```
-Specifying "Interval" in the query will cause the query response to be an IntervalResult object. An IntervalResult is a type of QueryResult that consist of Map<AbsoluteTimeframe,QueryResult> objects.
+
+Specifying "Interval" in the query will cause the query response to be an `IntervalResult` object. An `IntervalResult` is a type of `QueryResult` that consist of `Map<AbsoluteTimeframe,QueryResult>` objects.
 
 ``` java
 Query query = new Query.Builder(QueryType.COUNT)
@@ -354,14 +358,14 @@ Query query = new Query.Builder(QueryType.COUNT)
         .build();
 QueryResult result = queryClient.execute(query);
 if (result.isIntervalResult()) {
-        for (Map.Entry<AbsoluteTimeframe, QueryResult> intervalResult : result.getIntervalResults().entrySet()) {
-            AbsoluteTimeframe timeframe = intervalResult.getKey();
-            long intervalCount = intervalResult.getValue().longValue();
-            // ... do something with the absolute timeframe and count result.
-        }
+    for (IntervalResultValue intervalResult : result.getIntervalResults()) {
+        AbsoluteTimeframe timeframe = intervalResult.getTimeframe();
+        long intervalCount = intervalResult.getResult().longValue();
+        // ... do something with the absolute timeframe and count result.
+    }
 }
 ```
-Filtering via both Group By and Interval will cause the query response to be an IntervalResult object that contains GroupByResult objects follows:
+Filtering via both Group By and Interval will cause the query response to be an `IntervalResult` object that contains `GroupByResult` objects follows:
 
 ``` java
 Query query = new Query.Builder(QueryType.COUNT)
@@ -373,10 +377,10 @@ Query query = new Query.Builder(QueryType.COUNT)
 QueryResult result = queryClient.execute(query);
 
 if (result.isIntervalResult()) {
-    for (Map.Entry<AbsoluteTimeframe, QueryResult> intervalResult : result.getIntervalResults().entrySet()) {
-        AbsoluteTimeframe timeframe = intervalResult.getKey();
+    for (IntervalResultValue intervalResult : result.getIntervalResults()) {
+        AbsoluteTimeframe timeframe = intervalResult.getTimeframe();
 
-        for (Map.Entry<Group, QueryResult> groupResult : intervalResult.getValue().getGroupResults().entrySet()) {
+        for (Map.Entry<Group, QueryResult> groupResult : intervalResult.getResult().getGroupResults().entrySet()) {
             Map<String, Object> groupProperies = groupResult.getKey().getProperties();
             long groupCount = groupResult.getValue().longValue();
             // ... do something with the group properties and the count result
@@ -384,7 +388,10 @@ if (result.isIntervalResult()) {
     }
 }
 ```
-To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the MultiAnalysis.Builder instead. An instance of MultiAnalysisResult will be returned unless Group By and/or Interval parameters are included, in which case the MultiAnalysisResult(s) will be nested inside an IntervalResult and/or a GroupByResult, just like any other QueryResult for other single analysis types when grouping/intervals are applied:
+
+#### Multi-Analysis
+
+To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the `MultiAnalysis.Builder` instead. An instance of `MultiAnalysisResult` will be returned unless Group By and/or Interval parameters are included, in which case the `MultiAnalysisResult`(s) will be nested inside an `IntervalResult` and/or a `GroupByResult`, just like any other `QueryResult` for other single analysis types when grouping/intervals are applied:
 
 ``` java
 final MultiAnalysis multiAnalysis = new MultiAnalysis.Builder()
@@ -405,7 +412,9 @@ if (result instanceof MultiAnalysisResult) {
     }
 }
 ```
-The ```MultiAnalysis.Builder``` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no SubAnalysis instances set.
+The `MultiAnalysis.Builder` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no `SubAnalysis` instances set.
+
+#### Funnel Analysis
 
 Funnel analysis can similarly be performed using the `Funnel.Builder`. As with multi-analysis, some parameter checking is done to ensure required parameters are at least provided. The result of a funnel analysis is a `FunnelResult`, on which a `ListResult` containing the results of the funnel are available through `getFunnelResult()`, and if actor values were requested, their results will be available through `getActorsResult()`. `FunnelStep`s are required to provide a collection name, an actor property name, and a `Timeframe` instance unless one is provided for the entire funnel using `Funnel.Builder.withTimeframe()`. Additional optional parameters are available for specifying a list of `Filter`s for each step and the special parameters `inverted`, `optional`, and `withActors`.
 
@@ -462,22 +471,138 @@ if (result instanceof FunnelResult) {
 
 ```
 
+#### Saved/Cached Queries
+
+To work with [Saved/Cached Queries](https://keen.io/docs/api/#saved-queries), create a 
+`KeenQueryClient` as normal, then use it to create a `SavedQueries` implementation:
+
+```java
+KeenQueryClient queryClient = ...;
+SavedQueries savedQueryApi = queryClient.getSavedQueriesInterface();
+```
+
+One can create a query, get a single query definition by resource name, get all query definitions, 
+and delete a query. Note that most Saved/Cached Query functionality requires a Master Key, but 
+retrieving result(s) of a query can be done with just a Read Key. Here are some examples:
+
+```java
+
+// First, we'll create a query. Let's count the number of purchases with a price >= $1 in the last
+// two weeks including the current week.
+SingleAnalysis count = new SingleAnalysis.Builder(QueryType.COUNT)
+        .withEventCollection("purchases")
+        .withFilter("price", FilterOperator.GREATER_THAN_EQUAL, 1.00)
+        .withTimeframe(new RelativeTimeframe("this_2_weeks"))
+        .build();
+
+// There are variations of create*Query() to set things like the refresh rate.
+Map<String, Object> rawCreateResponse = savedQueryApi.createSavedQuery("saved-query-name", count);
+
+// Get all query definitions for this project.
+List<Map<String, Object>> allQueryDefs = savedQueryApi.getAllDefinitions();
+
+// Get the query definition for the query we just created.
+Map<String, Object> countQueryDef = savedQueryApi.getDefinition("saved-query-name");
+
+// Now retrieve the result of the query actually having been run.
+QueryResult sumResultSaved = savedQueryApi.getResult("saved-query-name");
+
+// Maybe update the query. See notes below, as this is a little more complex.
+
+// Now delete the query.
+savedQueryApi.deleteQuery("saved-query-name");
+```
+
+Updating queries requires sending a `PUT` with the complete query definition. Any property not sent 
+is interpreted as being cleared/removed. This means that properties set via another client, 
+including the Projects Explorer Web UI, will be lost this way.
+
+The updateQuery() method makes this easier by allowing client code to just specify the properties 
+that need updating. To do this, it will retrieve the existing query definition first, which means 
+there will be two HTTP requests. Use updateQueryFull() in code that already has a full query 
+definition that can reasonably be expected to be current.
+
+There are also some helper methods to update a few properties.
+
+```java
+Map<String, Object> updateResponse = null;
+
+// Update a saved query to now be a cached query with the minimum refresh rate of 4 hrs...
+
+// ...using partial update:
+Map<String, Object> partialUpdates = new HashMap<String, Object>();
+int refreshRate = 4 * 3600; // 4 hrs
+partialUpdates.put("refresh_rate", refreshRate);
+
+updateResponse = savedQueryApi.updateQuery("saved-query-name", partialUpdates);
+
+// ...using full update, if we've already fetched the query definition and removed unacceptable
+// properties. Some properties, like "run_information" returned by getting a query definition cannot
+// be `PUT` back or an error is returned.:
+Map<String, Object> fullUpdates = mySanitizeHelper(countQueryDef);
+fullUpdates.put("refresh_rate", 14400);
+updateResponse = savedQueryApi.updateQueryFull("saved-query-name", fullUpdates);
+
+// ...or using the helpers:
+updateResponse = savedQueryApi.setRefreshRate("saved-query-name", RefreshRate.fromHours(4));
+
+
+// Update a saved query to a new resource name...
+
+// ...using partial update:
+Map<String, Object> partialUpdatesName = new HashMap<String, Object>();
+partialUpdatesName.put("query_name", "cached-query-name");
+updateResponse = savedQueryApi.updateQuery("saved-query-name", partialUpdates);
+
+// ...using full update, if we've already fetched the query definition or have it lying around for
+// whatever reason. We send "refresh_rate" again, along with the entire definition, or else it would
+// be reset. Assume "updateResponse" is the response from having changed the refresh rate just now:
+Map<String, Object> fullUpdatesName = mySanitizeHelper(updateResponse);
+fullUpdatesName.put("query_name", "cached-query-name");
+updateResponse = savedQueryApi.updateQueryFull("saved-query-name", fullUpdatesName);
+
+// ...or using the helpers:
+updateResponse = savedQueryApi.setQueryName("saved-query-name", "cached-query-name");
+```
+
+As one can see, updating with partial updates or using the helpers where available is easier than 
+re-creating a full query definition which contains only acceptable properties. In either case, the 
+updates are presented as a `Map<String, ?>` that mirrors the JSON structure of the query definition, 
+like what is returned from `getDefinition()`. So if client code just wants to change the 
+"event_collection" to "sales" instead, it has to pass a nested `Map<>` structure. As the updates 
+get more deeply nested or otherwise complicated, it might be better to just re-create the query 
+from scratch, optionally deleting it first. The raw response from `create*Query()` has a field 
+indicating whether the query was created or updated.
+
+```java
+
+// Updating a deep property, like the "event_collection" property.
+
+// Construct a nested `Map<>` structure matching JSON { "query": { "event_collection": "sales" } }
+Map<String, Object> queryUpdates = HashMap<String, Object>();
+queryUpdates.put("event_collection", "sales");
+Map<String, Object> updateEventCollection = new HashMap<String, Object>();
+updateEventCollection.put("query", queryUpdates);
+
+updateResponse = savedQueryApi.updateQuery("cached-query-name", updateEventCollection);
+```
+
 ### Utility Methods
 
-There are also some utility methods to add filters and timeframes to a Query:
+There are also some utility methods to add filters and timeframes to a `Query`:
 ```java
 
 // this will add two filter parameters, with 1 < click-count < 5
 Query query = new Query.Builder(QueryType.COUNT)
-	            .withEventCollection("<event_collection>")
-	            .withFilter("click-count", FilterOperator.GREATER_THAN, 1)
-	            .withFilter("click-count", FilterOperator.LESS_THAN, 5)
-	            .withTimeframe(new RelativeTimeframe("this_month"))
-	            .build();
+        .withEventCollection("<event_collection>")
+        .withFilter("click-count", FilterOperator.GREATER_THAN, 1)
+        .withFilter("click-count", FilterOperator.LESS_THAN, 5)
+        .withTimeframe(new RelativeTimeframe("this_month"))
+        .build();
 
 QueryResult result = queryClient.execute(query);
 if (result.isLong()) {
-	long queryResult = result.longValue();
+    long queryResult = result.longValue();
 }
 ```
 
@@ -523,6 +648,21 @@ The KeenClient supports HTTP proxies via the `setProxy(String proxyHost, int pro
 KeenClient client = new JavaKeenClientBuilder().build();
 client.setProxy("secureproxy.example.com", 2570);
 // now use the client object as you normally would
+```
+
+Note that if using an authenticated proxy, it's also necessary to set the [default authenticator](https://docs.oracle.com/javase/7/docs/api/java/net/Authenticator.html#setDefault(java.net.Authenticator)):
+
+```java
+import java.net.*;
+
+Authenticator.setDefault(
+   new Authenticator() {
+      @Override
+      public PasswordAuthentication getPasswordAuthentication() {
+         return new PasswordAuthentication("user", "password".toCharArray());
+      }
+   }
+);
 ```
 
 ## Working with the Source
@@ -629,6 +769,12 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 5.2.0
+
++ Add Saved/Cached Query support.
++ Support includes Create, Read a definition or all definitions, Retrieve results, Update partial or
+  complete definitions, and Delete of Saved/Cached Queries.
 
 ##### 5.1.0
 
