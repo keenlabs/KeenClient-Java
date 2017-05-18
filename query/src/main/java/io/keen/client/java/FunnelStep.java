@@ -10,32 +10,31 @@ import java.util.Map;
  * @author baumatron
  */
 public class FunnelStep extends RequestParameter<Map<String, Object>> {
-        
     // Required parameters
     /**
      * The name of the event collection.
      */
     private final String collectionName;
-    
+
     /**
      * The name of the actor property for this funnel step.
      */
     private final String actorPropertyName;
-    
+
     /**
      * The timeframe used to qualify the events used for this funnel step.
      * If not specified here for the funnel step, must be specified on the funnel
      * itself.
      */
     private final Timeframe timeframe;
-    
+
     // Optional parameters
     /**
      * An optional list of filters used to qualify the events used in 
      * this funnel step.
      */
     private final RequestParameterCollection<Filter> filters;
-    
+
     // Special parameters
     /**
      * If true, inverted means events matching this step will be excluded from
@@ -43,19 +42,19 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
      * Cannot be set if this is the first step in a funnel query.
      */
     private final Boolean inverted;
-    
+
     /**
      * If optional is set, the funnel will ignore the effects of this step
      * on subsequent steps.
      */
     private final Boolean optional;
-    
+
     /**
      * If set, the query result will include a list of actor property values
      * for this step.
      */
     private final Boolean withActors;
-    
+
     /**
      * FunnelStep constructor including all required, optional, and special parameters.
      * Any parameter that is optional may be set to null.
@@ -85,33 +84,33 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
         final Boolean inverted,
         final Boolean optional,
         final Boolean withActors) {
-        
+
         if (null == collectionName || collectionName.trim().isEmpty()) {
             throw new IllegalArgumentException("FunnelStep parameter collectionName must be provided.");
         }
-        
+
         if (null == actorPropertyName || actorPropertyName.trim().isEmpty()) {
             throw new IllegalArgumentException("FunnelStep parameter actorPropertyName must be provided.");
         }
-        
+
         this.collectionName = collectionName;
         this.actorPropertyName = actorPropertyName;
-        
+
         // Timeframe may be null
         this.timeframe = timeframe;
-        
+
         if (null != filters && !filters.isEmpty()) {
             this.filters = new RequestParameterCollection(filters);
         } else {
             this.filters = null;
         }
-        
+
         // Special properties
         this.inverted = inverted;
         this.optional = optional;
         this.withActors = withActors;
     }
-    
+
     /**
      * Constructor with only most basic required parameters.
      * Does not include timeframe, meaning timeframe must be specified for the
@@ -123,12 +122,12 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
     public FunnelStep(
         final String collectionName,
         final String actorPropertyName) {
-        
+
         // timeframe can be unspecified for a funnel step, but only if it
         // has been specified at for the root request
         this(collectionName, actorPropertyName, null);
     }
-    
+
     /**
      * Constructor with required parameters.
      * Includes timeframe, which is required if not specified on the Funnel
@@ -143,7 +142,7 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
         final String collectionName,
         final String actorPropertyName,
         Timeframe timeframe) {
-        
+
         this(collectionName, actorPropertyName, timeframe, null, null, null, null);
     }
 
@@ -155,11 +154,11 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
     @Override
     Map<String, Object> constructParameterRequestArgs() {
         Map<String, Object> args = new HashMap<String, Object>();
-        
+
         // Add required step parameters
         args.put(KeenQueryConstants.EVENT_COLLECTION, collectionName);
         args.put(KeenQueryConstants.ACTOR_PROPERTY, actorPropertyName);
-        
+
         // timeframe is only required if not specified for the funnel itself,
         // so it may not be set.
         if (null != this.timeframe) {
@@ -173,7 +172,7 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
                 this.filters.constructParameterRequestArgs()
             );
         }
-        
+
         // Add special parameters if they are set
         if (null != this.inverted) {
             args.put(
@@ -181,31 +180,31 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
                 this.inverted
             );
         }
-        
+
         if (null != this.optional) {
             args.put(
                 KeenQueryConstants.OPTIONAL,
                 this.optional
             );
         }
-        
+
         if (null != this.withActors) {
             args.put(
                 KeenQueryConstants.WITH_ACTORS,
                 this.withActors
             );
         }
-        
+
         return args;
     }
-    
+
     /**
      * Package visible accessor for validating Funnel Timeframe arguments.
      * 
      * @return The step's Timeframe
      */
     public Timeframe getTimeframe() { return this.timeframe; }
-    
+
     /**
      * Get the value of the inverted special property. Will return null
      * if the property is not specified.
@@ -213,7 +212,7 @@ public class FunnelStep extends RequestParameter<Map<String, Object>> {
      * @return The value of 'inverted'
      */
     public Boolean getInverted() { return this.inverted; }
-    
+
     /**
      * Get the value of the optional special property. Will return null
      * if the property is not specified.

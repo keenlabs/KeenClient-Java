@@ -25,7 +25,7 @@ public class MultiAnalysisResult extends QueryResult {
      *
      * @param subAnalysisLabel The label that was assigned to this sub-analysis in the
      *                         MultiAnalysis request.
-     * @return The result of the given sub-anlysis.
+     * @return The result of the given sub-analysis.
      */
     public QueryResult getResultFor(String subAnalysisLabel) {
         if (!this.analysesResults.containsKey(subAnalysisLabel)) {

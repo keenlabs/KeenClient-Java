@@ -20,7 +20,7 @@ public enum QueryType {
 
     private final String text;
 
-    private QueryType(final String text) {
+    QueryType(final String text) {
         this.text = text;
     }
 

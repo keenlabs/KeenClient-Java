@@ -6,7 +6,8 @@ package io.keen.client.java;
  * @author dkador
  * @since 1.0.0
  */
-class KeenConstants {
+public final class KeenConstants {
+    private KeenConstants() {}
 
     static final String SERVER_ADDRESS = "https://api.keen.io";
     static final String API_VERSION = "3.0";
@@ -23,4 +24,7 @@ class KeenConstants {
     static final String INVALID_PROPERTY_NAME_ERROR = "InvalidPropertyNameError";
     static final String INVALID_PROPERTY_VALUE_ERROR = "InvalidPropertyValueError";
 
+    // Exported constants
+
+    public static final String KEEN_FAKE_JSON_ROOT = "io.keen.client.java.__fake_root";
 }

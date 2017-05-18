@@ -12,7 +12,6 @@ import java.util.Map;
  * @since 1.0.0
  */
 public interface Timeframe {
-
     /**
      * Subclasses must implement this method to construct
      * the appropriate Timeframe JSON arguments to send for the query.

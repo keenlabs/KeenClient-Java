@@ -3,8 +3,6 @@ package io.keen.client.java.result;
 import java.util.List;
 import java.util.Map;
 
-import io.keen.client.java.AbsoluteTimeframe;
-
 /**
  * This abstract class represents the object returned by a Keen Query.
  * By default, all methods with boolean return values are set to return false,
@@ -17,7 +15,6 @@ import io.keen.client.java.AbsoluteTimeframe;
  * @since 1.0.0, 07/06/15
  */
 public abstract class QueryResult {
-
     /**
      * @return {@code false}
      */
@@ -87,7 +84,8 @@ public abstract class QueryResult {
     }
 
     /**
-     * @return map of AbsoluteTimeframe to QueryResult's, which is IllegalStateException in abstract class.
+     * @return map of AbsoluteTimeframe to QueryResult's, which is IllegalStateException in
+     * abstract class.
      */
     public List<IntervalResultValue> getIntervalResults() { throw new IllegalStateException(); }
 
@@ -95,5 +93,4 @@ public abstract class QueryResult {
      * @return map of Group to QueryResult's, which is IllegalStateException in abstract class.
      */
     public Map<Group, QueryResult> getGroupResults() { throw new IllegalStateException(); }
-
 }

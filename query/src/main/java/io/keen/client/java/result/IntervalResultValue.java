@@ -6,7 +6,6 @@ import io.keen.client.java.AbsoluteTimeframe;
  * Models a single piece of a full interval result.
  */
 public class IntervalResultValue {
-
     private final AbsoluteTimeframe timeframe;
     private final QueryResult result;
 

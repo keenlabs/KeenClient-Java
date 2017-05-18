@@ -25,6 +25,7 @@ import io.keen.client.java.exceptions.InvalidEventException;
 import io.keen.client.java.exceptions.NoWriteKeyException;
 import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.HttpMethods;
 import io.keen.client.java.http.OutputSource;
 import io.keen.client.java.http.Request;
 import io.keen.client.java.http.Response;
@@ -148,8 +149,12 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties,
-            		new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException("No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -212,14 +217,19 @@ public class KeenClient {
                               final Map<String, Object> event,
                               final Map<String, Object> keenProperties,
                               final KeenCallback callback) {
-
         if (!isActive) {
             handleLibraryInactive(callback);
             return;
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException(
+                                  "No project specified, but no default project found"));
             return;
         }
         final KeenProject useProject = (project == null ? defaultProject : project);
@@ -289,7 +299,13 @@ public class KeenClient {
         }
 
         if (project == null && defaultProject == null) {
-            handleFailure(null, project, eventCollection, event, keenProperties, new IllegalStateException("No project specified, but no default project found"));
+            handleFailure(null,
+                          project,
+                          eventCollection,
+                          event,
+                          keenProperties,
+                          new IllegalStateException(
+                                  "No project specified, but no default project found"));
             return;
         }
         KeenProject useProject = (project == null ? defaultProject : project);
@@ -1416,7 +1432,7 @@ public class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        Request request = new Request(url, "POST", writeKey, source, proxy);
+        Request request = new Request(url, HttpMethods.POST, writeKey, source, proxy);
         Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.
@@ -1530,7 +1546,7 @@ public class KeenClient {
             try {
                 callback.onSuccess();
             } catch (Exception userException) {
-                // Do nothing.
+                // Do nothing. Issue #98
             }
         }
     }
@@ -1549,16 +1565,22 @@ public class KeenClient {
      * @param keenProperties  A Map that consists of key/value pairs to override default properties.
      *                        ex: "timestamp" -&gt; Calendar.getInstance()
      */
-    private void handleSuccess(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
-			Map<String, Object> keenProperties) {
-    	handleSuccess(callback);
+    private void handleSuccess(KeenCallback callback,
+                               KeenProject project,
+                               String eventCollection,
+                               Map<String, Object> event,
+                               Map<String, Object> keenProperties) {
+        handleSuccess(callback);
         if (callback != null) {
             try {
-                if(callback instanceof KeenDetailedCallback){
-                	((KeenDetailedCallback)callback).onSuccess(project, eventCollection, event, keenProperties);
+                if (callback instanceof KeenDetailedCallback){
+                    ((KeenDetailedCallback)callback).onSuccess(project,
+                                                               eventCollection,
+                                                               event,
+                                                               keenProperties);
                 }
             } catch (Exception userException) {
-                // Do nothing.
+                // Do nothing. Issue #98
             }
         }
     }
@@ -1585,12 +1607,12 @@ public class KeenClient {
                 try {
                     callback.onFailure(e);
                 } catch (Exception userException) {
-                    // Do nothing.
+                    // Do nothing. Issue #98
                 }
             }
         }
     }
-    
+
     /**
      * Handles a failure in the Keen library. If the client is running in debug mode, this will
      * immediately throw a runtime exception. Otherwise, this will log an error message and, if the
@@ -1608,8 +1630,12 @@ public class KeenClient {
      *                        ex: "timestamp" -&gt; Calendar.getInstance()
      * @param e        The exception which caused the failure.
      */
-    private void handleFailure(KeenCallback callback, KeenProject project, String eventCollection, Map<String, Object> event,
-    			Map<String, Object> keenProperties, Exception e) {
+    private void handleFailure(KeenCallback callback,
+                               KeenProject project,
+                               String eventCollection,
+                               Map<String, Object> event,
+                               Map<String, Object> keenProperties,
+                               Exception e) {
         if (isDebugMode) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -1617,16 +1643,20 @@ public class KeenClient {
                 throw new RuntimeException(e);
             }
         } else {
-        	handleFailure(callback, e);
-        	
+            handleFailure(callback, e);
+
             KeenLogging.log("Encountered error: " + e.getMessage());
             if (callback != null) {
                 try {
-                    if(callback instanceof KeenDetailedCallback){
-                    	((KeenDetailedCallback)callback).onFailure(project, eventCollection, event, keenProperties, e);
+                    if (callback instanceof KeenDetailedCallback){
+                        ((KeenDetailedCallback)callback).onFailure(project,
+                                                                   eventCollection,
+                                                                   event,
+                                                                   keenProperties,
+                                                                   e);
                     }
                 } catch (Exception userException) {
-                    // Do nothing.
+                    // Do nothing. Issue #98
                 }
             }
         }
@@ -1660,7 +1690,7 @@ public class KeenClient {
         KeenUtils.closeQuietly(reader);
         return event;
     }
-    
+
     /**
      * Gets the map of attempt counts from the eventStore
      *

@@ -5,6 +5,7 @@ import android.os.Build;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -14,15 +15,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+import io.keen.client.java.KeenConstants;
 import io.keen.client.java.KeenJsonHandler;
 
 /**
  * Implementation of the {@link io.keen.client.java.KeenJsonHandler} interface using the built-in
  * Android JSON library ({@link org.json.JSONObject}).
  *
- * @author Kevin Litwack (kevin@kevinlitwack.com)
+ * @author Kevin Litwack (kevin@kevinlitwack.com), masojus
  * @since 2.0.0
  */
 public class AndroidJsonHandler implements KeenJsonHandler {
@@ -40,8 +44,25 @@ public class AndroidJsonHandler implements KeenJsonHandler {
 
         String json = readerToString(reader);
         try {
-            JSONObject jsonObject = new JSONObject(json);
-            return JsonHelper.toMap(jsonObject);
+            Object jsonObjOrArray = getJsonObjectManager().newTokener(json).nextValue();
+
+            // Issue #99 : Take a look at better dealing with root Map<> vs root List<> in the
+            // response.
+
+            Object rootNode = JsonHelper.fromJson(jsonObjOrArray);
+            Map<String, Object> rootMap = null;
+
+            if (null == rootNode) {
+                throw new IllegalArgumentException("Empty reader or ill-formatted JSON " +
+                                                   "encountered.");
+            } else if (rootNode instanceof Map) {
+                rootMap = (Map)rootNode;
+            } else if (rootNode instanceof List) {
+                rootMap = new LinkedHashMap<String, Object>();
+                rootMap.put(KeenConstants.KEEN_FAKE_JSON_ROOT, rootNode);
+            }
+
+            return rootMap;
         } catch (JSONException e) {
             throw new IOException(e);
         }
@@ -100,6 +121,7 @@ public class AndroidJsonHandler implements KeenJsonHandler {
     protected interface JsonObjectManager {
         String stringify(JSONObject object);
         JSONObject newObject(Map<String, ?> map);
+        JSONTokener newTokener(String json);
         JSONArray newArray(Collection<?> collection);
     }
 
@@ -115,6 +137,11 @@ public class AndroidJsonHandler implements KeenJsonHandler {
         @Override
         public JSONObject newObject(Map<String, ?> map) {
             return new JSONObject(map);
+        }
+
+        @Override
+        public JSONTokener newTokener(String json) {
+            return new JSONTokener(json);
         }
 
         @Override

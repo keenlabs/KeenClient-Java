@@ -26,6 +26,7 @@ class TestJsonHandler implements KeenJsonHandler {
      */
     @Override
     public Map<String, Object> readJson(Reader reader) throws IOException {
+        // This won't work for results that contain a root JSON Array.
         return mapper.readValue(reader, MAP_TYPE);
     }
 

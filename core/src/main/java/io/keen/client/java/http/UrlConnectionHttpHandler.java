@@ -75,6 +75,12 @@ public class UrlConnectionHttpHandler implements HttpHandler {
 
         // If the request has a body, send it. Otherwise just connect.
         if (request.body != null) {
+            if (HttpMethods.GET.equals(request.method) ||
+                HttpMethods.DELETE.equals(request.method)) {
+                throw new IllegalStateException("Trying to send a GET request with a request " +
+                                                "body, which would result in sending a POST.");
+            }
+
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json");
             request.body.writeTo(connection.getOutputStream());

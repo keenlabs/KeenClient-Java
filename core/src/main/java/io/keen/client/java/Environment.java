@@ -1,12 +1,13 @@
 package io.keen.client.java;
 
 /**
- * Exists solely to provide an abstraction around environment variables so we can actually test them.
+ * Exists solely to provide an abstraction around environment variables so we can actually test
+ * them.
  *
+ * @author Kevin Litwack, masojus
  * @since 1.0.0
  */
 class Environment {
-
     /**
      * Gets the Keen Project ID from the system environment.
      *
@@ -35,6 +36,15 @@ class Environment {
     }
 
     /**
+     * Gets the Keen read key from the system environment.
+     *
+     * @return The Keen read key.
+     */
+    public String getKeenMasterKey() {
+        return getValue("KEEN_MASTER_KEY");
+    }
+
+    /**
      * Gets the specified property from the system environment.
      *
      * @param name The name of the property to get.
@@ -43,5 +53,4 @@ class Environment {
     private String getValue(String name) {
         return System.getenv().get(name);
     }
-
 }
