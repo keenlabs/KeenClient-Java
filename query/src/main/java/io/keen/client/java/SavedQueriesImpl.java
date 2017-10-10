@@ -340,7 +340,7 @@ final class SavedQueriesImpl implements SavedQueries {
     }
 
     @Override
-    public Map<String, Object> updateQueryFull(String queryName, Map<String, Object> fullDefinition)
+    public Map<String, Object> updateQueryFull(String queryName, Map<String, ?> fullDefinition)
             throws IOException {
         // Push the new full definition as provided by client code. Technically this would also work
         // as a raw create method.
