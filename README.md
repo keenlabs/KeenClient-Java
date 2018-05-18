@@ -68,6 +68,7 @@ to use it. It is conventional to create a "libs" directory to contain external d
 1. `git clone git@github.com:keenlabs/KeenClient-Java.git`
 1. `cd KeenClient-Java`
 1. `export JAVA_HOME=<path to Java>` (Windows: `set JAVA_HOME=<path to Java>`)
+1. `export ANDROID_HOME=<path to Android SDK location - tested with Platform version 23 and Build Tools 23.0.3>`
 1. `./gradlew build` (Windows: `gradlew.bat build`)
 1. Jars will be built and deposited into the various `build/libs` directories (e.g. `java/build/libs`, `android/build/libs`). You can then use these jars just as if you had downloaded them.
 
