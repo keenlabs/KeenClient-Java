@@ -20,7 +20,8 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:5.2.0'
+    compile 'io.keen:keen-client-api-java:5.2.0'  // streaming 
+    compile 'io.keen:keen-client-api-query:5.2.0' // querying
 }
 ```
 
@@ -38,6 +39,12 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
+  <version>5.2.0</version>
+</dependency>
+
+<dependency>
+  <groupId>io.keen</groupId>
+  <artifactId>keen-client-api-query</artifactId>
   <version>5.2.0</version>
 </dependency>
 ```
