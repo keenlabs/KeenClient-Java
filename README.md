@@ -68,6 +68,7 @@ to use it. It is conventional to create a "libs" directory to contain external d
 1. `git clone git@github.com:keenlabs/KeenClient-Java.git`
 1. `cd KeenClient-Java`
 1. `export JAVA_HOME=<path to Java>` (Windows: `set JAVA_HOME=<path to Java>`)
+1. `export ANDROID_HOME=<path to Android SDK location - tested with Platform version 23 and Build Tools 23.0.3>`
 1. `./gradlew build` (Windows: `gradlew.bat build`)
 1. Jars will be built and deposited into the various `build/libs` directories (e.g. `java/build/libs`, `android/build/libs`). You can then use these jars just as if you had downloaded them.
 
@@ -256,15 +257,37 @@ final Map<String, Object> m = ImmutableMap.<String, Object>builder().
 
 By default the library assumes that your events are "fire and forget", that is, you don't need to know when (or even if) they succeed. However if you do need to know for some reason, the client includes overloads of each method which take a `KeenCallback` object. This object allows you to receive notification when a request completes, as well as whether it succeeded and, if it failed, an `Exception` indicating the cause of the failure.
 
-### Do analysis with Keen IO
+## Do analysis with Keen IO
 
 The query capabilities within the Java Keen client enable you to send POST queries and receive the results of the queries in a JSON object. For query types, refer to [API technical reference](https://keen.io/docs/api/reference/).
 
-#### Add the Keen Query Client Package to your Build
+### Add the Keen Query Client Package to your Build
 
-The Query Client is published into a separate artifact, since many applications only need event publishing. If you would like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. The instructions are the same as described above under [Installation](#installation), but with the artifact name `keen-client-api-query` (instead of `keen-client-api-java` or `keen-client-api-android`).
+The Query Client is published into a separate artifact, since many applications only need event publishing. If you would 
+like to use the query client then you will need to ensure that you also have the appropriate artifact in your build. 
 
-#### Building a Keen Query Client
+
+#### Gradle
+
+```groovy
+dependencies {
+    compile 'io.keen:keen-client-api-query:5.2.0' 
+}
+```
+
+#### Maven
+
+Paste the following snippet into your pom.xml:
+
+```xml
+<dependency>
+  <groupId>io.keen</groupId>
+  <artifactId>keen-client-api-query</artifactId>
+  <version>5.2.0</version>
+</dependency>
+```
+
+### Building a Keen Query Client
 
 You can build a `KeenQueryClient` by just providing a `KeenProject`. Note that for query purposes, the write key is not required. It is therefore OK and normal to provide ```null``` argument for the write key, unless that same `KeenProject` will be used for publishing events as well.
 ```java
@@ -279,7 +302,7 @@ KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
         .withBaseUrl(baseURL)
         .build();
 ```
-#### Using the KeenQueryClient to send Queries
+### Using the KeenQueryClient to send Queries
 
 The most simple way that users can use the `KeenQueryClient` to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO API.
 ```java
@@ -294,7 +317,7 @@ double sum = queryClient.sum("<event_collection>", "<target_property>", new Rela
 ```
 The exceptions are Select Unique, Extraction, Funnel, and Multi-Analysis queries. These queries are a little more complicated, and Extraction is currently not supported by the Keen Query Client.
 
-#### Advanced
+### Advanced
 
 Alternatively, users can use optional parameters to send queries. The return type is a `QueryResult` object. The user is expected to verify the expected `QueryResult` subclass, given the parameters entered.
 ```java
@@ -389,7 +412,7 @@ if (result.isIntervalResult()) {
 }
 ```
 
-#### Multi-Analysis
+### Multi-Analysis
 
 To perform a [Multi-Analysis](https://keen.io/docs/api/#multi-analysis), use the `MultiAnalysis.Builder` instead. An instance of `MultiAnalysisResult` will be returned unless Group By and/or Interval parameters are included, in which case the `MultiAnalysisResult`(s) will be nested inside an `IntervalResult` and/or a `GroupByResult`, just like any other `QueryResult` for other single analysis types when grouping/intervals are applied:
 
@@ -414,7 +437,7 @@ if (result instanceof MultiAnalysisResult) {
 ```
 The `MultiAnalysis.Builder` will only allow configuration of properties that are actually supported by a Multi-Analysis, and will throw an exception at the build() call if the set of parameters configured isn't sufficient, e.g. if there are no `SubAnalysis` instances set.
 
-#### Funnel Analysis
+### Funnel Analysis
 
 Funnel analysis can similarly be performed using the `Funnel.Builder`. As with multi-analysis, some parameter checking is done to ensure required parameters are at least provided. The result of a funnel analysis is a `FunnelResult`, on which a `ListResult` containing the results of the funnel are available through `getFunnelResult()`, and if actor values were requested, their results will be available through `getActorsResult()`. `FunnelStep`s are required to provide a collection name, an actor property name, and a `Timeframe` instance unless one is provided for the entire funnel using `Funnel.Builder.withTimeframe()`. Additional optional parameters are available for specifying a list of `Filter`s for each step and the special parameters `inverted`, `optional`, and `withActors`.
 
@@ -471,7 +494,7 @@ if (result instanceof FunnelResult) {
 
 ```
 
-#### Saved/Cached Queries
+### Saved/Cached Queries
 
 To work with [Saved/Cached Queries](https://keen.io/docs/api/#saved-queries), create a 
 `KeenQueryClient` as normal, then use it to create a `SavedQueries` implementation:
