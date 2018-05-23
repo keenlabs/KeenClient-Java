@@ -20,7 +20,7 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:5.2.0' 
+    compile 'io.keen:keen-client-api-java:5.2.0'
 }
 ```
 
