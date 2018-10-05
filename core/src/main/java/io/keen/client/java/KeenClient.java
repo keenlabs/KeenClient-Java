@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -160,6 +161,9 @@ public class KeenClient {
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
+            if (eventCollection.contains(" ")){
+                eventCollection = URLEncoder.encode(eventCollection, "UTF-8").replace("+", "%20");
+            }
             // Build the event.
             Map<String, Object> newEvent =
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
