@@ -1,7 +1,7 @@
 package io.keen.client.java;
 
 /**
- * A Percentile representation enforcing the format and range specified by the Keen IO APIs.
+ * A Percentile representation enforcing the format and range specified by the Keen APIs.
  *
  * @author masojus
  */
@@ -26,7 +26,7 @@ public class Percentile {
 
     /**
      * Creates a Percentile instance with a Double value if in the valid range as described in the
-     * <a href="https://keen.io/docs/api/#percentile">Keen IO APIs</a>. This factory will throw
+     * <a href="https://keen.io/docs/api/#percentile">Keen APIs</a>. This factory will throw
      * if the given percentile does not strictly satisfy the rules in those API docs. Use
      * {@link #createCoerced(double)} if clamping and rounding is fine.
      *
@@ -61,7 +61,7 @@ public class Percentile {
 
     /**
      * Creates a Percentile instance with a Double value if in the valid range as described in the
-     * <a href="https://keen.io/docs/api/#percentile">Keen IO APIs</a>. This factory will clamp
+     * <a href="https://keen.io/docs/api/#percentile">Keen APIs</a>. This factory will clamp
      * values into the appropriate range and round to two decimal places.
      *
      * @param percentile The percentile to calculate, coerced to (0, 100.00] with two decimal places
