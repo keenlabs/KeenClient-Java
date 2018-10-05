@@ -250,7 +250,7 @@ public class KeenClientTest {
             client.addEvent("foo", event);
             fail("add event without write key should fail");
         } catch (NoWriteKeyException e) {
-            assertEquals("You can't send events to Keen IO if you haven't set a write key.",
+            assertEquals("You can't send events to Keen if you haven't set a write key.",
                     e.getLocalizedMessage());
         }
     }

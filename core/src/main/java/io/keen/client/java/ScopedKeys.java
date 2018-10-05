@@ -14,7 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 import io.keen.client.java.exceptions.ScopedKeyException;
 
 /**
- * ScopedKeys is a utility class for dealing with Keen IO Scoped Keys. You'll probably only ever need the
+ * ScopedKeys is a utility class for dealing with Keen Scoped Keys. You'll probably only ever need the
  * encrypt method. However, for completeness, there's also a decrypt method.
  * <p>
  * Example usage:
@@ -54,11 +54,11 @@ public class ScopedKeys {
     // TODO: Review exceptions from this class.
 
     /**
-     * Encrypts the given options with a Keen IO API Key and creates a Scoped Key.
+     * Encrypts the given options with a Keen API Key and creates a Scoped Key.
      *
-     * @param apiKey  Your Keen IO API Key.
+     * @param apiKey  Your Keen API Key.
      * @param options The options you want to encrypt.
-     * @return A Keen IO Scoped Key.
+     * @return A Keen Scoped Key.
      * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
     public static String encrypt(String apiKey, Map<String, Object> options)
@@ -71,12 +71,12 @@ public class ScopedKeys {
     }
 
     /**
-     * Encrypts the given options with a Keen IO API Key and creates a Scoped Key.
+     * Encrypts the given options with a Keen API Key and creates a Scoped Key.
      *
      * @param client  The KeenClient to use for JSON handling.
-     * @param apiKey  Your Keen IO API Key.
+     * @param apiKey  Your Keen API Key.
      * @param options The options you want to encrypt.
-     * @return A Keen IO Scoped Key.
+     * @return A Keen Scoped Key.
      * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
     public static String encrypt(KeenClient client, String apiKey, Map<String, Object> options)
@@ -116,12 +116,12 @@ public class ScopedKeys {
     }
 
     /**
-     * Encrypts the given options with a Keen IO API Key and creates a Scoped Key.
+     * Encrypts the given options with a Keen API Key and creates a Scoped Key.
      *
      * @param client  The KeenClient to use for JSON handling.
-     * @param apiKey  Your Keen IO API Key.
+     * @param apiKey  Your Keen API Key.
      * @param options The options you want to encrypt.
-     * @return A Keen IO Scoped Key.
+     * @return A Keen Scoped Key.
      * @throws ScopedKeyException an error occurred while attempting to encrypt a Scoped Key.
      */
     public static String encrypt32CharacterKey(KeenClient client, String apiKey, Map<String, Object> options)
@@ -161,9 +161,9 @@ public class ScopedKeys {
     }
 
     /**
-     * Decrypts the given Keen IO Scoped Key with an API Key and returns the decrypted Scoped Key Options.
+     * Decrypts the given Keen Scoped Key with an API Key and returns the decrypted Scoped Key Options.
      *
-     * @param apiKey    Your Keen IO API Key.
+     * @param apiKey    Your Keen API Key.
      * @param scopedKey The Scoped Key you want to decrypt.
      * @return The decrypted Scoped Key Options.
      * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.
@@ -178,10 +178,10 @@ public class ScopedKeys {
     }
 
     /**
-     * Decrypts the given Keen IO Scoped Key with an API Key and returns the decrypted Scoped Key Options.
+     * Decrypts the given Keen Scoped Key with an API Key and returns the decrypted Scoped Key Options.
      *
      * @param client  The KeenClient to use for JSON handling.
-     * @param apiKey    Your Keen IO API Key.
+     * @param apiKey    Your Keen API Key.
      * @param scopedKey The Scoped Key you want to decrypt.
      * @return The decrypted Scoped Key Options.
      * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.
@@ -223,10 +223,10 @@ public class ScopedKeys {
     }
 
     /**
-     * Decrypts the given Keen IO Scoped Key with an API Key and returns the decrypted Scoped Key Options.
+     * Decrypts the given Keen Scoped Key with an API Key and returns the decrypted Scoped Key Options.
      *
      * @param client  The KeenClient to use for JSON handling.
-     * @param apiKey    Your Keen IO API Key.
+     * @param apiKey    Your Keen API Key.
      * @param scopedKey The Scoped Key you want to decrypt.
      * @return The decrypted Scoped Key Options.
      * @throws ScopedKeyException an error occurred while attempting to decrypt a Scoped Key.

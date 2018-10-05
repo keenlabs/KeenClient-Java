@@ -1085,7 +1085,7 @@ public class KeenClient {
                                                         String eventCollection, Map<String, Object> event, Map<String, Object> keenProperties) {
 
         if (project.getWriteKey() == null) {
-            throw new NoWriteKeyException("You can't send events to Keen IO if you haven't set a write key.");
+            throw new NoWriteKeyException("You can't send events to Keen if you haven't set a write key.");
         }
 
         validateEventCollection(eventCollection);

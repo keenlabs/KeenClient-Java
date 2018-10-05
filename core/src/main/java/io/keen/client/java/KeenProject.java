@@ -21,10 +21,10 @@ public class KeenProject {
     /**
      * Construct a Keen project.
      *
-     * @param projectId The Keen IO Project ID.
-     * @param writeKey  Your Keen IO Write Key. This may be null if this project will only be used
+     * @param projectId The Keen Project ID.
+     * @param writeKey  Your Keen Write Key. This may be null if this project will only be used
      *                  for reading events.
-     * @param readKey   Your Keen IO Read Key. This may be null if this project will only be used
+     * @param readKey   Your Keen Read Key. This may be null if this project will only be used
      *                  for writing events.
      */
     public KeenProject(String projectId, String writeKey, String readKey) {
@@ -34,12 +34,12 @@ public class KeenProject {
     /**
      * Construct a Keen project.
      *
-     * @param projectId The Keen IO Project ID.
-     * @param writeKey  Your Keen IO Write Key. This may be null if this project will only be used
+     * @param projectId The Keen Project ID.
+     * @param writeKey  Your Keen Write Key. This may be null if this project will only be used
      *                  for reading events.
-     * @param readKey   Your Keen IO Read Key. This may be null if this project will only be used
+     * @param readKey   Your Keen Read Key. This may be null if this project will only be used
      *                  for writing events.
-     * @param masterKey Your Keen IO Master Key. This may be null if not using administrative
+     * @param masterKey Your Keen Master Key. This may be null if not using administrative
      *                  functionality that requires such a key.
      */
     public KeenProject(String projectId, String writeKey, String readKey, String masterKey) {
