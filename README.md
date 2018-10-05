@@ -111,7 +111,7 @@ Note that many people have [strong preferences against singletons](http://stacko
 
 ### Specifying Your Project
 
-To use the client with the Keen IO API, you have to configure your Keen IO Project ID and its access keys (if you need an account, [sign up here](https://keen.io/) - it's free).
+To use the client with the Keen API, you have to configure your Keen Project ID and its access keys (if you need an account, [sign up here](https://keen.io/) - it's free).
 
 In most scenarios you will always be adding events to the same project, so as a convenience the Keen client allows you to specify the project parameters in environment variables and those parameters will be implicitly used for all requests. The environment variables you should set are `KEEN_PROJECT_ID`, `KEEN_WRITE_KEY`, and `KEEN_READ_KEY`. Setting a write key is required for publishing events. Setting a read key is required for running queries.
 
@@ -154,7 +154,7 @@ You can also explicitly disable Exception catching by using the following statem
 KeenClient.client().setDebugMode(true);
 ```
 
-### Send Events to Keen IO
+### Send Events to Keen
 
 Here's a very basic example for an app that tracks "purchases":
 
@@ -169,7 +169,7 @@ Here's a very basic example for an app that tracks "purchases":
     }
 ```
 
-That's it! After running your code, check your Keen IO Project to see the event has been added.
+That's it! After running your code, check your Keen Project to see the event has been added.
 
 NOTE: You are responsible for making sure that the contents of the event map can be properly serialized into JSON by the JSON handler you've configured the `KeenClient` to use. This shouldn't be an issue for standard maps of primitives and lists/arrays, but may be a problem for more complex data structures.
 
@@ -257,7 +257,7 @@ final Map<String, Object> m = ImmutableMap.<String, Object>builder().
 
 By default the library assumes that your events are "fire and forget", that is, you don't need to know when (or even if) they succeed. However if you do need to know for some reason, the client includes overloads of each method which take a `KeenCallback` object. This object allows you to receive notification when a request completes, as well as whether it succeeded and, if it failed, an `Exception` indicating the cause of the failure.
 
-## Do analysis with Keen IO
+## Do analysis with Keen
 
 The query capabilities within the Java Keen client enable you to send POST queries and receive the results of the queries in a JSON object. For query types, refer to [API technical reference](https://keen.io/docs/api/reference/).
 
@@ -304,7 +304,7 @@ KeenQueryClient queryClient = new KeenQueryClient.Builder(queryProject)
 ```
 ### Using the KeenQueryClient to send Queries
 
-The most simple way that users can use the `KeenQueryClient` to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen IO API.
+The most simple way that users can use the `KeenQueryClient` to send queries is as follows. These methods take only the required query parameters as input, and the user receives a very specific ```long``` or ```double``` response type. Please note that Timeframe is now required by the Keen API.
 ```java
 long count = queryClient.count("<event_collection>", new RelativeTimeframe("this_week"));
 long countUnique = queryClient.countUnique("<event_collection>", "<target_property>", new AbsoluteTimeframe("2015-05-15T19:00:00.000Z","2015-06-07T19:00:00.000Z"));
@@ -629,7 +629,7 @@ if (result.isLong()) {
 }
 ```
 
-### Generate a Scoped Key for Keen IO
+### Generate a Scoped Key for Keen
 
 Here's a simple example of generating a Scoped Write Key:
 
@@ -754,7 +754,7 @@ A: Our SDK handles offline data collection and have built-in limits to prevent t
 
 Here's how it works. You specify when events should be uploaded to Keen (e.g. when the app is backgrounded).
 
-If your player is offline when that happens, their data will be collected on the device and it will not be posted to Keen IO.
+If your player is offline when that happens, their data will be collected on the device and it will not be posted to Keen.
 However, the next time they trigger the code that send events (e.g. backgrounding the app again) all the data from the previous sessions will also be posted (the timestamps will reflect the times the events actually happened).
 
 ## Troubleshooting
@@ -771,7 +771,7 @@ This is usually caused by the Android SDK being before JUnit in your classpath. 
 
 #### "java.security.InvalidKeyException: Illegal key size or default parameters" error in JUnit tests or using Scoped Keys
 
-The default encryption settings for JDK6+ don't allow using AES-256-CBC, which is the encryption methodology used for Keen IO Scoped Keys. To fix, download the appropriate file policy files:
+The default encryption settings for JDK6+ don't allow using AES-256-CBC, which is the encryption methodology used for Keen Scoped Keys. To fix, download the appropriate file policy files:
 
 * [Java 6 Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html)
 * [Java 7 Unlimited Strength Jurisdiction Policy Files](http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html)
