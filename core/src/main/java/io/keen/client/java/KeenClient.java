@@ -161,7 +161,7 @@ public class KeenClient {
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
-            if (eventCollection.contains(" ")){
+            if (!eventCollection.isEmpty()){
                 eventCollection = URLEncoder.encode(eventCollection, "UTF-8").replace("+", "%20");
             }
             // Build the event.
