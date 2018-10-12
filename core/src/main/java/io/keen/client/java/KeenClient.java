@@ -1362,15 +1362,23 @@ public class KeenClient {
      * @param event           The event to publish.
      * @return The response from the server.
      * @throws IOException If there was an error communicating with the server.
+     * @throws URISyntaxException if you write illegal character to encode.
      */
     private String publish(KeenProject project, String eventCollection,
-                           Map<String, Object> event) throws IOException, URISyntaxException {
+                           Map<String, Object> event) throws IOException {
+        URL url = null;
         // just using basic JDK HTTP library
-        eventCollection = new URI(null, null, eventCollection,null).getRawPath();
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
-                KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
-        URL url = new URL(urlString);
+        try {
+            eventCollection = new URI(null, null, eventCollection,null).getRawPath();
+            String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
+                    KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
+            url = new URL(urlString);
+        } catch (URISyntaxException e) {
+            KeenLogging.log("Event collection name has invalid character to encode");
+            e.printStackTrace();
+        }
         return publishObject(project, url, event);
+
     }
 
     /**
