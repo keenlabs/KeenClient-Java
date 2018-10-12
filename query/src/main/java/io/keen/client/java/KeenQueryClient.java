@@ -699,8 +699,7 @@ public class KeenQueryClient {
                                               request,
                                               url.toString()));
             } catch (IOException e) {
-                KeenLogging.log("Couldn't log request written to file: ");
-                e.printStackTrace();
+                KeenLogging.log("Couldn't log request written to file: ", e);
             }
         }
 

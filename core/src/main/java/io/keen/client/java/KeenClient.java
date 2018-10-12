@@ -1369,13 +1369,12 @@ public class KeenClient {
         URL url = null;
         // just using basic JDK HTTP library
         try {
-            eventCollection = new URI(null, null, eventCollection,null).getRawPath();
+            eventCollection = new URI(null, null, eventCollection, null).getRawPath();
             String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
                     KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
             url = new URL(urlString);
         } catch (URISyntaxException e) {
-            KeenLogging.log("Event collection name has invalid character to encode");
-            e.printStackTrace();
+            KeenLogging.log("Event collection name has invalid character to encode", e);
         }
         return publishObject(project, url, event);
 
@@ -1436,8 +1435,7 @@ public class KeenClient {
                 KeenLogging.log(String.format(Locale.US, "Sent request '%s' to URL '%s'",
                         request, url.toString()));
             } catch (IOException e) {
-                KeenLogging.log("Couldn't log event written to file: ");
-                e.printStackTrace();
+                KeenLogging.log("Couldn't log event written to file: ", e);
             }
         }
 
