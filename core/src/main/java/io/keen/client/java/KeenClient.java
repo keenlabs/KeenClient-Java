@@ -161,7 +161,6 @@ public class KeenClient {
         KeenProject useProject = (project == null ? defaultProject : project);
 
         try {
-            eventCollection = URLEncoder.encode(eventCollection, "UTF-8").replace("+", "%20");
             // Build the event.
             Map<String, Object> newEvent =
                     validateAndBuildEvent(useProject, eventCollection, event, keenProperties);
@@ -1366,6 +1365,7 @@ public class KeenClient {
     private String publish(KeenProject project, String eventCollection,
                            Map<String, Object> event) throws IOException {
         // just using basic JDK HTTP library
+        eventCollection = URLEncoder.encode(eventCollection, "UTF-8").replace("+", "%20");
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
                 KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
         URL url = new URL(urlString);

@@ -268,16 +268,31 @@ public class KeenClientTest {
     @Test
     public void testAddEventWithWhitespaceH() throws Exception{
         setMockResponse(200, POST_EVENT_SUCCESS);
+
         client.addEvent(" H", TEST_EVENTS.get(0), null);
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         verify(mockHttpHandler).execute(capturedRequest.capture());
         assertThat(capturedRequest.getValue().url.toString(), endsWith("%20H"));
     }
 
     @Test
+    public void testAddEventWithNameWhitespaceH() throws Exception{
+        setMockResponse(200, POST_EVENT_SUCCESS);
+
+        client.addEvent("test Htest", TEST_EVENTS.get(0), null);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("test%20Htest"));
+    }
+
+    @Test
     public void testAddEventWithPlus() throws Exception{
         setMockResponse(200, POST_EVENT_SUCCESS);
+
         client.addEvent("Test+test", TEST_EVENTS.get(0), null);
+
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         verify(mockHttpHandler).execute(capturedRequest.capture());
         assertThat(capturedRequest.getValue().url.toString(), endsWith("Test%2Btest"));
