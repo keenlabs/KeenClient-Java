@@ -275,6 +275,15 @@ public class KeenClientTest {
     }
 
     @Test
+    public void testAddEventWithPlus() throws Exception{
+        setMockResponse(200, POST_EVENT_SUCCESS);
+        client.addEvent("Test+test", TEST_EVENTS.get(0), null);
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("Test%2Btest"));
+    }
+
+    @Test
     public void testAddEventNonSSL() throws Exception {
         setMockResponse(201, POST_EVENT_SUCCESS);
         client.setBaseUrl("http://api.keen.io");
