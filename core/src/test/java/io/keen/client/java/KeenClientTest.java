@@ -280,11 +280,11 @@ public class KeenClientTest {
     public void testAddEventWithNameWhitespaceH() throws Exception{
         setMockResponse(200, POST_EVENT_SUCCESS);
 
-        client.addEvent("test Htest", TEST_EVENTS.get(0), null);
+        client.addEvent("test test", TEST_EVENTS.get(0), null);
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         verify(mockHttpHandler).execute(capturedRequest.capture());
-        assertThat(capturedRequest.getValue().url.toString(), endsWith("test%20Htest"));
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("test%20test"));
     }
 
     @Test
@@ -295,7 +295,7 @@ public class KeenClientTest {
 
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         verify(mockHttpHandler).execute(capturedRequest.capture());
-        assertThat(capturedRequest.getValue().url.toString(), endsWith("Test%2Btest"));
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("Test+test"));
     }
 
     @Test

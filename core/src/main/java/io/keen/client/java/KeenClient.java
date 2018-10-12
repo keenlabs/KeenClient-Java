@@ -7,8 +7,9 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1363,9 +1364,9 @@ public class KeenClient {
      * @throws IOException If there was an error communicating with the server.
      */
     private String publish(KeenProject project, String eventCollection,
-                           Map<String, Object> event) throws IOException {
+                           Map<String, Object> event) throws IOException, URISyntaxException {
         // just using basic JDK HTTP library
-        eventCollection = URLEncoder.encode(eventCollection, "UTF-8").replace("+", "%20");
+        eventCollection = new URI(null, null, eventCollection,null).getRawPath();
         String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
                 KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
         URL url = new URL(urlString);
