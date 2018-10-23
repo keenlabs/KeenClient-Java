@@ -27,6 +27,7 @@ import io.keen.client.java.http.Response;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -262,6 +263,39 @@ public class KeenClientTest {
         ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
         verify(mockHttpHandler).execute(capturedRequest.capture());
         assertThat(capturedRequest.getValue().url.toString(), startsWith("https://api.keen.io"));
+    }
+
+    @Test
+    public void testAddEventWithWhitespaceH() throws Exception{
+        setMockResponse(200, POST_EVENT_SUCCESS);
+
+        client.addEvent(" H", TEST_EVENTS.get(0), null);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("%20H"));
+    }
+
+    @Test
+    public void testAddEventWithNameWhitespaceH() throws Exception{
+        setMockResponse(200, POST_EVENT_SUCCESS);
+
+        client.addEvent("test test", TEST_EVENTS.get(0), null);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("test%20test"));
+    }
+
+    @Test
+    public void testAddEventWithPlus() throws Exception{
+        setMockResponse(200, POST_EVENT_SUCCESS);
+
+        client.addEvent("Test+test", TEST_EVENTS.get(0), null);
+
+        ArgumentCaptor<Request> capturedRequest = ArgumentCaptor.forClass(Request.class);
+        verify(mockHttpHandler).execute(capturedRequest.capture());
+        assertThat(capturedRequest.getValue().url.toString(), endsWith("Test+test"));
     }
 
     @Test

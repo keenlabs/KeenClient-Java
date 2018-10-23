@@ -32,6 +32,13 @@ public class KeenLogging {
         }
     }
 
+    static void log(String msg, Throwable throwable) {
+        if (isLoggingEnabled()) {
+            LOGGER.log(Level.FINER, msg, throwable);
+            HANDLER.flush();
+        }
+    }
+
     /**
      * Call this to enable logging.
      */

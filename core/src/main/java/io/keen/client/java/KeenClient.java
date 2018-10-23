@@ -6,7 +6,10 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -1361,13 +1364,27 @@ public class KeenClient {
      * @return The response from the server.
      * @throws IOException If there was an error communicating with the server.
      */
-    private String publish(KeenProject project, String eventCollection,
-                           Map<String, Object> event) throws IOException {
-        // just using basic JDK HTTP library
-        String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
-                KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
-        URL url = new URL(urlString);
+    private String publish(KeenProject project, String eventCollection, Map<String, Object> event) throws IOException {
+        URL url = createURL(project, eventCollection);
+        if (url == null) {
+            throw new IllegalStateException("URL address is empty");
+        }
         return publishObject(project, url, event);
+    }
+
+    private URL createURL(KeenProject project, String eventCollection) {
+        try {
+            String encodedCollectionName = new URI(null, null, eventCollection, null).getRawPath();
+            String path = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
+                    KeenConstants.API_VERSION, project.getProjectId(), encodedCollectionName);
+            return new URL(path);
+        } catch (URISyntaxException e) {
+            KeenLogging.log("Event collection name has invalid character to encode", e);
+        } catch (MalformedURLException e) {
+            KeenLogging.log("Url you create is malformed or there is not legal protocol in string you specified", e);
+        }
+
+        return null;
     }
 
     /**
@@ -1425,8 +1442,7 @@ public class KeenClient {
                 KeenLogging.log(String.format(Locale.US, "Sent request '%s' to URL '%s'",
                         request, url.toString()));
             } catch (IOException e) {
-                KeenLogging.log("Couldn't log event written to file: ");
-                e.printStackTrace();
+                KeenLogging.log("Couldn't log event written to file: ", e);
             }
         }
 
