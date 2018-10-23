@@ -1365,33 +1365,24 @@ public class KeenClient {
      * @throws IOException If there was an error communicating with the server.
      */
     private String publish(KeenProject project, String eventCollection, Map<String, Object> event) throws IOException {
-        URL createURL = createURL(project, eventCollection);
-        return publishObject(project, createURL, event);
+        URL url = createURL(project, eventCollection);
+        if (url == null) {
+            throw new IllegalStateException("URL address is empty");
+        }
+        return publishObject(project, url, event);
     }
 
-    /**
-     * Create URL address which is used to publish it to Keen service.
-     *
-     * @param project           The project in which to publish the event.
-     * @param eventCollection   The name of the collection in which to publish the event.
-     * @return URL address
-     * @throws URISyntaxException If string could not be parsed as a URI reference.
-     * @throws MalformedURLException If URL you created is malformed or there is no legal specified in it.
-     */
     private URL createURL(KeenProject project, String eventCollection) {
-        URL url = null;
         try {
-            eventCollection = new URI(null, null, eventCollection, null).getRawPath();
-            String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
-                    KeenConstants.API_VERSION, project.getProjectId(), eventCollection);
-            url = new URL(urlString);
-        } catch (URISyntaxException e) {
-            KeenLogging.log("Event collection name has invalid character to encode", e);
-        } catch (MalformedURLException e) {
-            KeenLogging.log("Url you create is malformed or there is not legal protocol in string you specified ", e);
+            String rawPath = new URI(null, null, eventCollection, null).getRawPath();
+            String path = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
+                    KeenConstants.API_VERSION, project.getProjectId(), rawPath);
+            return new URL(path);
+        } catch (URISyntaxException | MalformedURLException e) {
+            KeenLogging.log("Event you sent has invalid URL address", e);
         }
 
-        return url;
+        return null;
     }
 
     /**
