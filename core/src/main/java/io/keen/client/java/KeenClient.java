@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1362,12 +1363,23 @@ public class KeenClient {
      * @param event           The event to publish.
      * @return The response from the server.
      * @throws IOException If there was an error communicating with the server.
-     * @throws URISyntaxException if you write illegal character to encode.
      */
-    private String publish(KeenProject project, String eventCollection,
-                           Map<String, Object> event) throws IOException {
+    private String publish(KeenProject project, String eventCollection, Map<String, Object> event) throws IOException {
+        URL createURL = createURL(project, eventCollection);
+        return publishObject(project, createURL, event);
+    }
+
+    /**
+     * Create URL address which is used to publish it to Keen service.
+     *
+     * @param project           The project in which to publish the event.
+     * @param eventCollection   The name of the collection in which to publish the event.
+     * @return URL address
+     * @throws URISyntaxException If string could not be parsed as a URI reference.
+     * @throws MalformedURLException If URL you created is malformed or there is no legal specified in it.
+     */
+    private URL createURL(KeenProject project, String eventCollection) {
         URL url = null;
-        // just using basic JDK HTTP library
         try {
             eventCollection = new URI(null, null, eventCollection, null).getRawPath();
             String urlString = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
@@ -1375,9 +1387,11 @@ public class KeenClient {
             url = new URL(urlString);
         } catch (URISyntaxException e) {
             KeenLogging.log("Event collection name has invalid character to encode", e);
+        } catch (MalformedURLException e) {
+            KeenLogging.log("Url you create is malformed or there is not legal protocol in string you specified ", e);
         }
-        return publishObject(project, url, event);
 
+        return url;
     }
 
     /**
