@@ -1374,9 +1374,9 @@ public class KeenClient {
 
     private URL createURL(KeenProject project, String eventCollection) {
         try {
-            String rawPath = new URI(null, null, eventCollection, null).getRawPath();
+            String encodedCollectionName = new URI(null, null, eventCollection, null).getRawPath();
             String path = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
-                    KeenConstants.API_VERSION, project.getProjectId(), rawPath);
+                    KeenConstants.API_VERSION, project.getProjectId(), encodedCollectionName);
             return new URL(path);
         } catch (URISyntaxException e) {
             KeenLogging.log("Event collection name has invalid character to encode", e);

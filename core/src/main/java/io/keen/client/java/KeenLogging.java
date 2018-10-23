@@ -38,6 +38,7 @@ public class KeenLogging {
             HANDLER.flush();
         }
     }
+
     /**
      * Call this to enable logging.
      */
