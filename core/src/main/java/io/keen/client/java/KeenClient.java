@@ -1378,8 +1378,10 @@ public class KeenClient {
             String path = String.format(Locale.US, "%s/%s/projects/%s/events/%s", getBaseUrl(),
                     KeenConstants.API_VERSION, project.getProjectId(), rawPath);
             return new URL(path);
-        } catch (URISyntaxException | MalformedURLException e) {
-            KeenLogging.log("Event you sent has invalid URL address", e);
+        } catch (URISyntaxException e) {
+            KeenLogging.log("Event collection name has invalid character to encode", e);
+        } catch (MalformedURLException e) {
+            KeenLogging.log("Url you create is malformed or there is not legal protocol in string you specified", e);
         }
 
         return null;
