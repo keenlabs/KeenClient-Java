@@ -730,6 +730,8 @@ public class KeenClient {
         private KeenEventStore eventStore;
         private Executor publishExecutor;
         private KeenNetworkStatusHandler networkStatusHandler;
+        private Integer connectTimeout;
+        private Integer readTimeout;
 
         /**
          * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
@@ -950,6 +952,27 @@ public class KeenClient {
             setNetworkStatusHandler(networkStatusHandler);
             return this;
         }
+        /**
+         * Sets the connection timeout to use.
+         *
+         * @param connectTimeout in milliseconds
+         * @return This instance (for method chaining).
+         */
+        public Builder withConnectTimeout(int connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        /**
+         * Sets the read timeout to use.
+         *
+         * @param readTimeout in milliseconds
+         * @return This instance (for method chaining).
+         */
+        public Builder withReadTimeout(int readTimeout) {
+            this.readTimeout = readTimeout;
+            return this;
+        }
 
         /**
          * Builds a new Keen client using the interfaces which have been specified explicitly on
@@ -999,6 +1022,14 @@ public class KeenClient {
                 KeenLogging.log("Exception building network status handler: " + e.getMessage());
             }
 
+            if (readTimeout == null) {
+                readTimeout = KeenClient.DEFAULT_READ_TIMEOUT;
+            }
+
+            if (connectTimeout == null) {
+                connectTimeout = KeenClient.DEFAULT_CONNECT_TIMEOUT;
+            }
+
             return buildInstance();
         }
 
@@ -1042,6 +1073,8 @@ public class KeenClient {
         this.eventStore = builder.eventStore;
         this.publishExecutor = builder.publishExecutor;
         this.networkStatusHandler = builder.networkStatusHandler;
+        this.connectTimeout = builder.connectTimeout;
+        this.readTimeout = builder.readTimeout;
 
         // If any of the interfaces are null, mark this client as inactive.
         if (httpHandler == null || jsonHandler == null ||
@@ -1176,6 +1209,8 @@ public class KeenClient {
     private final Executor publishExecutor;
     private final KeenNetworkStatusHandler networkStatusHandler;
     private final Object attemptsLock = new Object();
+    private final int connectTimeout;
+    private final int readTimeout;
 
     private boolean isActive = true;
     private boolean isDebugMode;
@@ -1448,7 +1483,7 @@ public class KeenClient {
 
         // Send the request.
         String writeKey = project.getWriteKey();
-        Request request = new Request(url, HttpMethods.POST, writeKey, source, proxy);
+        Request request = new Request(url, HttpMethods.POST, writeKey, source, proxy, connectTimeout, readTimeout);
         Response response = httpHandler.execute(request);
 
         // If logging is enabled, log the response.
@@ -1477,6 +1512,8 @@ public class KeenClient {
 
     ///// PRIVATE CONSTANTS /////
     private static final String ENCODING = "UTF-8";
+    private static final int DEFAULT_CONNECT_TIMEOUT = 30000;
+    private static final int DEFAULT_READ_TIMEOUT = 30000;
 
     /**
      * Handles a response from the Keen service to a batch post events operation. In particular,

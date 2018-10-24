@@ -50,8 +50,8 @@ public class UrlConnectionHttpHandler implements HttpHandler {
         } else {
             result = (HttpURLConnection) request.url.openConnection();
         }
-        result.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
-        result.setReadTimeout(DEFAULT_READ_TIMEOUT);
+        result.setConnectTimeout(request.connectTimeout);
+        result.setReadTimeout(request.readTimeout);
         return result;
     }
 
@@ -119,11 +119,4 @@ public class UrlConnectionHttpHandler implements HttpHandler {
         // Build and return the HTTP response object.
         return new Response(connection.getResponseCode(), body);
     }
-
-
-    ///// PRIVATE CONSTANTS /////
-
-    private static final int DEFAULT_CONNECT_TIMEOUT = 30000;
-    private static final int DEFAULT_READ_TIMEOUT = 30000;
-
 }

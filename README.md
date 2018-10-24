@@ -793,6 +793,10 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.3.0
+
++ Added withReadTimeout and withConnectTimeout methods to both KeenQueryClient.Builder and KeenClient.Builder
+
 ##### 5.2.1
 
 + Add encoding for event collection name before creating URL to publish.

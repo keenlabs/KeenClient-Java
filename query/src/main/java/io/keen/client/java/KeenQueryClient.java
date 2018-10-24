@@ -48,10 +48,15 @@ import io.keen.client.java.result.StringResult;
  */
 public class KeenQueryClient {
     private static final String ENCODING = "UTF-8";
+    private static final int DEFAULT_CONNECT_TIMEOUT = 30000;
+    private static final int DEFAULT_READ_TIMEOUT = 30000;
+
     private final KeenJsonHandler jsonHandler;
     private final RequestUrlBuilder requestUrlBuilder;
     private final KeenProject project;
     private final HttpHandler httpHandler;
+    private final int connectTimeout;
+    private final int readTimeout;
 
     /**
      * Gets the default project that this {@link KeenQueryClient} is using.
@@ -704,7 +709,7 @@ public class KeenQueryClient {
         }
 
         // Send the request.
-        Request request = new Request(url, method, authKey, source, null);
+        Request request = new Request(url, method, authKey, source, null, connectTimeout, readTimeout);
         Response response = httpHandler.execute(request);
 
         if (!response.isSuccess()) {
@@ -786,6 +791,8 @@ public class KeenQueryClient {
         jsonHandler = builder.jsonHandler;
         requestUrlBuilder = new RequestUrlBuilder(KeenConstants.API_VERSION, builder.baseUrl);
         project = builder.project;
+        readTimeout = builder.readTimeout;
+        connectTimeout = builder.connectTimeout;
     }
 
     /**
@@ -804,6 +811,8 @@ public class KeenQueryClient {
         private KeenJsonHandler jsonHandler;
         private String baseUrl;
         private KeenProject project;
+        private Integer connectTimeout;
+        private Integer readTimeout;
 
         /**
          * Builder to create a KeenQueryClient with {@link KeenProject}.
@@ -941,6 +950,28 @@ public class KeenQueryClient {
         public void setKeenProject(KeenProject project) { this.project = project; }
 
         /**
+         * Sets the connection timeout for queries.
+         *
+         * @param connectTimeout in milliseconds
+         * @return This instance (for method chaining).
+         */
+        public Builder withConnectTimeout(int connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        /**
+         * Sets the read timeout for queries.
+         *
+         * @param readTimeout in milliseconds
+         * @return This instance (for method chaining).
+         */
+        public Builder withReadTimeout(int readTimeout) {
+            this.readTimeout = readTimeout;
+            return this;
+        }
+
+        /**
          * Builds a new Keen query client using the interfaces which have been specified explicitly on
          * this builder instance via the set* or with* methods, or the default interfaces if none
          * have been specified.
@@ -973,6 +1004,13 @@ public class KeenQueryClient {
                 baseUrl = KeenConstants.SERVER_ADDRESS;
             }
 
+            if (connectTimeout == null) {
+                connectTimeout = KeenQueryClient.DEFAULT_CONNECT_TIMEOUT;
+            }
+
+            if (readTimeout == null) {
+                readTimeout = KeenQueryClient.DEFAULT_READ_TIMEOUT;
+            }
             return buildInstance();
         }
 

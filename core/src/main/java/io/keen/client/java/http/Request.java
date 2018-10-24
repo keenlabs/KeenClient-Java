@@ -18,19 +18,19 @@ public final class Request {
     public final String authorization;
     public final OutputSource body;
     public final Proxy proxy;
+    public final int connectTimeout;
+    public final int readTimeout;
 
-    ///// PUBLIC CONSTRUCTORS /////
+    ///// PUBLIC CONSTRUCTOR /////
 
-    public Request(URL url, String method, String authorization, OutputSource body) {
-        this(url, method, authorization, body, null);
-    }
-
-    public Request(URL url, String method, String authorization, OutputSource body, Proxy proxy) {
+    public Request(URL url, String method, String authorization, OutputSource body, Proxy proxy, int connectTimeout, int readTimeout) {
         this.url = url;
         this.method = method;
         this.authorization = authorization;
         this.body = body;
         this.proxy = proxy;
+        this.connectTimeout = connectTimeout;
+        this.readTimeout = readTimeout;
     }
 
 }

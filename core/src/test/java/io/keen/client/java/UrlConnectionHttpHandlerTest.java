@@ -105,7 +105,7 @@ public class UrlConnectionHttpHandlerTest {
         URL testUrl = new URL(TEST_URL);
 
         // Execute the request get the result.
-        Request request = new Request(testUrl, "POST", TEST_AUTHORIZATION, source);
+        Request request = new Request(testUrl, "POST", TEST_AUTHORIZATION, source, null, 30000, 30000);
         Response result = handler.execute(request);
 
         // Confirm that the mocked connection received the expected request.
