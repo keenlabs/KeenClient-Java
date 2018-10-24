@@ -793,6 +793,10 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.2.1
+
++ Add encoding for event collection name before creating URL to publish.
+
 ##### 5.2.0
 
 + Add Saved/Cached Query support.
