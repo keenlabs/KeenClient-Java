@@ -730,8 +730,8 @@ public class KeenClient {
         private KeenEventStore eventStore;
         private Executor publishExecutor;
         private KeenNetworkStatusHandler networkStatusHandler;
-        private Integer connectTimeout;
-        private Integer readTimeout;
+        private int connectTimeout = KeenClient.DEFAULT_CONNECT_TIMEOUT;
+        private int readTimeout = KeenClient.DEFAULT_READ_TIMEOUT;
 
         /**
          * Gets the default {@link HttpHandler} to use if none is explicitly set for this builder.
@@ -1020,14 +1020,6 @@ public class KeenClient {
                 }
             } catch (Exception e) {
                 KeenLogging.log("Exception building network status handler: " + e.getMessage());
-            }
-
-            if (readTimeout == null) {
-                readTimeout = KeenClient.DEFAULT_READ_TIMEOUT;
-            }
-
-            if (connectTimeout == null) {
-                connectTimeout = KeenClient.DEFAULT_CONNECT_TIMEOUT;
             }
 
             return buildInstance();

@@ -811,8 +811,8 @@ public class KeenQueryClient {
         private KeenJsonHandler jsonHandler;
         private String baseUrl;
         private KeenProject project;
-        private Integer connectTimeout;
-        private Integer readTimeout;
+        private int connectTimeout = KeenQueryClient.DEFAULT_CONNECT_TIMEOUT;
+        private int readTimeout = KeenQueryClient.DEFAULT_READ_TIMEOUT;
 
         /**
          * Builder to create a KeenQueryClient with {@link KeenProject}.
@@ -1004,13 +1004,6 @@ public class KeenQueryClient {
                 baseUrl = KeenConstants.SERVER_ADDRESS;
             }
 
-            if (connectTimeout == null) {
-                connectTimeout = KeenQueryClient.DEFAULT_CONNECT_TIMEOUT;
-            }
-
-            if (readTimeout == null) {
-                readTimeout = KeenQueryClient.DEFAULT_READ_TIMEOUT;
-            }
             return buildInstance();
         }
 
