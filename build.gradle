@@ -67,7 +67,8 @@ String getPassword(String prompt) {
             } // dialog end
         } // edt end
     } else {
-        pass = System.console().readPassword("\n" + prompt)
+        println prompt + ":"
+        pass = System.console().readPassword()
     }
 
     pass = new String(pass)

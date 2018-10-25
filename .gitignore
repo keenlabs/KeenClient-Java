@@ -1,5 +1,6 @@
 # Mac crap
 .DS_Store
+.java-version
 
 # intellij
 .idea
