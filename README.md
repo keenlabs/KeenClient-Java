@@ -799,7 +799,8 @@ client.addEvent("collection-name", event, keenProperties);
 
 ##### 5.2.1
 
-+ Add encoding for event collection name before creating URL to publish.
++ Enabled URL encoding of collection names. Since now all requests use encoded URLs instead of relying on ELB's encoding
+  feature. Please note, that it may affect you in case you already used to pass to KeenClient encoded collection names.
 
 ##### 5.2.0
 
