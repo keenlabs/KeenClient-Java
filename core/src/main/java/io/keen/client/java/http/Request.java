@@ -21,7 +21,12 @@ public final class Request {
     public final int connectTimeout;
     public final int readTimeout;
 
-    ///// PUBLIC CONSTRUCTOR /////
+    ///// PUBLIC CONSTRUCTORS /////
+
+    @Deprecated
+    public Request(URL url, String method, String authorization, OutputSource body) {
+        this(url, method, authorization, body, null, 30000, 30000);
+    }
 
     public Request(URL url, String method, String authorization, OutputSource body, Proxy proxy, int connectTimeout, int readTimeout) {
         this.url = url;
