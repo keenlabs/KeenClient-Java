@@ -31,4 +31,11 @@ public class LongResult extends QueryResult {
     public long longValue() {
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "LongResult{" +
+                "result=" + result +
+                '}';
+    }
 }

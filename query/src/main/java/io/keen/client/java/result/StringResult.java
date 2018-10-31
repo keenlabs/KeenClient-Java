@@ -31,4 +31,11 @@ public class StringResult extends QueryResult {
     public String stringValue() {
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "StringResult{" +
+                "result='" + result + '\'' +
+                '}';
+    }
 }

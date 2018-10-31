@@ -281,6 +281,10 @@ public class KeenQueryClient {
         return new SavedQueriesImpl(this);
     }
 
+    public CachedDatasets getCachedDatasetsClient() {
+        return new CachedDatasetsClient(this);
+    }
+
     Map<String, Object> getMapResponse(KeenQueryRequest request) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> response = getResponse(Map.class, request);

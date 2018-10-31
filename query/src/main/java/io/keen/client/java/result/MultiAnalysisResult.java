@@ -43,4 +43,11 @@ public class MultiAnalysisResult extends QueryResult {
     public Map<String, QueryResult> getAllResults() {
         return this.analysesResults;
     }
+
+    @Override
+    public String toString() {
+        return "MultiAnalysisResult{" +
+                "analysesResults=" + analysesResults +
+                '}';
+    }
 }

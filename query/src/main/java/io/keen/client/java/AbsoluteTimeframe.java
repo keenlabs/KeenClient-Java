@@ -62,4 +62,12 @@ public class AbsoluteTimeframe implements Timeframe {
 
         return timeframe;
     }
+
+    @Override
+    public String toString() {
+        return "AbsoluteTimeframe{" +
+                "start='" + start + '\'' +
+                ", end='" + end + '\'' +
+                '}';
+    }
 }

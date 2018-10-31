@@ -21,4 +21,12 @@ public class IntervalResultValue {
     public QueryResult getResult() {
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "IntervalResultValue{" +
+                "timeframe=" + timeframe +
+                ", result=" + result +
+                '}';
+    }
 }

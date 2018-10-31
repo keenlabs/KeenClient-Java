@@ -46,4 +46,11 @@ public class Group {
 
         return properties.get(propertyName);
     }
+
+    @Override
+    public String toString() {
+        return "Group{" +
+                "properties=" + properties +
+                '}';
+    }
 }

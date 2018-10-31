@@ -34,4 +34,11 @@ public class ListResult extends QueryResult {
     public List<QueryResult> getListResults() {
         return results;
     }
+
+    @Override
+    public String toString() {
+        return "ListResult{" +
+                "results=" + results +
+                '}';
+    }
 }

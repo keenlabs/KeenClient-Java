@@ -40,4 +40,10 @@ public class GroupByResult extends QueryResult {
         return results;
     }
 
+    @Override
+    public String toString() {
+        return "GroupByResult{" +
+                "results=" + results +
+                '}';
+    }
 }

@@ -47,4 +47,12 @@ public class FunnelResult extends QueryResult {
      * @return The ListResult containing the results of the funnel query.
      */
     public ListResult getFunnelResult() { return this.funnelResult; }
+
+    @Override
+    public String toString() {
+        return "FunnelResult{" +
+                "funnelResult=" + funnelResult +
+                ", actorsResult=" + actorsResult +
+                '}';
+    }
 }

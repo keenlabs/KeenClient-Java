@@ -35,4 +35,10 @@ public class IntervalResult extends QueryResult {
         return results;
     }
 
+    @Override
+    public String toString() {
+        return "IntervalResult{" +
+                "results=" + results +
+                '}';
+    }
 }

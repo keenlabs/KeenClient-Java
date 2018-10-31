@@ -31,4 +31,11 @@ public class DoubleResult extends QueryResult {
     public double doubleValue() {
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "DoubleResult{" +
+                "result=" + result +
+                '}';
+    }
 }
