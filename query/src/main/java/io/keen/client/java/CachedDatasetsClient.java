@@ -4,6 +4,7 @@ import io.keen.client.java.result.IntervalResultValue;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -22,10 +23,15 @@ public class CachedDatasetsClient implements CachedDatasets {
         return keenQueryClient.getMapResponse(request);
     }
 
+    @Override
+    public List<IntervalResultValue> getResults(String datasetName, String indexBy, Timeframe timeframe) throws IOException {
+        return getResults(datasetName, indexBy, timeframe, Collections.<String>emptyList());
+    }
+
+    @Override
     public List<IntervalResultValue> getResults(String datasetName, String indexBy, Timeframe timeframe, Collection<String> groupByParams) throws IOException {
         KeenQueryRequest request = CachedDatasetRequest.resultsRequest(datasetName, indexBy, timeframe, groupByParams);
 
-        List<IntervalResultValue> result = keenQueryClient.execute(request).getIntervalResults();
-        return result;
+        return keenQueryClient.execute(request).getIntervalResults();
     }
 }

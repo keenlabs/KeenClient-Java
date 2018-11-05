@@ -80,7 +80,7 @@ class RequestUrlBuilder {
                 }
             }
 
-            return new URL(url.toString());
+            return new URL(url.toString().replaceFirst("&$", ""));
         } catch (MalformedURLException ex) {
             Logger.getLogger(RequestUrlBuilder.class.getName())
                     .log(Level.SEVERE, "Failed to format query URL.", ex);

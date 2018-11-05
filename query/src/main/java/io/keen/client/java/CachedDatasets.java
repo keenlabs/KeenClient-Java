@@ -11,6 +11,8 @@ public interface CachedDatasets {
 
     Map<String, Object> getDefinition(String datasetName) throws IOException;
 
+    List<IntervalResultValue> getResults(String datasetName, String indexBy, Timeframe timeframe) throws IOException;
+
     List<IntervalResultValue> getResults(String datasetName, String indexBy, Timeframe timeframe, Collection<String> groupByParams) throws IOException;
 
 }

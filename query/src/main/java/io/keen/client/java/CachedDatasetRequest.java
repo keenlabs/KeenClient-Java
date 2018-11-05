@@ -6,7 +6,6 @@ import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.http.HttpMethods;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
