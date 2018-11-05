@@ -1,8 +1,12 @@
 package io.keen.client.java;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.http.HttpMethods;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,9 +33,16 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
 
     static KeenQueryRequest resultsRequest(String datasetName, final String indexBy, final Timeframe timeframe, final Collection<String> groupByParams) {
         return new CachedDatasetRequest(HttpMethods.GET, false, datasetName) {
+            private final ObjectMapper objectMapper = new ObjectMapper()
+                    .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
             @Override
             URL getRequestURL(RequestUrlBuilder urlBuilder, String projectId) throws KeenQueryClientException {
-                return urlBuilder.getDatasetsUrl(projectId, getResourceName(), "/results", queryArgs());
+                try {
+                    return urlBuilder.getDatasetsUrl(projectId, getResourceName(), "/results", queryArgs());
+                } catch (IOException e) {
+                    throw new KeenQueryClientException(e);
+                }
             }
 
             @Override
@@ -49,7 +60,7 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
                 return groupByParams;
             }
 
-            private Map<String, Object> queryArgs() {
+            private Map<String, Object> queryArgs() throws IOException {
                 if (indexBy == null) {
                     throw new IllegalArgumentException("index_by is required");
                 }
@@ -57,9 +68,11 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
                     throw new IllegalArgumentException("timeframe is required");
                 }
 
+                Object timeframeAsArgs = timeframe.constructTimeframeArgs().get(KeenQueryConstants.TIMEFRAME);
+
                 HashMap<String, Object> queryArgs = new HashMap<String, Object>();
                 queryArgs.put(KeenQueryConstants.INDEX_BY, indexBy);
-                queryArgs.putAll(timeframe.constructTimeframeArgs());
+                queryArgs.put(KeenQueryConstants.TIMEFRAME, objectMapper.writeValueAsString(timeframeAsArgs));
                 return queryArgs;
             }
         };
