@@ -765,6 +765,8 @@ If you are not trying to build the Android client, you can remove `android` from
 
         sdk.dir=<Android SDK path>
 
+If you use Intellij IDE, `local.properties` file should be create in a root directory of project.
+
 #### "RuntimeException: Stub!" error in JUnit tests
 
 This is usually caused by the Android SDK being before JUnit in your classpath. (Android includes a stubbed version of JUnit.) To fix this, move JUnit ahead of the Android SDK so it gets picked up first.
