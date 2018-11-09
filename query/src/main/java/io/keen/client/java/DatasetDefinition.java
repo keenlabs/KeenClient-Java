@@ -1,0 +1,145 @@
+package io.keen.client.java;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+public class DatasetDefinition {
+
+    private String datasetName;
+
+    private String displayName;
+
+    private String projectId;
+
+    private String organizationId;
+
+    private String lastScheduledDate;
+
+    private String latestSubtimeframeAvailable;
+
+    private String millisecondsBehind;
+
+    private List<String> indexBy;
+
+    private DatasetQuery query;
+
+    static DatasetDefinition fromMap(Map<String, Object> properties) {
+        DatasetDefinition definition = new DatasetDefinition();
+        definition.datasetName = (String) properties.get("dataset_name");
+        definition.displayName = (String) properties.get("display_name");
+        definition.projectId = (String) properties.get("project_id");
+        definition.organizationId = (String) properties.get("organization_id");
+        definition.lastScheduledDate = (String) properties.get("last_scheduled_date");
+        definition.latestSubtimeframeAvailable = (String) properties.get("latest_subtimeframe_available");
+        definition.millisecondsBehind = String.valueOf(properties.get("milliseconds_behind"));
+        //noinspection unchecked
+        definition.indexBy = (List<String>) properties.get("index_by");
+        //noinspection unchecked
+        definition.query = DatasetQuery.fromMap((Map<String, Object>) properties.get("query"));
+        return definition;
+    }
+
+    static List<DatasetDefinition> collectionFromMap(Map<String, Object> properties) {
+        if (properties.get("datasets") == null) {
+            return Collections.emptyList();
+        }
+        //noinspection unchecked
+        List<Map<String, Object>> datasets = (List<Map<String, Object>>) properties.get("datasets");
+        List<DatasetDefinition> definitions = new LinkedList<DatasetDefinition>();
+
+        for (Map<String, Object> dataset : datasets) {
+            definitions.add(fromMap(dataset));
+        }
+
+        return definitions;
+    }
+
+    public String getDatasetName() {
+        return datasetName;
+    }
+
+    public void setDatasetName(String datasetName) {
+        this.datasetName = datasetName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
+    }
+
+    public String getLastScheduledDate() {
+        return lastScheduledDate;
+    }
+
+    public void setLastScheduledDate(String lastScheduledDate) {
+        this.lastScheduledDate = lastScheduledDate;
+    }
+
+    public String getLatestSubtimeframeAvailable() {
+        return latestSubtimeframeAvailable;
+    }
+
+    public void setLatestSubtimeframeAvailable(String latestSubtimeframeAvailable) {
+        this.latestSubtimeframeAvailable = latestSubtimeframeAvailable;
+    }
+
+    public String getMillisecondsBehind() {
+        return millisecondsBehind;
+    }
+
+    public void setMillisecondsBehind(String millisecondsBehind) {
+        this.millisecondsBehind = millisecondsBehind;
+    }
+
+    public List<String> getIndexBy() {
+        return indexBy;
+    }
+
+    public void setIndexBy(List<String> indexBy) {
+        this.indexBy = indexBy;
+    }
+
+    public DatasetQuery getQuery() {
+        return query;
+    }
+
+    public void setQuery(DatasetQuery query) {
+        this.query = query;
+    }
+
+    @Override
+    public String toString() {
+        return "DatasetDefinition{" +
+                "datasetName='" + datasetName + '\'' +
+                ", displayName='" + displayName + '\'' +
+                ", projectId='" + projectId + '\'' +
+                ", organizationId='" + organizationId + '\'' +
+                ", lastScheduledDate='" + lastScheduledDate + '\'' +
+                ", latestSubtimeframeAvailable='" + latestSubtimeframeAvailable + '\'' +
+                ", millisecondsBehind='" + millisecondsBehind + '\'' +
+                ", indexBy=" + indexBy +
+                ", query=" + query +
+                '}';
+    }
+}

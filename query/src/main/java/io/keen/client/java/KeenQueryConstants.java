@@ -33,6 +33,8 @@ class KeenQueryConstants {
 
     // Datasets parameters
     static final String INDEX_BY = "index_by";
+    static final String LIMIT = "limit";
+    static final String AFTER_NAME = "after_name";
 
     // filter property names
     static final String PROPERTY_NAME = "property_name";

@@ -59,18 +59,21 @@ class RequestUrlBuilder {
         }
     }
 
-    URL getDatasetsUrl(String projectId, String datasetName, String suffix, Map<String, Object> queryParams) throws KeenQueryClientException {
+    URL getDatasetsUrl(String projectId, String datasetName, boolean fetchResults, Map<String, Object> queryParams) throws KeenQueryClientException {
         try {
             StringBuilder url = new StringBuilder(String.format(Locale.US,
-                    "%s/%s/projects/%s/%s/%s",
+                    "%s/%s/projects/%s/%s",
                     this.baseUrl,
                     this.apiVersion,
                     projectId,
-                    KeenQueryConstants.DATASETS,
-                    datasetName
+                    KeenQueryConstants.DATASETS
             ));
-            if (suffix != null) {
-                url.append(suffix);
+
+            if (datasetName != null) {
+                url.append("/").append(datasetName);
+                if (fetchResults) {
+                    url.append("/results");
+                }
             }
 
             if (queryParams != null && !queryParams.isEmpty()) {
