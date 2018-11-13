@@ -91,7 +91,7 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
         };
     }
 
-    static KeenQueryRequest deleteRequest(String datasetName) {
+    static KeenQueryRequest deletionRequest(String datasetName) {
         return new CachedDatasetRequest(HttpMethods.DELETE, true, datasetName) {
 
             @Override

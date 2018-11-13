@@ -23,6 +23,7 @@ public class DatasetQuery {
 
     private List<Filter> filters;
 
+    @SuppressWarnings("unchecked")
     static DatasetQuery fromMap(Map<String, Object> properties) {
         DatasetQuery query = new DatasetQuery();
         query.projectId = (String) properties.get("project_id");
@@ -31,12 +32,10 @@ public class DatasetQuery {
         query.timezone = (String) properties.get("timezone");
         query.interval = (String) properties.get("interval");
         query.timeframe = (String) properties.get("timeframe");
-        //noinspection unchecked
         query.groupBy = (List<String>) properties.get("group_by");
 
         if (properties.get("filters") != null) {
             query.filters = new LinkedList<Filter>();
-            //noinspection unchecked
             for (Map<String, Object> filter : (List<Map<String, Object>>) properties.get("filters")) {
                 query.filters.add(new Filter(
                         (String) filter.get("property_name"),

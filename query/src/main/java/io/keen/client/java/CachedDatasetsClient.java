@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-public class CachedDatasetsClient implements CachedDatasets {
+class CachedDatasetsClient implements CachedDatasets {
 
     private KeenQueryClient keenQueryClient;
 
@@ -44,12 +44,12 @@ public class CachedDatasetsClient implements CachedDatasets {
     public List<DatasetDefinition> getDefinitionsByProject(Integer limit, String afterName) throws IOException {
         KeenQueryRequest request = CachedDatasetRequest.definitionsByProjectRequest(limit, afterName);
 
-        return DatasetDefinition.collectionFromMap(keenQueryClient.getMapResponse(request));
+        return DatasetDefinition.definitionsFromMap(keenQueryClient.getMapResponse(request));
     }
 
     @Override
     public boolean delete(String datasetName) throws IOException {
-        KeenQueryRequest request = CachedDatasetRequest.deleteRequest(datasetName);
+        KeenQueryRequest request = CachedDatasetRequest.deletionRequest(datasetName);
 
         return keenQueryClient.getMapResponse(request).isEmpty();
     }

@@ -25,7 +25,8 @@ public class DatasetDefinition {
 
     private DatasetQuery query;
 
-    static DatasetDefinition fromMap(Map<String, Object> properties) {
+    @SuppressWarnings("unchecked")
+    static DatasetDefinition fromMap(Map<String, ?> properties) {
         DatasetDefinition definition = new DatasetDefinition();
         definition.datasetName = (String) properties.get("dataset_name");
         definition.displayName = (String) properties.get("display_name");
@@ -34,18 +35,16 @@ public class DatasetDefinition {
         definition.lastScheduledDate = (String) properties.get("last_scheduled_date");
         definition.latestSubtimeframeAvailable = (String) properties.get("latest_subtimeframe_available");
         definition.millisecondsBehind = String.valueOf(properties.get("milliseconds_behind"));
-        //noinspection unchecked
         definition.indexBy = (List<String>) properties.get("index_by");
-        //noinspection unchecked
         definition.query = DatasetQuery.fromMap((Map<String, Object>) properties.get("query"));
         return definition;
     }
 
-    static List<DatasetDefinition> collectionFromMap(Map<String, Object> properties) {
+    @SuppressWarnings("unchecked")
+    static List<DatasetDefinition> definitionsFromMap(Map<String, ?> properties) {
         if (properties.get("datasets") == null) {
             return Collections.emptyList();
         }
-        //noinspection unchecked
         List<Map<String, Object>> datasets = (List<Map<String, Object>>) properties.get("datasets");
         List<DatasetDefinition> definitions = new LinkedList<DatasetDefinition>();
 
