@@ -5,11 +5,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static io.keen.client.java.KeenQueryConstants.*;
+
 public class DatasetQuery {
 
     private String projectId;
 
     private String analysisType;
+
+    private String targetProperty;
 
     private String eventCollection;
 
@@ -61,6 +65,14 @@ public class DatasetQuery {
 
     public void setAnalysisType(String analysisType) {
         this.analysisType = analysisType;
+    }
+
+    public String getTargetProperty() {
+        return targetProperty;
+    }
+
+    public void setTargetProperty(String targetProperty) {
+        this.targetProperty = targetProperty;
     }
 
     public String getEventCollection() {
@@ -116,19 +128,27 @@ public class DatasetQuery {
 //        private List<Filter> filters;
         Map<String, Object> result = new HashMap<String, Object>();
         if (analysisType != null) {
-            result.put(KeenQueryConstants.ANALYSIS_TYPE, analysisType);
+            result.put(ANALYSIS_TYPE, analysisType);
+
+            if (!COUNT.equals(analysisType) && targetProperty == null) {
+                throw new IllegalStateException("target_property must not be null when analysis_type does not equal to '" + COUNT + "'");
+            }
+
+            if (targetProperty != null) {
+                result.put(TARGET_PROPERTY, targetProperty);
+            }
         }
         if (eventCollection != null) {
-            result.put(KeenQueryConstants.EVENT_COLLECTION, eventCollection);
+            result.put(EVENT_COLLECTION, eventCollection);
         }
         if (timeframe != null) {
-            result.put(KeenQueryConstants.TIMEFRAME, timeframe);
+            result.put(TIMEFRAME, timeframe);
         }
         if (timezone != null) {
-            result.put(KeenQueryConstants.TIMEZONE, timezone);
+            result.put(TIMEZONE, timezone);
         }
         if (interval != null) {
-            result.put(KeenQueryConstants.INTERVAL, interval);
+            result.put(INTERVAL, interval);
         }
         return result;
     }
@@ -138,6 +158,7 @@ public class DatasetQuery {
         return "DatasetQuery{" +
                 "projectId='" + projectId + '\'' +
                 ", analysisType='" + analysisType + '\'' +
+                ", targetProperty='" + targetProperty + '\'' +
                 ", eventCollection='" + eventCollection + '\'' +
                 ", timezone='" + timezone + '\'' +
                 ", interval='" + interval + '\'' +
