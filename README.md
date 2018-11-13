@@ -765,7 +765,7 @@ If you are not trying to build the Android client, you can remove `android` from
 
         sdk.dir=<Android SDK path>
 
-If you use Intellij IDE, `local.properties` file should be create in a root directory of project.
+If you use Intellij IDE, the `local.properties` file should be created in a root directory of the project.
 
 #### "RuntimeException: Stub!" error in JUnit tests
 
