@@ -1,9 +1,6 @@
 package io.keen.client.java;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.keen.client.java.KeenQueryConstants.*;
 
@@ -115,6 +112,10 @@ public class DatasetQuery {
         this.groupBy = groupBy;
     }
 
+    public void setGroupBy(String groupBy) {
+        this.groupBy = Collections.singletonList(groupBy);
+    }
+
     public List<Filter> getFilters() {
         return filters;
     }
@@ -129,14 +130,9 @@ public class DatasetQuery {
         Map<String, Object> result = new HashMap<String, Object>();
         if (analysisType != null) {
             result.put(ANALYSIS_TYPE, analysisType);
-
-            if (!COUNT.equals(analysisType) && targetProperty == null) {
-                throw new IllegalStateException("target_property must not be null when analysis_type does not equal to '" + COUNT + "'");
-            }
-
-            if (targetProperty != null) {
-                result.put(TARGET_PROPERTY, targetProperty);
-            }
+        }
+        if (targetProperty != null) {
+            result.put(TARGET_PROPERTY, targetProperty);
         }
         if (eventCollection != null) {
             result.put(EVENT_COLLECTION, eventCollection);
@@ -149,6 +145,9 @@ public class DatasetQuery {
         }
         if (interval != null) {
             result.put(INTERVAL, interval);
+        }
+        if (groupBy != null) {
+            result.put(GROUP_BY, groupBy);
         }
         return result;
     }
