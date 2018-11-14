@@ -320,7 +320,7 @@ public class KeenQueryClient {
 
         boolean isGroupBy = request.groupedResponseExpected();
         boolean isInterval = request.intervalResponseExpected();
-        boolean isMultiAnalysis = request instanceof MultiAnalysis;
+        boolean isMultiAnalysis = KeenQueryConstants.MULTI_ANALYSIS.equals(request.getAnalysisType());
         boolean isFunnel = request instanceof Funnel;
 
         final Collection<String> groupByParams = request.groupedResponseExpected() ?

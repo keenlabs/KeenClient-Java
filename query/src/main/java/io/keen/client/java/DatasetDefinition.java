@@ -45,10 +45,10 @@ public class DatasetDefinition {
         if (properties.get("datasets") == null) {
             return Collections.emptyList();
         }
-        List<Map<String, Object>> datasets = (List<Map<String, Object>>) properties.get("datasets");
+        List<Map<String, ?>> datasets = (List<Map<String, ?>>) properties.get("datasets");
         List<DatasetDefinition> definitions = new LinkedList<DatasetDefinition>();
 
-        for (Map<String, Object> dataset : datasets) {
+        for (Map<String, ?> dataset : datasets) {
             definitions.add(fromMap(dataset));
         }
 

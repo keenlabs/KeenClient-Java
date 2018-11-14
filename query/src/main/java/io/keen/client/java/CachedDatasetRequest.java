@@ -52,6 +52,11 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
             }
 
             @Override
+            String getAnalysisType() {
+                return datasetDefinition.getQuery().getAnalysisType();
+            }
+
+            @Override
             Collection<String> getGroupByParams() {
                 return datasetDefinition.getQuery().getGroupBy();
             }
