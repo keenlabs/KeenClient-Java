@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * DoubleResult is for if the QueryResult object is of type Double.
  *
@@ -34,8 +37,6 @@ public class DoubleResult extends QueryResult {
 
     @Override
     public String toString() {
-        return "DoubleResult{" +
-                "result=" + result +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

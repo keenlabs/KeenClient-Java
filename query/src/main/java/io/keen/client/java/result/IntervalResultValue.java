@@ -1,6 +1,8 @@
 package io.keen.client.java.result;
 
 import io.keen.client.java.AbsoluteTimeframe;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Models a single piece of a full interval result.
@@ -24,9 +26,6 @@ public class IntervalResultValue {
 
     @Override
     public String toString() {
-        return "IntervalResultValue{" +
-                "timeframe=" + timeframe +
-                ", result=" + result +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * LongResult is for if the QueryResult object is of type Long.
  *
@@ -34,8 +37,6 @@ public class LongResult extends QueryResult {
 
     @Override
     public String toString() {
-        return "LongResult{" +
-                "result=" + result +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

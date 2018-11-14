@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * Represents the results from a Funnel analysis. This includes both the results of each FunnelStep
  * and optionally the 'actor_property's at each step, if requested.
@@ -50,9 +53,6 @@ public class FunnelResult extends QueryResult {
 
     @Override
     public String toString() {
-        return "FunnelResult{" +
-                "funnelResult=" + funnelResult +
-                ", actorsResult=" + actorsResult +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

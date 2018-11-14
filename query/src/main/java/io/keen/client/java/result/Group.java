@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +52,6 @@ public class Group {
 
     @Override
     public String toString() {
-        return "Group{" +
-                "properties=" + properties +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

@@ -1,5 +1,8 @@
 package io.keen.client.java;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.*;
 
 import static io.keen.client.java.KeenQueryConstants.*;
@@ -201,16 +204,6 @@ public class DatasetQuery {
 
     @Override
     public String toString() {
-        return "DatasetQuery{" +
-                "projectId='" + projectId + '\'' +
-                ", analysisType='" + analysisType + '\'' +
-                ", targetProperty='" + targetProperty + '\'' +
-                ", eventCollection='" + eventCollection + '\'' +
-                ", timezone='" + timezone + '\'' +
-                ", interval='" + interval + '\'' +
-                ", timeframe='" + timeframe + '\'' +
-                ", groupBy=" + groupBy +
-                ", filters=" + filters +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

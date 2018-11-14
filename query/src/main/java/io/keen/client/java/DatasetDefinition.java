@@ -1,5 +1,8 @@
 package io.keen.client.java;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -129,16 +132,6 @@ public class DatasetDefinition {
 
     @Override
     public String toString() {
-        return "DatasetDefinition{" +
-                "datasetName='" + datasetName + '\'' +
-                ", displayName='" + displayName + '\'' +
-                ", projectId='" + projectId + '\'' +
-                ", organizationId='" + organizationId + '\'' +
-                ", lastScheduledDate='" + lastScheduledDate + '\'' +
-                ", latestSubtimeframeAvailable='" + latestSubtimeframeAvailable + '\'' +
-                ", millisecondsBehind='" + millisecondsBehind + '\'' +
-                ", indexBy=" + indexBy +
-                ", query=" + query +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

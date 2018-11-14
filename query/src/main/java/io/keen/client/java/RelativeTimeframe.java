@@ -1,5 +1,8 @@
 package io.keen.client.java;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,5 +74,10 @@ public class RelativeTimeframe implements Timeframe {
         }
 
         return timeframe;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

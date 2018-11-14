@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * StringResult is for if the QueryResult object is of type String.
  *
@@ -17,7 +20,7 @@ public class StringResult extends QueryResult {
     }
 
     /**
-     * @return  {@code true}
+     * @return {@code true}
      */
     @Override
     public boolean isString() {
@@ -34,8 +37,6 @@ public class StringResult extends QueryResult {
 
     @Override
     public String toString() {
-        return "StringResult{" +
-                "result='" + result + '\'' +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

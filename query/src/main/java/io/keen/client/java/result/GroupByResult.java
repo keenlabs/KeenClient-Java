@@ -1,5 +1,8 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -42,8 +45,6 @@ public class GroupByResult extends QueryResult {
 
     @Override
     public String toString() {
-        return "GroupByResult{" +
-                "results=" + results +
-                '}';
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }
