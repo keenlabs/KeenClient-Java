@@ -74,98 +74,6 @@ public class DatasetQuery {
         return new SubAnalysis(label, analysisType, targetProperty);
     }
 
-    public String getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
-    public String getAnalysisType() {
-        return analysisType;
-    }
-
-    public void setAnalysisType(String analysisType) {
-        this.analysisType = analysisType;
-    }
-
-    public List<SubAnalysis> getAnalyses() {
-        return analyses;
-    }
-
-    public void setAnalyses(SubAnalysis... analyses) {
-        this.analyses = Arrays.asList(analyses);
-    }
-
-    public void setAnalyses(List<SubAnalysis> analyses) {
-        this.analyses = analyses;
-    }
-
-    public String getTargetProperty() {
-        return targetProperty;
-    }
-
-    public void setTargetProperty(String targetProperty) {
-        this.targetProperty = targetProperty;
-    }
-
-    public String getEventCollection() {
-        return eventCollection;
-    }
-
-    public void setEventCollection(String eventCollection) {
-        this.eventCollection = eventCollection;
-    }
-
-    public String getTimezone() {
-        return timezone;
-    }
-
-    public void setTimezone(String timezone) {
-        this.timezone = timezone;
-    }
-
-    public String getInterval() {
-        return interval;
-    }
-
-    public void setInterval(String interval) {
-        this.interval = interval;
-    }
-
-    public String getTimeframe() {
-        return timeframe;
-    }
-
-    public void setTimeframe(String timeframe) {
-        this.timeframe = timeframe;
-    }
-
-    public List<String> getGroupBy() {
-        return groupBy;
-    }
-
-    public void setGroupBy(List<String> groupBy) {
-        this.groupBy = groupBy;
-    }
-
-    public void setGroupBy(String... groupBy) {
-        this.groupBy = Arrays.asList(groupBy);
-    }
-
-    public List<Filter> getFilters() {
-        return filters;
-    }
-
-    public void setFilters(List<Filter> filters) {
-        this.filters = filters;
-    }
-
-    public void setFilter(Filter filter) {
-        this.filters = Collections.singletonList(filter);
-    }
-
     Map<String, Object> asMap() {
         Map<String, Object> result = new HashMap<String, Object>();
         if (analysisType != null) {
@@ -206,8 +114,134 @@ public class DatasetQuery {
         return result;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getAnalysisType() {
+        return analysisType;
+    }
+
+    public List<SubAnalysis> getAnalyses() {
+        return analyses;
+    }
+
+    public String getTargetProperty() {
+        return targetProperty;
+    }
+
+    public String getEventCollection() {
+        return eventCollection;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public String getInterval() {
+        return interval;
+    }
+
+    public String getTimeframe() {
+        return timeframe;
+    }
+
+    public List<String> getGroupBy() {
+        return groupBy;
+    }
+
+    public List<Filter> getFilters() {
+        return filters;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+
+    public static final class DatasetQueryBuilder {
+        private String projectId;
+        private String analysisType;
+        private List<SubAnalysis> analyses;
+        private String targetProperty;
+        private String eventCollection;
+        private String timezone;
+        private String interval;
+        private String timeframe;
+        private List<String> groupBy;
+        private List<Filter> filters;
+
+        private DatasetQueryBuilder() {
+        }
+
+        public static DatasetQueryBuilder aDatasetQuery() {
+            return new DatasetQueryBuilder();
+        }
+
+        public DatasetQueryBuilder withProjectId(String projectId) {
+            this.projectId = projectId;
+            return this;
+        }
+
+        public DatasetQueryBuilder withAnalysisType(String analysisType) {
+            this.analysisType = analysisType;
+            return this;
+        }
+
+        public DatasetQueryBuilder withAnalyses(List<SubAnalysis> analyses) {
+            this.analyses = analyses;
+            return this;
+        }
+
+        public DatasetQueryBuilder withTargetProperty(String targetProperty) {
+            this.targetProperty = targetProperty;
+            return this;
+        }
+
+        public DatasetQueryBuilder withEventCollection(String eventCollection) {
+            this.eventCollection = eventCollection;
+            return this;
+        }
+
+        public DatasetQueryBuilder withTimezone(String timezone) {
+            this.timezone = timezone;
+            return this;
+        }
+
+        public DatasetQueryBuilder withInterval(String interval) {
+            this.interval = interval;
+            return this;
+        }
+
+        public DatasetQueryBuilder withTimeframe(String timeframe) {
+            this.timeframe = timeframe;
+            return this;
+        }
+
+        public DatasetQueryBuilder withGroupBy(List<String> groupBy) {
+            this.groupBy = groupBy;
+            return this;
+        }
+
+        public DatasetQueryBuilder withFilters(List<Filter> filters) {
+            this.filters = filters;
+            return this;
+        }
+
+        public DatasetQuery build() {
+            DatasetQuery datasetQuery = new DatasetQuery();
+            datasetQuery.targetProperty = this.targetProperty;
+            datasetQuery.timezone = this.timezone;
+            datasetQuery.analysisType = this.analysisType;
+            datasetQuery.eventCollection = this.eventCollection;
+            datasetQuery.filters = this.filters;
+            datasetQuery.interval = this.interval;
+            datasetQuery.groupBy = this.groupBy;
+            datasetQuery.projectId = this.projectId;
+            datasetQuery.timeframe = this.timeframe;
+            datasetQuery.analyses = this.analyses;
+            return datasetQuery;
+        }
     }
 }

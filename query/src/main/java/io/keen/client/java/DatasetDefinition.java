@@ -62,76 +62,119 @@ public class DatasetDefinition {
         return datasetName;
     }
 
-    public void setDatasetName(String datasetName) {
-        this.datasetName = datasetName;
-    }
-
     public String getDisplayName() {
         return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
     }
 
     public String getProjectId() {
         return projectId;
     }
 
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
     public String getOrganizationId() {
         return organizationId;
-    }
-
-    public void setOrganizationId(String organizationId) {
-        this.organizationId = organizationId;
     }
 
     public String getLastScheduledDate() {
         return lastScheduledDate;
     }
 
-    public void setLastScheduledDate(String lastScheduledDate) {
-        this.lastScheduledDate = lastScheduledDate;
-    }
-
     public String getLatestSubtimeframeAvailable() {
         return latestSubtimeframeAvailable;
-    }
-
-    public void setLatestSubtimeframeAvailable(String latestSubtimeframeAvailable) {
-        this.latestSubtimeframeAvailable = latestSubtimeframeAvailable;
     }
 
     public String getMillisecondsBehind() {
         return millisecondsBehind;
     }
 
-    public void setMillisecondsBehind(String millisecondsBehind) {
-        this.millisecondsBehind = millisecondsBehind;
-    }
-
     public List<String> getIndexBy() {
         return indexBy;
-    }
-
-    public void setIndexBy(List<String> indexBy) {
-        this.indexBy = indexBy;
     }
 
     public DatasetQuery getQuery() {
         return query;
     }
 
-    public void setQuery(DatasetQuery query) {
-        this.query = query;
-    }
-
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+
+    public static final class DatasetDefinitionBuilder {
+        private String datasetName;
+        private String displayName;
+        private String projectId;
+        private String organizationId;
+        private String lastScheduledDate;
+        private String latestSubtimeframeAvailable;
+        private String millisecondsBehind;
+        private List<String> indexBy;
+        private DatasetQuery query;
+
+        private DatasetDefinitionBuilder() {
+        }
+
+        public static DatasetDefinitionBuilder aDatasetDefinition() {
+            return new DatasetDefinitionBuilder();
+        }
+
+        public DatasetDefinitionBuilder withDatasetName(String datasetName) {
+            this.datasetName = datasetName;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withDisplayName(String displayName) {
+            this.displayName = displayName;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withProjectId(String projectId) {
+            this.projectId = projectId;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withOrganizationId(String organizationId) {
+            this.organizationId = organizationId;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withLastScheduledDate(String lastScheduledDate) {
+            this.lastScheduledDate = lastScheduledDate;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withLatestSubtimeframeAvailable(String latestSubtimeframeAvailable) {
+            this.latestSubtimeframeAvailable = latestSubtimeframeAvailable;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withMillisecondsBehind(String millisecondsBehind) {
+            this.millisecondsBehind = millisecondsBehind;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withIndexBy(List<String> indexBy) {
+            this.indexBy = indexBy;
+            return this;
+        }
+
+        public DatasetDefinitionBuilder withQuery(DatasetQuery query) {
+            this.query = query;
+            return this;
+        }
+
+        public DatasetDefinition build() {
+            DatasetDefinition datasetDefinition = new DatasetDefinition();
+            datasetDefinition.datasetName = this.datasetName;
+            datasetDefinition.projectId = this.projectId;
+            datasetDefinition.organizationId = this.organizationId;
+            datasetDefinition.millisecondsBehind = this.millisecondsBehind;
+            datasetDefinition.lastScheduledDate = this.lastScheduledDate;
+            datasetDefinition.indexBy = this.indexBy;
+            datasetDefinition.query = this.query;
+            datasetDefinition.displayName = this.displayName;
+            datasetDefinition.latestSubtimeframeAvailable = this.latestSubtimeframeAvailable;
+            return datasetDefinition;
+        }
     }
 }
