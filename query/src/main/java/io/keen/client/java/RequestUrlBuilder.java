@@ -2,8 +2,10 @@ package io.keen.client.java;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -77,18 +79,19 @@ class RequestUrlBuilder {
             }
 
             if (queryParams != null && !queryParams.isEmpty()) {
-                url.append("?");
+                StringBuilder query = new StringBuilder();
                 for (Map.Entry<String, Object> entry : queryParams.entrySet()) {
-                    url.append(String.format("%s=%s&", entry.getKey(), entry.getValue()));
+                    query.append(String.format("%s=", URLEncoder.encode(entry.getKey(), "UTF-8")));
+                    query.append(String.format("%s&", URLEncoder.encode(entry.getValue().toString(), "UTF-8")));
                 }
+                url.append("?").append(query.toString().replaceFirst("&$", ""));
             }
-
-            return new URL(url.toString().replaceFirst("&$", ""));
-        } catch (MalformedURLException ex) {
+            return new URL(url.toString());
+        } catch (IOException ex) {
             Logger.getLogger(RequestUrlBuilder.class.getName())
-                    .log(Level.SEVERE, "Failed to format query URL.", ex);
+                    .log(Level.SEVERE, "Failed to format dataset URL.", ex);
 
-            throw new KeenQueryClientException("Failed to format query URL.", ex);
+            throw new KeenQueryClientException("Failed to format dataset URL.", ex);
         }
     }
 }

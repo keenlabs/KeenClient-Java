@@ -3,16 +3,17 @@ package io.keen.client.java;
 import io.keen.client.java.result.IntervalResultValue;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public interface CachedDatasets {
 
-    DatasetDefinition create(String datasetName, String displayName, DatasetQuery query, Set<String> indexBy) throws IOException;
+    DatasetDefinition create(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy) throws IOException;
 
     DatasetDefinition getDefinition(String datasetName) throws IOException;
 
-    List<IntervalResultValue> getResults(DatasetDefinition datasetDefinition, String indexBy, Timeframe timeframe) throws IOException;
+    List<IntervalResultValue> getResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe) throws IOException;
 
     List<DatasetDefinition> getDefinitionsByProject() throws IOException;
 

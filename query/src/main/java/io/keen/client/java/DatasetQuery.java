@@ -162,6 +162,10 @@ public class DatasetQuery {
         this.filters = filters;
     }
 
+    public void setFilter(Filter filter) {
+        this.filters = Collections.singletonList(filter);
+    }
+
     Map<String, Object> asMap() {
         Map<String, Object> result = new HashMap<String, Object>();
         if (analysisType != null) {
@@ -204,6 +208,6 @@ public class DatasetQuery {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

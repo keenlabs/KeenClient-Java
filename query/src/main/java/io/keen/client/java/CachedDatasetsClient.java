@@ -3,8 +3,9 @@ package io.keen.client.java;
 import io.keen.client.java.result.IntervalResultValue;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 class CachedDatasetsClient implements CachedDatasets {
 
@@ -15,7 +16,7 @@ class CachedDatasetsClient implements CachedDatasets {
     }
 
     @Override
-    public DatasetDefinition create(String datasetName, String displayName, DatasetQuery query, Set<String> indexBy) throws IOException {
+    public DatasetDefinition create(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy) throws IOException {
         KeenQueryRequest request = CachedDatasetRequest.creationRequest(datasetName, displayName, query, indexBy);
 
         return DatasetDefinition.fromMap(keenQueryClient.getMapResponse(request));
@@ -29,8 +30,8 @@ class CachedDatasetsClient implements CachedDatasets {
     }
 
     @Override
-    public List<IntervalResultValue> getResults(DatasetDefinition datasetDefinition, String indexBy, Timeframe timeframe) throws IOException {
-        KeenQueryRequest request = CachedDatasetRequest.resultsRequest(datasetDefinition, indexBy, timeframe);
+    public List<IntervalResultValue> getResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe) throws IOException {
+        KeenQueryRequest request = CachedDatasetRequest.resultsRequest(datasetDefinition, indexByValues, timeframe);
 
         return keenQueryClient.execute(request).getIntervalResults();
     }

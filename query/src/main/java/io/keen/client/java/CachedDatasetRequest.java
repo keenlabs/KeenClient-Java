@@ -7,7 +7,10 @@ import io.keen.client.java.http.HttpMethods;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
@@ -27,7 +30,7 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
         };
     }
 
-    static KeenQueryRequest resultsRequest(final DatasetDefinition datasetDefinition, final String indexBy, final Timeframe timeframe) {
+    static KeenQueryRequest resultsRequest(final DatasetDefinition datasetDefinition, final Map<String, ?> indexByValues, final Timeframe timeframe) {
         return new CachedDatasetRequest(HttpMethods.GET, false, datasetDefinition.getDatasetName()) {
             private final ObjectMapper objectMapper = new ObjectMapper()
                     .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
@@ -62,8 +65,11 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
             }
 
             private Map<String, Object> queryArgs() throws IOException {
-                if (indexBy == null) {
+                if (indexByValues == null) {
                     throw new IllegalArgumentException("index_by is required");
+                }
+                if (indexByValues.size() != datasetDefinition.getIndexBy().size()) {
+                    throw new IllegalArgumentException("Values for all index_by properties are required: " + datasetDefinition.getIndexBy());
                 }
                 if (timeframe == null) {
                     throw new IllegalArgumentException("timeframe is required");
@@ -72,7 +78,7 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
                 Object timeframeAsArgs = timeframe.constructTimeframeArgs().get(KeenQueryConstants.TIMEFRAME);
 
                 HashMap<String, Object> queryArgs = new HashMap<String, Object>();
-                queryArgs.put(KeenQueryConstants.INDEX_BY, indexBy);
+                queryArgs.put(KeenQueryConstants.INDEX_BY, objectMapper.writeValueAsString(indexByValues));
                 queryArgs.put(KeenQueryConstants.TIMEFRAME, objectMapper.writeValueAsString(timeframeAsArgs));
                 return queryArgs;
             }
@@ -106,7 +112,7 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
         };
     }
 
-    static KeenQueryRequest creationRequest(final String datasetName, final String displayName, final DatasetQuery query, final Set<String> indexBy) {
+    static KeenQueryRequest creationRequest(final String datasetName, final String displayName, final DatasetQuery query, final Collection<String> indexBy) {
         return new CachedDatasetRequest(HttpMethods.PUT, true, datasetName) {
 
             @Override
