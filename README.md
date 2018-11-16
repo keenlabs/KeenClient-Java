@@ -870,6 +870,14 @@ client.addEvent("collection-name", event, keenProperties);
 
 ## Changelog
 
+##### 5.4.0
+
++ Added support for Cached Datasets
++ Added toString, equals and hashCode for objects representing definitions and results of queries/datasets
++ Replaced generation of KeenVersion.java with validation whether committed file got updated manually (faster development in Intellij)
++ Added detailed, optional debug messages for both requests and responses.
++ Minor, backward compatible refactoring  
+
 ##### 5.3.0
 
 + Added withReadTimeout and withConnectTimeout methods to both KeenQueryClient.Builder and KeenClient.Builder
