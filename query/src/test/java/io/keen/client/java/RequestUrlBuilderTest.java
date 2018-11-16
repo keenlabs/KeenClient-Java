@@ -1,5 +1,9 @@
 package io.keen.client.java;
 
+import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
+import org.hamcrest.core.StringContains;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URL;
@@ -7,7 +11,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
 
 public class RequestUrlBuilderTest {
@@ -47,10 +54,16 @@ public class RequestUrlBuilderTest {
             put("key2", "value?& <3");
             put("key3", "¯\\_(ツ)_/¯");
         }};
+        String encodedEntry1 = "key1=value";
+        String encodedEntry2 = "key2=value%3F%26+%3C3";
+        String encodedEntry3 = "key3=%C2%AF%5C_%28%E3%83%84%29_%2F%C2%AF";
 
         URL result = builder.getDatasetsUrl(PROJECT_ID, DATASET, true, queryParams);
 
-        assertThat(result.getQuery(), equalTo("key1=value&key2=value%3F%26+%3C3&key3=%C2%AF%5C_%28%E3%83%84%29_%2F%C2%AF"));
+        assertThat(result.getQuery().length(), equalTo(encodedEntry1.length() + encodedEntry2.length() + encodedEntry3.length() + 2));
+        assertThat(result.getQuery(), containsString(encodedEntry1));
+        assertThat(result.getQuery(), containsString(encodedEntry2));
+        assertThat(result.getQuery(), containsString(encodedEntry3));
     }
 
 }

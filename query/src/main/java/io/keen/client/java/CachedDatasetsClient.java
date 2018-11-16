@@ -3,10 +3,7 @@ package io.keen.client.java;
 import io.keen.client.java.result.IntervalResultValue;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -52,12 +49,17 @@ class CachedDatasetsClient implements CachedDatasets {
         if (datasetDefinition == null) {
             throw new IllegalArgumentException("Dataset definition is required");
         }
+
+        Set<String> sortedDefinitionIndexProperties = new TreeSet<String>(datasetDefinition.getIndexBy());
         if (indexByValues == null || indexByValues.isEmpty()) {
-            throw new IllegalArgumentException("Values for all index_by properties are required: " + datasetDefinition.getIndexBy());
+            throw new IllegalArgumentException("Values for all index_by properties are required: " + sortedDefinitionIndexProperties);
         }
-        if (!Arrays.equals(indexByValues.keySet().toArray(), datasetDefinition.getIndexBy().toArray())) {
-            throw new IllegalArgumentException("Values for the following index_by properties must be present: " + datasetDefinition.getIndexBy() + ". Found for: " + indexByValues.keySet());
+
+        Set<String> sortedQueryIndexProperties = new TreeSet<String>(indexByValues.keySet());
+        if (!sortedDefinitionIndexProperties.equals(sortedQueryIndexProperties)) {
+            throw new IllegalArgumentException("Values for the following index_by properties must be present: " + sortedDefinitionIndexProperties + ". Found for: " + sortedQueryIndexProperties);
         }
+
         if (timeframe == null) {
             throw new IllegalArgumentException("Timeframe is required");
         }
