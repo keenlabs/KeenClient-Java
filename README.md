@@ -610,7 +610,7 @@ updateEventCollection.put("query", queryUpdates);
 updateResponse = savedQueryApi.updateQuery("cached-query-name", updateEventCollection);
 ```
 
-### Saved/Cached Queries
+### Cached Datasets
 
 Cached Datasets are a powerful way for you to build applications with charts and tables that load instantly, 
 even as your Streams volume grows. Conceptually similar to Cached Queries, a Cached Dataset additionally allows 

@@ -43,7 +43,7 @@ public interface CachedDatasets {
      * Gets query results from a Cached Dataset.
      *
      * @param datasetDefinition A definition of Cached Dataset. Required as a definition determines the response format.
-     * @param indexByValues     A map of [index identifier -> index value] for all index properties defined in a Dataset definition.
+     * @param indexByValues     A map of [index identifier : index value] for all index properties defined in a Dataset definition.
      * @param timeframe         Limits retrieval of results to a specific portion of the Cached Dataset.
      * @return Query results from a Cached Dataset.
      * @throws IOException If there was an error communicating with the server.
