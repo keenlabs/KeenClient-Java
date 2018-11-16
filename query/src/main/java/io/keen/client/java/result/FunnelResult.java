@@ -60,11 +60,11 @@ public class FunnelResult extends QueryResult {
 
     @Override
     public boolean equals(Object obj) {
-        return EqualsBuilder.reflectionEquals(this, obj, false);
+        return EqualsBuilder.reflectionEquals(this, obj);
     }
 
     @Override
     public int hashCode() {
-        return HashCodeBuilder.reflectionHashCode(this, false);
+        return HashCodeBuilder.reflectionHashCode(this);
     }
 }

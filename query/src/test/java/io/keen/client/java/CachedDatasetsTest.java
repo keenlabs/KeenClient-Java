@@ -1,7 +1,12 @@
 package io.keen.client.java;
 
 import io.keen.client.java.result.*;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.*;
@@ -11,15 +16,47 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "unused"})
+@RunWith(JUnitParamsRunner.class)
 public class CachedDatasetsTest extends KeenQueryTestBase {
 
+    private static final String NULL = null;
+
     private CachedDatasets cachedDatasets;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Override
     public void setup() throws IOException {
         super.setup();
         cachedDatasets = queryClient.getCachedDatasetsClient();
+    }
+
+    @Test
+    @Parameters
+    public void shouldFailToCreateCachedDataset(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy, String expectedMessage) throws IOException {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(expectedMessage);
+
+        cachedDatasets.create(datasetName, displayName, query, indexBy);
+    }
+
+    private Object parametersForShouldFailToCreateCachedDataset() {
+        return new Object[][]{
+                {null, "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
+                {"", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
+                {" ", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
+
+                {"dataset-name", null, mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
+                {"dataset-name", "", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
+                {"dataset-name", " ", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
+
+                {"dataset-name", "display name", null, mock(Collection.class), "Dataset query is required"},
+
+                {"dataset-name", "display name", mock(DatasetQuery.class), null, "At least one index property is required"},
+                {"dataset-name", "display name", mock(DatasetQuery.class), Collections.<String>emptyList(), "At least one index property is required"},
+        };
     }
 
     @Test
@@ -66,7 +103,21 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
                 "  \"milliseconds_behind\": 0\n" +
                 "}");
 
-        DatasetDefinition datasetDefinition = cachedDatasets.create("testing-things", "testing things", mock(DatasetQuery.class), mock(Collection.class));
+        DatasetQuery datasetQuery = DatasetQuery.DatasetQueryBuilder
+                .aDatasetQuery()
+                .withAnalysisType("multi_analysis")
+                .withAnalyses(asList(new SubAnalysis("total count", QueryType.COUNT), new SubAnalysis("select unique", QueryType.SELECT_UNIQUE, "user.email")))
+                .withEventCollection("add_project_member")
+                .withFilters(singletonList(new Filter("organization.id", FilterOperator.EQUAL_TO, "specific-org-id")))
+                .withGroupBy(singletonList("user.uuid"))
+                .withTimeframe("this_6_months")
+                .withTimezone("UTC")
+                .withInterval("monthly")
+                .build();
+
+        List<String> indexByValues = Arrays.asList("organization.id", "project.has_saved_queries");
+
+        DatasetDefinition datasetDefinition = cachedDatasets.create("testing-things", "testing things", datasetQuery, indexByValues);
 
         assertEquals("testing-things", datasetDefinition.getDatasetName());
         assertEquals("TESTING THINGS", datasetDefinition.getDisplayName());
@@ -105,6 +156,20 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
         assertNull(countAnalysis.constructParameterRequestArgs().get("percentile"));
     }
 
+    @Test
+    @Parameters
+    public void shouldFailToCachedDatasetDefinition(String datasetName) throws IOException {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Dataset name cannot be blank");
+
+        cachedDatasets.getDefinition(datasetName);
+    }
+
+    private Object parametersForShouldFailToCachedDatasetDefinition() {
+        return new Object[]{
+                null, "", " "
+        };
+    }
 
     @Test
     public void shouldGetCachedDatasetDefinition() throws IOException {
@@ -187,6 +252,46 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
         assertEquals("count", countAnalysis.constructParameterRequestArgs().get("analysis_type"));
         assertNull(countAnalysis.constructParameterRequestArgs().get("target_property"));
         assertNull(countAnalysis.constructParameterRequestArgs().get("percentile"));
+    }
+
+    @Test
+    @Parameters
+    public void shouldFailToGetResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe, String exceptionMessage) throws IOException {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(exceptionMessage);
+
+        cachedDatasets.getResults(datasetDefinition, indexByValues, timeframe);
+    }
+
+    private Object parametersForShouldFailToGetResults() {
+        DatasetDefinition datasetDefinition = DatasetDefinition.DatasetDefinitionBuilder
+                .aDatasetDefinition()
+                .withDatasetName("testing-things")
+                .withDisplayName("TESTING THINGS")
+                .withIndexBy(asList("organization.id", "project.has_saved_queries"))
+                .withQuery(mock(DatasetQuery.class))
+                .build();
+
+        HashMap<String, Object> indexByValues = new HashMap<String, Object>() {{
+            put("organization.id", "specific-org-id");
+            put("project.has_saved_queries", true);
+        }};
+        return new Object[][]{
+                {null, indexByValues, new RelativeTimeframe("previous_3_months"), "Dataset definition is required"},
+
+                {datasetDefinition, null, new RelativeTimeframe("previous_3_months"),
+                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]"},
+                {datasetDefinition, Collections.<String, Object>emptyMap(), new RelativeTimeframe("previous_3_months"),
+                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]"},
+                {datasetDefinition, Collections.<String, Object>singletonMap("project.has_saved_queries", true), new RelativeTimeframe("previous_3_months"),
+                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [project.has_saved_queries]"},
+                {datasetDefinition, new HashMap<String, Object>(indexByValues) {{
+                    put("additional.property", false);
+                }}, new RelativeTimeframe("previous_3_months"),
+                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [additional.property, organization.id, project.has_saved_queries]"},
+
+                {datasetDefinition, indexByValues, null, "Timeframe is required"},
+        };
     }
 
     @Test
@@ -414,6 +519,24 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
         assertEquals(2, definitions.size());
         assertEquals("dataset-1", definitions.get(0).getDatasetName());
         assertEquals("dataset-2", definitions.get(1).getDatasetName());
+
+        // also checking default behaviour
+        assertEquals(definitions, cachedDatasets.getDefinitionsByProject());
+    }
+
+    @Test
+    @Parameters
+    public void shouldFailToDeleteDatasetDefinition(String datasetName) throws IOException {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Dataset name cannot be blank");
+
+        cachedDatasets.delete(datasetName);
+    }
+
+    private Object parametersForShouldFailToDeleteDatasetDefinition() {
+        return new Object[]{
+                null, "", " "
+        };
     }
 
     @Test

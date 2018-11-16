@@ -65,16 +65,6 @@ abstract class CachedDatasetRequest extends PersistentAnalysis {
             }
 
             private Map<String, Object> queryArgs() throws IOException {
-                if (indexByValues == null) {
-                    throw new IllegalArgumentException("index_by is required");
-                }
-                if (indexByValues.size() != datasetDefinition.getIndexBy().size()) {
-                    throw new IllegalArgumentException("Values for all index_by properties are required: " + datasetDefinition.getIndexBy());
-                }
-                if (timeframe == null) {
-                    throw new IllegalArgumentException("timeframe is required");
-                }
-
                 Object timeframeAsArgs = timeframe.constructTimeframeArgs().get(KeenQueryConstants.TIMEFRAME);
 
                 HashMap<String, Object> queryArgs = new HashMap<String, Object>();

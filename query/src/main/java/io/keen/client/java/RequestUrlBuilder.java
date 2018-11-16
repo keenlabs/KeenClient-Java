@@ -61,7 +61,7 @@ class RequestUrlBuilder {
         }
     }
 
-    URL getDatasetsUrl(String projectId, String datasetName, boolean fetchResults, Map<String, Object> queryParams) throws KeenQueryClientException {
+    URL getDatasetsUrl(String projectId, String datasetName, boolean fetchResults, Map<String, ?> queryParams) throws KeenQueryClientException {
         try {
             StringBuilder url = new StringBuilder(String.format(Locale.US,
                     "%s/%s/projects/%s/%s",
@@ -80,7 +80,7 @@ class RequestUrlBuilder {
 
             if (queryParams != null && !queryParams.isEmpty()) {
                 StringBuilder query = new StringBuilder();
-                for (Map.Entry<String, Object> entry : queryParams.entrySet()) {
+                for (Map.Entry<String, ?> entry : queryParams.entrySet()) {
                     query.append(String.format("%s=", URLEncoder.encode(entry.getKey(), "UTF-8")));
                     query.append(String.format("%s&", URLEncoder.encode(entry.getValue().toString(), "UTF-8")));
                 }
