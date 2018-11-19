@@ -1,9 +1,5 @@
 package io.keen.client.java;
 
-import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.Matchers;
-import org.hamcrest.core.StringContains;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URL;
@@ -11,9 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
 

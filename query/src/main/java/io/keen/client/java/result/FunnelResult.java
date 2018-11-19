@@ -1,10 +1,5 @@
 package io.keen.client.java.result;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 /**
  * Represents the results from a Funnel analysis. This includes both the results of each FunnelStep
  * and optionally the 'actor_property's at each step, if requested.
@@ -52,19 +47,4 @@ public class FunnelResult extends QueryResult {
      * @return The ListResult containing the results of the funnel query.
      */
     public ListResult getFunnelResult() { return this.funnelResult; }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return EqualsBuilder.reflectionEquals(this, obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return HashCodeBuilder.reflectionHashCode(this);
-    }
 }

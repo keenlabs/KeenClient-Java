@@ -435,6 +435,12 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
 
         assertEquals(new ListResult(Collections.<QueryResult>emptyList()), ((MultiAnalysisResult) novemberQueryResult).getResultFor("select unique"));
         assertEquals(new LongResult(0L), ((MultiAnalysisResult) novemberQueryResult).getResultFor("total count"));
+
+        // and the second invocation in order to make sure that equals() & hashCode() are implemented properly
+
+        List<IntervalResultValue> results2 = cachedDatasets.getResults(datasetDefinition, indexByValues, new RelativeTimeframe("this_3_months"));
+        
+        assertEquals(results, results2);
     }
 
     @Test
