@@ -1,11 +1,10 @@
 package io.keen.client.java;
 
 import io.keen.client.java.result.IntervalResultValue;
+import org.apache.commons.lang3.Validate;
 
 import java.io.IOException;
 import java.util.*;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 class CachedDatasetsClient implements CachedDatasets {
 
@@ -17,18 +16,10 @@ class CachedDatasetsClient implements CachedDatasets {
 
     @Override
     public DatasetDefinition create(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy) throws IOException {
-        if (isBlank(datasetName)) {
-            throw new IllegalArgumentException("Dataset name cannot be blank");
-        }
-        if (isBlank(displayName)) {
-            throw new IllegalArgumentException("Display name cannot be blank");
-        }
-        if (query == null) {
-            throw new IllegalArgumentException("Dataset query is required");
-        }
-        if (indexBy == null || indexBy.isEmpty()) {
-            throw new IllegalArgumentException("At least one index property is required");
-        }
+        Validate.notBlank(datasetName, "Dataset name cannot be blank");
+        Validate.notBlank(displayName, "Display name cannot be blank");
+        Validate.notNull(query, "Dataset query is required");
+        Validate.notEmpty(indexBy, "At least one index property is required");
 
         KeenQueryRequest request = CachedDatasetRequest.creationRequest(datasetName, displayName, query, indexBy);
         return DatasetDefinition.fromMap(keenQueryClient.getMapResponse(request));
@@ -36,9 +27,7 @@ class CachedDatasetsClient implements CachedDatasets {
 
     @Override
     public DatasetDefinition getDefinition(String datasetName) throws IOException {
-        if (isBlank(datasetName)) {
-            throw new IllegalArgumentException("Dataset name cannot be blank");
-        }
+        Validate.notBlank(datasetName, "Dataset name cannot be blank");
 
         KeenQueryRequest request = CachedDatasetRequest.definitionRequest(datasetName);
         return DatasetDefinition.fromMap(keenQueryClient.getMapResponse(request));
@@ -46,22 +35,15 @@ class CachedDatasetsClient implements CachedDatasets {
 
     @Override
     public List<IntervalResultValue> getResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe) throws IOException {
-        if (datasetDefinition == null) {
-            throw new IllegalArgumentException("Dataset definition is required");
-        }
+        Validate.notNull(datasetDefinition, "Dataset definition is required");
+        Validate.notNull(timeframe, "Timeframe is required");
 
         Set<String> sortedDefinitionIndexProperties = new TreeSet<String>(datasetDefinition.getIndexBy());
-        if (indexByValues == null || indexByValues.isEmpty()) {
-            throw new IllegalArgumentException("Values for all index_by properties are required: " + sortedDefinitionIndexProperties);
-        }
+        Validate.notEmpty(indexByValues, "Values for all index_by properties are required: %s", sortedDefinitionIndexProperties);
 
         Set<String> sortedQueryIndexProperties = new TreeSet<String>(indexByValues.keySet());
         if (!sortedDefinitionIndexProperties.equals(sortedQueryIndexProperties)) {
             throw new IllegalArgumentException("Values for the following index_by properties must be present: " + sortedDefinitionIndexProperties + ". Found for: " + sortedQueryIndexProperties);
-        }
-
-        if (timeframe == null) {
-            throw new IllegalArgumentException("Timeframe is required");
         }
 
         KeenQueryRequest request = CachedDatasetRequest.resultsRequest(datasetDefinition, indexByValues, timeframe);
@@ -69,21 +51,19 @@ class CachedDatasetsClient implements CachedDatasets {
     }
 
     @Override
-    public List<DatasetDefinition> getDefinitionsByProject() throws IOException {
-        return getDefinitionsByProject(null, null);
+    public List<DatasetDefinition> getDefinitions() throws IOException {
+        return getDefinitions(null, null);
     }
 
     @Override
-    public List<DatasetDefinition> getDefinitionsByProject(Integer limit, String afterName) throws IOException {
+    public List<DatasetDefinition> getDefinitions(Integer limit, String afterName) throws IOException {
         KeenQueryRequest request = CachedDatasetRequest.definitionsByProjectRequest(limit, afterName);
         return DatasetDefinition.definitionsFromMap(keenQueryClient.getMapResponse(request));
     }
 
     @Override
     public boolean delete(String datasetName) throws IOException {
-        if (isBlank(datasetName)) {
-            throw new IllegalArgumentException("Dataset name cannot be blank");
-        }
+        Validate.notBlank(datasetName, "Dataset name cannot be blank");
 
         KeenQueryRequest request = CachedDatasetRequest.deletionRequest(datasetName);
         return keenQueryClient.getMapResponse(request).isEmpty();

@@ -35,8 +35,8 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
 
     @Test
     @Parameters
-    public void shouldFailToCreateCachedDataset(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy, String expectedMessage) throws IOException {
-        thrown.expect(IllegalArgumentException.class);
+    public void shouldFailToCreateCachedDataset(String datasetName, String displayName, DatasetQuery query, Collection<String> indexBy, String expectedMessage, Class<? extends Throwable> expectedExceptionType) throws IOException {
+        thrown.expect(expectedExceptionType);
         thrown.expectMessage(expectedMessage);
 
         cachedDatasets.create(datasetName, displayName, query, indexBy);
@@ -44,18 +44,18 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
 
     private Object parametersForShouldFailToCreateCachedDataset() {
         return new Object[][]{
-                {null, "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
-                {"", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
-                {" ", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank"},
+                {null, "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank", NullPointerException.class},
+                {"", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank", IllegalArgumentException.class},
+                {" ", "display name", mock(DatasetQuery.class), mock(Collection.class), "Dataset name cannot be blank", IllegalArgumentException.class},
 
-                {"dataset-name", null, mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
-                {"dataset-name", "", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
-                {"dataset-name", " ", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank"},
+                {"dataset-name", null, mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank", NullPointerException.class},
+                {"dataset-name", "", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank", IllegalArgumentException.class},
+                {"dataset-name", " ", mock(DatasetQuery.class), mock(Collection.class), "Display name cannot be blank", IllegalArgumentException.class},
 
-                {"dataset-name", "display name", null, mock(Collection.class), "Dataset query is required"},
+                {"dataset-name", "display name", null, mock(Collection.class), "Dataset query is required", NullPointerException.class},
 
-                {"dataset-name", "display name", mock(DatasetQuery.class), null, "At least one index property is required"},
-                {"dataset-name", "display name", mock(DatasetQuery.class), Collections.<String>emptyList(), "At least one index property is required"},
+                {"dataset-name", "display name", mock(DatasetQuery.class), null, "At least one index property is required", NullPointerException.class},
+                {"dataset-name", "display name", mock(DatasetQuery.class), Collections.<String>emptyList(), "At least one index property is required", IllegalArgumentException.class},
         };
     }
 
@@ -158,16 +158,18 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
 
     @Test
     @Parameters
-    public void shouldFailToCachedDatasetDefinition(String datasetName) throws IOException {
-        thrown.expect(IllegalArgumentException.class);
+    public void shouldFailToCachedDatasetDefinition(String datasetName, Class<? extends Throwable> expectedExceptionType) throws IOException {
+        thrown.expect(expectedExceptionType);
         thrown.expectMessage("Dataset name cannot be blank");
 
         cachedDatasets.getDefinition(datasetName);
     }
 
     private Object parametersForShouldFailToCachedDatasetDefinition() {
-        return new Object[]{
-                null, "", " "
+        return new Object[][]{
+                {null, NullPointerException.class},
+                {"", IllegalArgumentException.class},
+                {" ", IllegalArgumentException.class}
         };
     }
 
@@ -256,8 +258,8 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
 
     @Test
     @Parameters
-    public void shouldFailToGetResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe, String exceptionMessage) throws IOException {
-        thrown.expect(IllegalArgumentException.class);
+    public void shouldFailToGetResults(DatasetDefinition datasetDefinition, Map<String, ?> indexByValues, Timeframe timeframe, String exceptionMessage, Class<? extends Throwable> expectedExceptionType) throws IOException {
+        thrown.expect(expectedExceptionType);
         thrown.expectMessage(exceptionMessage);
 
         cachedDatasets.getResults(datasetDefinition, indexByValues, timeframe);
@@ -277,20 +279,20 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
             put("project.has_saved_queries", true);
         }};
         return new Object[][]{
-                {null, indexByValues, new RelativeTimeframe("previous_3_months"), "Dataset definition is required"},
+                {null, indexByValues, new RelativeTimeframe("previous_3_months"), "Dataset definition is required", NullPointerException.class},
 
                 {datasetDefinition, null, new RelativeTimeframe("previous_3_months"),
-                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]"},
+                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]", NullPointerException.class},
                 {datasetDefinition, Collections.<String, Object>emptyMap(), new RelativeTimeframe("previous_3_months"),
-                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]"},
+                        "Values for all index_by properties are required: [organization.id, project.has_saved_queries]", IllegalArgumentException.class},
                 {datasetDefinition, Collections.<String, Object>singletonMap("project.has_saved_queries", true), new RelativeTimeframe("previous_3_months"),
-                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [project.has_saved_queries]"},
+                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [project.has_saved_queries]", IllegalArgumentException.class},
                 {datasetDefinition, new HashMap<String, Object>(indexByValues) {{
                     put("additional.property", false);
                 }}, new RelativeTimeframe("previous_3_months"),
-                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [additional.property, organization.id, project.has_saved_queries]"},
+                        "Values for the following index_by properties must be present: [organization.id, project.has_saved_queries]. Found for: [additional.property, organization.id, project.has_saved_queries]", IllegalArgumentException.class},
 
-                {datasetDefinition, indexByValues, null, "Timeframe is required"},
+                {datasetDefinition, indexByValues, null, "Timeframe is required", NullPointerException.class},
         };
     }
 
@@ -439,12 +441,12 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
         // and the second invocation in order to make sure that equals() & hashCode() are implemented properly
 
         List<IntervalResultValue> results2 = cachedDatasets.getResults(datasetDefinition, indexByValues, new RelativeTimeframe("this_3_months"));
-        
+
         assertEquals(results, results2);
     }
 
     @Test
-    public void shouldGetCachedDatasetsByProject() throws IOException {
+    public void shouldGetCachedDatasets() throws IOException {
         setMockResponse(200, "{\n" +
                 "    \"datasets\": [\n" +
                 "        {\n" +
@@ -520,28 +522,30 @@ public class CachedDatasetsTest extends KeenQueryTestBase {
                 "    \"count\": 43\n" +
                 "}");
 
-        List<DatasetDefinition> definitions = cachedDatasets.getDefinitionsByProject(2, "some-name");
+        List<DatasetDefinition> definitions = cachedDatasets.getDefinitions(2, "some-name");
 
         assertEquals(2, definitions.size());
         assertEquals("dataset-1", definitions.get(0).getDatasetName());
         assertEquals("dataset-2", definitions.get(1).getDatasetName());
 
         // also checking default behaviour
-        assertEquals(definitions, cachedDatasets.getDefinitionsByProject());
+        assertEquals(definitions, cachedDatasets.getDefinitions());
     }
 
     @Test
     @Parameters
-    public void shouldFailToDeleteDatasetDefinition(String datasetName) throws IOException {
-        thrown.expect(IllegalArgumentException.class);
+    public void shouldFailToDeleteDatasetDefinition(String datasetName, Class<? extends Throwable> expectedExceptionType) throws IOException {
+        thrown.expect(expectedExceptionType);
         thrown.expectMessage("Dataset name cannot be blank");
 
         cachedDatasets.delete(datasetName);
     }
 
     private Object parametersForShouldFailToDeleteDatasetDefinition() {
-        return new Object[]{
-                null, "", " "
+        return new Object[][]{
+                {null, NullPointerException.class},
+                {"", IllegalArgumentException.class},
+                {" ", IllegalArgumentException.class}
         };
     }
 

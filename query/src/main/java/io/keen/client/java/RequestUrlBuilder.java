@@ -3,6 +3,7 @@ package io.keen.client.java;
 import io.keen.client.java.exceptions.KeenQueryClientException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -63,28 +64,17 @@ class RequestUrlBuilder {
 
     URL getDatasetsUrl(String projectId, String datasetName, boolean fetchResults, Map<String, ?> queryParams) throws KeenQueryClientException {
         try {
-            StringBuilder url = new StringBuilder(String.format(Locale.US,
-                    "%s/%s/projects/%s/%s",
-                    this.baseUrl,
-                    this.apiVersion,
-                    projectId,
-                    KeenQueryConstants.DATASETS
-            ));
+            StringBuilder url = createBaseUrl(projectId);
 
             if (datasetName != null) {
-                url.append("/").append(datasetName);
+                appendDatasetName(url, datasetName);
                 if (fetchResults) {
-                    url.append("/results");
+                    appendFetchResults(url);
                 }
             }
 
             if (queryParams != null && !queryParams.isEmpty()) {
-                StringBuilder query = new StringBuilder();
-                for (Map.Entry<String, ?> entry : queryParams.entrySet()) {
-                    query.append(String.format("%s=", URLEncoder.encode(entry.getKey(), "UTF-8")));
-                    query.append(String.format("%s&", URLEncoder.encode(entry.getValue().toString(), "UTF-8")));
-                }
-                url.append("?").append(query.toString().replaceFirst("&$", ""));
+                appendQueryParams(url, queryParams);
             }
             return new URL(url.toString());
         } catch (IOException ex) {
@@ -93,5 +83,32 @@ class RequestUrlBuilder {
 
             throw new KeenQueryClientException("Failed to format dataset URL.", ex);
         }
+    }
+
+    private StringBuilder createBaseUrl(String projectId) {
+        return new StringBuilder(String.format(Locale.US,
+                "%s/%s/projects/%s/%s",
+                this.baseUrl,
+                this.apiVersion,
+                projectId,
+                KeenQueryConstants.DATASETS
+        ));
+    }
+
+    private void appendDatasetName(StringBuilder url, String datasetName) {
+        url.append("/").append(datasetName);
+    }
+
+    private void appendQueryParams(StringBuilder url, Map<String, ?> queryParams) throws UnsupportedEncodingException {
+        StringBuilder query = new StringBuilder();
+        for (Map.Entry<String, ?> entry : queryParams.entrySet()) {
+            query.append(String.format("%s=", URLEncoder.encode(entry.getKey(), "UTF-8")));
+            query.append(String.format("%s&", URLEncoder.encode(entry.getValue().toString(), "UTF-8")));
+        }
+        url.append("?").append(query.toString().replaceFirst("&$", ""));
+    }
+
+    private void appendFetchResults(StringBuilder url) {
+        url.append("/results");
     }
 }

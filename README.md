@@ -621,7 +621,7 @@ then use it to create a `CachedDatasets` implementation:
 
 ```java
 KeenQueryClient queryClient = ...;
-CachedDatasets cachedDatasets = queryClient.getCachedDatasets();
+CachedDatasets cachedDatasets = queryClient.getCachedDatasetsClient();
 ```
 
 Please notice, that Cached Datasets are [Early Release](https://intercom.help/keen/setup-help/what-does-early-release-mean) 
@@ -629,8 +629,8 @@ and there still some major improvements pending (example: server side error hand
 
 #### Creating a Cached Dataset
 
-Depending on your needs you can adjust query. Please see [Cached Dataset API Reference](https://keen.io/docs/api/#cached-datasets/) for details.
-This example show the most complicated usage pattern: multi analysis with multiple indexes. 
+Depending on your needs you can adjust the query. Please see [Cached Dataset API Reference](https://keen.io/docs/api/#cached-datasets/) for details.
+This example shows the most complicated usage pattern: multi analysis with multiple indexes. 
 
 ```java
 String datasetName = "new-project-members";
@@ -675,7 +675,7 @@ List<IntervalResultValue> results = cachedDatasets.getResults(
 #### Listing Cached Dataset Definitions for Project
 
 ```java
-List<DatasetDefinition> definitions = cachedDatasets.getDefinitionsByProject(30, "the-name-of-last-skipped-dataset");
+List<DatasetDefinition> definitions = cachedDatasets.getDefinitions(30, "the-name-of-last-skipped-dataset");
 ```
 
 #### Deleting a Cached Dataset

@@ -56,9 +56,9 @@ public interface CachedDatasets {
      *
      * @return A list of Cached Dataset definition.
      * @throws IOException If there was an error communicating with the server.
-     * @see CachedDatasets#getDefinitionsByProject(Integer, String)
+     * @see CachedDatasets#getDefinitions(Integer, String)
      */
-    List<DatasetDefinition> getDefinitionsByProject() throws IOException;
+    List<DatasetDefinition> getDefinitions() throws IOException;
 
     /**
      * Gets list of Cached Dataset definitions for a project.
@@ -67,9 +67,9 @@ public interface CachedDatasets {
      * @param afterName A cursor for use in pagination. after_name is the Cached Dataset name that defines your place in the list.
      * @return A list of Cached Dataset definition.
      * @throws IOException If there was an error communicating with the server.
-     * @see CachedDatasets#getDefinitionsByProject()
+     * @see CachedDatasets#getDefinitions()
      */
-    List<DatasetDefinition> getDefinitionsByProject(Integer limit, String afterName) throws IOException;
+    List<DatasetDefinition> getDefinitions(Integer limit, String afterName) throws IOException;
 
     /**
      * Deletes a Cached Dataset.
