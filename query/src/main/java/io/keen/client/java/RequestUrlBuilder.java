@@ -64,7 +64,7 @@ class RequestUrlBuilder {
 
     URL getDatasetsUrl(String projectId, String datasetName, boolean fetchResults, Map<String, ?> queryParams) throws KeenQueryClientException {
         try {
-            StringBuilder url = createBaseUrl(projectId);
+            StringBuilder url = createBaseDatasetsUrl(projectId);
 
             if (datasetName != null) {
                 appendDatasetName(url, datasetName);
@@ -85,7 +85,7 @@ class RequestUrlBuilder {
         }
     }
 
-    private StringBuilder createBaseUrl(String projectId) {
+    private StringBuilder createBaseDatasetsUrl(String projectId) {
         return new StringBuilder(String.format(Locale.US,
                 "%s/%s/projects/%s/%s",
                 this.baseUrl,
