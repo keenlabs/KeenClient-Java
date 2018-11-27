@@ -7,14 +7,17 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
 }
 
+project.evaluationDependsOn(":core")
+
 dependencies {
     compile project(':core')
     compile project(':java')
+    compile 'org.apache.commons:commons-lang3:3.8.1'
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
-    testCompile 'commons-io:commons-io:2.4'
     testCompile 'junit:junit:4.11'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.mockito:mockito-core:1.9.5'
+    testCompile 'pl.pragmatists:JUnitParams:1.1.1'
     testCompile project(':core').sourceSets.test.output
 }
 

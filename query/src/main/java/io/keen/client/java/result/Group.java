@@ -1,5 +1,10 @@
 package io.keen.client.java.result;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +21,7 @@ public class Group {
     /**
      * @param properties The map of properties to property values.
      */
-    public Group(Map<String, Object> properties) {
+    public Group(Map<String, ?> properties) {
         this.properties = Collections.unmodifiableMap(properties);
     }
 
@@ -45,5 +50,20 @@ public class Group {
         }
 
         return properties.get(propertyName);
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return EqualsBuilder.reflectionEquals(this, obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCodeBuilder.reflectionHashCode(this);
     }
 }

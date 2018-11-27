@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:5.3.0'
+    compile 'io.keen:keen-client-api-java:5.4.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:5.3.0@aar'
+    compile 'io.keen:keen-client-api-android:5.4.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>5.3.0</version>
+  <version>5.4.0</version>
 </dependency>
 ```
 
@@ -271,7 +271,7 @@ like to use the query client then you will need to ensure that you also have the
 
 ```groovy
 dependencies {
-    compile 'io.keen:keen-client-api-query:5.3.0' 
+    compile 'io.keen:keen-client-api-query:5.4.0' 
 }
 ```
 
@@ -283,7 +283,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-query</artifactId>
-  <version>5.3.0</version>
+  <version>5.4.0</version>
 </dependency>
 ```
 
@@ -610,6 +610,81 @@ updateEventCollection.put("query", queryUpdates);
 updateResponse = savedQueryApi.updateQuery("cached-query-name", updateEventCollection);
 ```
 
+### Cached Datasets
+
+Cached Datasets are a powerful way for you to build applications with charts and tables that load instantly, 
+even as your Streams volume grows. Conceptually similar to Cached Queries, a Cached Dataset additionally allows 
+you to retrieve results indexed by properties like customer, cohort, article, campaign and more. 
+
+To work with [Cached Datasets](https://keen.io/docs/api/#cached-datasets), create a `KeenQueryClient` as normal, 
+then use it to create a `CachedDatasets` implementation:
+
+```java
+KeenQueryClient queryClient = ...;
+CachedDatasets cachedDatasets = queryClient.getCachedDatasetsClient();
+```
+
+Please notice, that Cached Datasets are [Early Release](https://intercom.help/keen/setup-help/what-does-early-release-mean) 
+and there still some major improvements pending (example: server side error handling). 
+
+#### Creating a Cached Dataset
+
+Depending on your needs you can adjust the query. Please see [Cached Dataset API Reference](https://keen.io/docs/api/#cached-datasets/) for details.
+This example shows the most complicated usage pattern: multi analysis with multiple indexes. 
+
+```java
+String datasetName = "new-project-members";
+String displayName = "New Project Members";
+Collection<String> indexBy = asList("organization.id", "project.is_external");
+
+DatasetQuery datasetQuery = DatasetQueryBuilder
+        .aDatasetQuery()
+        .withAnalysisType("multi_analysis")
+        .withAnalyses(asList(new SubAnalysis("total count", QueryType.COUNT), new SubAnalysis("unique users", QueryType.SELECT_UNIQUE, "user.email")))
+        .withEventCollection("new_project_member")
+        .withFilters(singletonList(new Filter("organization.tag", FilterOperator.EQUAL_TO, "opensource")))
+        .withTimeframe("this_6_months")
+        .withTimezone("UTC")
+        .withInterval("monthly")
+        .build();
+
+DatasetDefinition datasetDefinition = cachedDatasets.create(datasetName, displayName, datasetQuery, indexBy);
+```
+ 
+#### Getting a Dataset Definition
+
+```java
+DatasetDefinition datasetDefinition = cachedDatasets.getDefinition("new-project-members");
+```  
+ 
+#### Retrieving results from a Cached Dataset
+
+```java
+DatasetDefinition datasetDefinition = ...
+
+List<IntervalResultValue> results = cachedDatasets.getResults(
+        datasetDefinition,
+        new HashMap<String, Object>() {{
+            put("organization.id", "the-penguins");
+            put("project.is_external", true);
+        }},
+        new RelativeTimeframe("this_3_months")
+);
+```  
+
+#### Listing Cached Dataset Definitions for Project
+
+```java
+List<DatasetDefinition> definitions = cachedDatasets.getDefinitions(30, "the-name-of-last-skipped-dataset");
+```
+
+#### Deleting a Cached Dataset
+
+```java
+boolean success = cachedDatasets.delete("new-project-members");
+```
+
+
 ### Utility Methods
 
 There are also some utility methods to add filters and timeframes to a `Query`:
@@ -765,6 +840,8 @@ If you are not trying to build the Android client, you can remove `android` from
 
         sdk.dir=<Android SDK path>
 
+If you use Intellij IDE, the `local.properties` file should be created in a root directory of the project.
+
 #### "RuntimeException: Stub!" error in JUnit tests
 
 This is usually caused by the Android SDK being before JUnit in your classpath. (Android includes a stubbed version of JUnit.) To fix this, move JUnit ahead of the Android SDK so it gets picked up first.
@@ -792,6 +869,14 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 5.4.0
+
++ Added support for Cached Datasets
++ Added toString, equals and hashCode for objects representing definitions and results of queries/datasets
++ Replaced generation of KeenVersion.java with validation whether committed file got updated manually (faster development in Intellij)
++ Added detailed, optional debug messages for both requests and responses.
++ Minor, backward compatible refactoring  
 
 ##### 5.3.0
 

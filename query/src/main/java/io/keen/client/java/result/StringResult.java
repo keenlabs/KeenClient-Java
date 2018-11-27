@@ -17,7 +17,7 @@ public class StringResult extends QueryResult {
     }
 
     /**
-     * @return  {@code true}
+     * @return {@code true}
      */
     @Override
     public boolean isString() {

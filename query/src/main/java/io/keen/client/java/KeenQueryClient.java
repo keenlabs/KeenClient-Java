@@ -6,14 +6,9 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.exceptions.ServerException;
@@ -281,6 +276,10 @@ public class KeenQueryClient {
         return new SavedQueriesImpl(this);
     }
 
+    public CachedDatasets getCachedDatasetsClient() {
+        return new CachedDatasetsClient(this);
+    }
+
     Map<String, Object> getMapResponse(KeenQueryRequest request) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> response = getResponse(Map.class, request);
@@ -316,7 +315,7 @@ public class KeenQueryClient {
 
         boolean isGroupBy = request.groupedResponseExpected();
         boolean isInterval = request.intervalResponseExpected();
-        boolean isMultiAnalysis = request instanceof MultiAnalysis;
+        boolean isMultiAnalysis = KeenQueryConstants.MULTI_ANALYSIS.equals(request.getAnalysisType());
         boolean isFunnel = request instanceof Funnel;
 
         final Collection<String> groupByParams = request.groupedResponseExpected() ?
@@ -688,6 +687,7 @@ public class KeenQueryClient {
         });
 
         // If logging is enabled, log the request being sent.
+        String requestId = UUID.randomUUID().toString();
         if (KeenLogging.isLoggingEnabled()) {
             try {
                 String request = "";
@@ -699,10 +699,9 @@ public class KeenQueryClient {
                 }
 
                 KeenLogging.log(String.format(Locale.US,
-                                              "Sent '%s' request '%s' to URL '%s'",
-                                              method,
-                                              request,
-                                              url.toString()));
+                        "Request ID: %s. Sent '%s' request '%s' to URL '%s'",
+                        requestId, method, request, url.toString()
+                ));
             } catch (IOException e) {
                 KeenLogging.log("Couldn't log request written to file: ", e);
             }
@@ -711,6 +710,10 @@ public class KeenQueryClient {
         // Send the request.
         Request request = new Request(url, method, authKey, source, null, connectTimeout, readTimeout);
         Response response = httpHandler.execute(request);
+
+        if (KeenLogging.isLoggingEnabled()) {
+            KeenLogging.log(String.format("Request ID: %s. Received response: '%s'", requestId, response.body));
+        }
 
         if (!response.isSuccess()) {
             throw new ServerException(response.body);

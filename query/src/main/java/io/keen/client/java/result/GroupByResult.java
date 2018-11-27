@@ -39,5 +39,4 @@ public class GroupByResult extends QueryResult {
     public Map<Group, QueryResult> getGroupResults() {
         return results;
     }
-
 }

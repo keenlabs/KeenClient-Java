@@ -34,5 +34,4 @@ public class IntervalResult extends QueryResult {
     public List<IntervalResultValue> getIntervalResults() {
         return results;
     }
-
 }

@@ -28,4 +28,8 @@ public enum QueryType {
     public String toString() {
         return text;
     }
+
+    static QueryType valueOfIgnoreCase(String name) {
+        return valueOf(name.toUpperCase());
+    }
 }

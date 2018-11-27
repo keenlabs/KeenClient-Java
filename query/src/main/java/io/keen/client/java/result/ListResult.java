@@ -15,7 +15,7 @@ public class ListResult extends QueryResult {
     /**
      * @param results the result list.
      */
-    public ListResult(List<QueryResult> results) {
+    public ListResult(List<? extends QueryResult> results) {
         this.results = Collections.unmodifiableList(results);
     }
 
