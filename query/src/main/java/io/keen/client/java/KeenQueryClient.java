@@ -104,7 +104,7 @@ public class KeenQueryClient {
 
     /**
      * Minimum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#minimum-resource
+     * Query API info here: https://keen.io/docs/api/#minimum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -125,7 +125,7 @@ public class KeenQueryClient {
 
     /**
      * Maximum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#maximum-resource
+     * Query API info here: https://keen.io/docs/api/#maximum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -146,7 +146,7 @@ public class KeenQueryClient {
 
     /**
      * Average query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#average-resource
+     * Query API info here: https://keen.io/docs/api/#average
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -167,7 +167,7 @@ public class KeenQueryClient {
 
     /**
      * Median query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#median-resource
+     * Query API info here: https://keen.io/docs/api/#median
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -188,7 +188,7 @@ public class KeenQueryClient {
 
     /**
      * Percentile query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#percentile-resource
+     * Query API info here: https://keen.io/docs/api/#percentile
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -211,7 +211,7 @@ public class KeenQueryClient {
 
     /**
      * Sum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/#sum-resource
+     * Query API info here: https://keen.io/docs/api/#sum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
