@@ -17,6 +17,7 @@ class KeenQueryConstants {
     static final String PERCENTILE_RESOURCE = "percentile";
     static final String SUM = "sum";
     static final String SELECT_UNIQUE = "select_unique";
+    static final String STANDARD_DEVIATION = "standard_deviation";
     static final String FUNNEL = "funnel";
     static final String MULTI_ANALYSIS = "multi_analysis";
 

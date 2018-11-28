@@ -104,7 +104,7 @@ public class KeenQueryClient {
 
     /**
      * Minimum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#minimum-resource
+     * Query API info here: https://keen.io/docs/api/#minimum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -125,7 +125,7 @@ public class KeenQueryClient {
 
     /**
      * Maximum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#maximum-resource
+     * Query API info here: https://keen.io/docs/api/#maximum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -146,7 +146,7 @@ public class KeenQueryClient {
 
     /**
      * Average query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#average-resource
+     * Query API info here: https://keen.io/docs/api/#average
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -167,7 +167,7 @@ public class KeenQueryClient {
 
     /**
      * Median query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#median-resource
+     * Query API info here: https://keen.io/docs/api/#median
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -188,7 +188,7 @@ public class KeenQueryClient {
 
     /**
      * Percentile query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#percentile-resource
+     * Query API info here: https://keen.io/docs/api/#percentile
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -211,7 +211,7 @@ public class KeenQueryClient {
 
     /**
      * Sum query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#sum-resource
+     * Query API info here: https://keen.io/docs/api/#sum
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -232,7 +232,7 @@ public class KeenQueryClient {
 
     /**
      * Select Unique query with only the required arguments.
-     * Query API info here: https://keen.io/docs/api/reference/#select-unique-resource
+     * Query API info here: https://keen.io/docs/api/#select-unique
      *
      * @param eventCollection     The name of the event collection you are analyzing.
      * @param targetProperty     The name of the property you are analyzing.
@@ -249,6 +249,25 @@ public class KeenQueryClient {
                 .build();
         QueryResult result = execute(queryParams);
         return result;
+    }
+
+    /**
+     * Standard Deviation query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/#standard-deviation
+     *
+     * @param eventCollection The name of the event collection you are analyzing.
+     * @param targetProperty  The name of the property you are analyzing.
+     * @param timeframe       The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The standard deviation query response.
+     * @throws IOException If there was an error communicating with the server or an error message received from the server.
+     */
+    public double standardDeviation(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+        Query queryParams = new Query.Builder(QueryType.STANDARD_DEVIATION)
+                .withEventCollection(eventCollection)
+                .withTargetProperty(targetProperty)
+                .withTimeframe(timeframe)
+                .build();
+        return queryResultToDouble(execute(queryParams));
     }
 
     /**
