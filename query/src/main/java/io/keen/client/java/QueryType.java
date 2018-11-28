@@ -16,7 +16,8 @@ public enum QueryType {
     MEDIAN(KeenQueryConstants.MEDIAN),
     PERCENTILE(KeenQueryConstants.PERCENTILE_RESOURCE),
     SUM(KeenQueryConstants.SUM),
-    SELECT_UNIQUE(KeenQueryConstants.SELECT_UNIQUE);
+    SELECT_UNIQUE(KeenQueryConstants.SELECT_UNIQUE),
+    STANDARD_DEVIATION(KeenQueryConstants.STANDARD_DEVIATION);
 
     private final String text;
 

@@ -252,6 +252,25 @@ public class KeenQueryClient {
     }
 
     /**
+     * Standard Deviation query with only the required arguments.
+     * Query API info here: https://keen.io/docs/api/reference/#standard-deviation
+     *
+     * @param eventCollection The name of the event collection you are analyzing.
+     * @param targetProperty  The name of the property you are analyzing.
+     * @param timeframe       The {@link RelativeTimeframe} or {@link AbsoluteTimeframe}.
+     * @return The standard deviation query response.
+     * @throws IOException If there was an error communicating with the server or an error message received from the server.
+     */
+    public double standardDeviation(String eventCollection, String targetProperty, Timeframe timeframe) throws IOException {
+        Query queryParams = new Query.Builder(QueryType.STANDARD_DEVIATION)
+                .withEventCollection(eventCollection)
+                .withTargetProperty(targetProperty)
+                .withTimeframe(timeframe)
+                .build();
+        return queryResultToDouble(execute(queryParams));
+    }
+
+    /**
      * This is the most flexible way to run a query. Use {@link Builder} to
      * build all the query arguments to run the query.
      *

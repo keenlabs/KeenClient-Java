@@ -119,7 +119,7 @@ public class Query extends KeenQueryRequest {
                 || queryType == QueryType.MINIMUM || queryType == QueryType.MAXIMUM
                 || queryType == QueryType.AVERAGE || queryType == QueryType.MEDIAN
                 || queryType == QueryType.PERCENTILE || queryType == QueryType.SUM
-                || queryType == QueryType.SELECT_UNIQUE) {
+                || queryType == QueryType.SELECT_UNIQUE || queryType == QueryType.STANDARD_DEVIATION) {
 
             if (eventCollection == null || eventCollection.isEmpty() || targetProperty == null || targetProperty.isEmpty()) {
                 return false;
@@ -127,9 +127,7 @@ public class Query extends KeenQueryRequest {
         }
 
         if (queryType == QueryType.PERCENTILE) {
-            if (percentile == null) {
-                return false;
-            }
+            return percentile != null;
         }
 
         return true;
