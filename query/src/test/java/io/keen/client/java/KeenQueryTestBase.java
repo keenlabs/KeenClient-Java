@@ -2,7 +2,9 @@ package io.keen.client.java;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import io.keen.client.java.http.HttpHandler;
+import io.keen.client.java.http.Request;
+import io.keen.client.java.http.Response;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -14,10 +16,6 @@ import org.mockito.MockitoAnnotations;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-
-import io.keen.client.java.http.HttpHandler;
-import io.keen.client.java.http.Request;
-import io.keen.client.java.http.Response;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;

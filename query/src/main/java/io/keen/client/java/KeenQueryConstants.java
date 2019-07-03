@@ -54,6 +54,7 @@ class KeenQueryConstants {
     static final String CONTAINS = "contains";
     static final String NOT_CONTAINS = "not_contains";
     static final String WITHIN = "within";
+    static final String REGEX = "regex";
 
     // funnel
     static final String ACTOR_PROPERTY = "actor_property";

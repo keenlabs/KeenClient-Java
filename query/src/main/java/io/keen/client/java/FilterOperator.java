@@ -17,7 +17,8 @@ public enum FilterOperator {
     IN(KeenQueryConstants.IN),
     CONTAINS(KeenQueryConstants.CONTAINS),
     NOT_CONTAINS(KeenQueryConstants.NOT_CONTAINS),
-    WITHIN(KeenQueryConstants.WITHIN);
+    WITHIN(KeenQueryConstants.WITHIN),
+    REGEX(KeenQueryConstants.REGEX);
 
     private final String text;
 

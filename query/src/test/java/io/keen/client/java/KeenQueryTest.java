@@ -3,14 +3,6 @@ package io.keen.client.java;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import java.util.Map;
-
 import io.keen.client.java.exceptions.KeenQueryClientException;
 import io.keen.client.java.exceptions.ServerException;
 import io.keen.client.java.http.Request;
@@ -19,6 +11,12 @@ import io.keen.client.java.result.GroupByResult;
 import io.keen.client.java.result.IntervalResult;
 import io.keen.client.java.result.IntervalResultValue;
 import io.keen.client.java.result.QueryResult;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -369,6 +367,26 @@ public class KeenQueryTest extends KeenQueryTestBase {
         assertEquals(TEST_TARGET_PROPERTY, filter2Node.get("property_name").asText());
         assertEquals("gt", filter2Node.get("operator").asText());
         assertEquals(1, filter2Node.get("property_value").asInt());
+    }
+
+    @Test
+    public void shouldReturnResultOnRegexFilter() throws Exception {
+        setMockResponse(200, "{\"result\": 0}");
+
+        Query queryParams = new Query.Builder(QueryType.COUNT)
+                .withEventCollection(TEST_EVENT_COLLECTION)
+                .withFilter(TEST_TARGET_PROPERTY, FilterOperator.REGEX, "[a-z]+")
+                .build();
+        String requestString = mockCaptureCountQueryRequest(queryParams);
+        ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
+        assertEquals(2, requestNode.size());
+        ArrayNode filtersNode = (ArrayNode) requestNode.get("filters");
+        ObjectNode filterRegexNode = (ObjectNode) filtersNode.get(0);
+        assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
+        assertEquals(TEST_TARGET_PROPERTY, filterRegexNode.get("property_name").asText());
+        assertEquals("regex", filterRegexNode.get("operator").asText());
+        System.out.println(filterRegexNode.get("property_value").asInt());
+        assertEquals(0, filterRegexNode.get("property_value").asInt());
     }
 
     @Test(expected=KeenQueryClientException.class)
