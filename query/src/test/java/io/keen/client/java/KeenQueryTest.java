@@ -372,20 +372,21 @@ public class KeenQueryTest extends KeenQueryTestBase {
     @Test
     public void shouldReturnResultOnRegexFilter() throws Exception {
         setMockResponse(200, "{\"result\": 0}");
-
         Query queryParams = new Query.Builder(QueryType.COUNT)
                 .withEventCollection(TEST_EVENT_COLLECTION)
                 .withFilter(TEST_TARGET_PROPERTY, FilterOperator.REGEX, "[a-z]+")
                 .build();
+
         String requestString = mockCaptureCountQueryRequest(queryParams);
         ObjectNode requestNode = (ObjectNode) OBJECT_MAPPER.readTree(requestString);
-        assertEquals(2, requestNode.size());
+
         ArrayNode filtersNode = (ArrayNode) requestNode.get("filters");
         ObjectNode filterRegexNode = (ObjectNode) filtersNode.get(0);
+
+        assertEquals(2, requestNode.size());
         assertEquals(TEST_EVENT_COLLECTION, requestNode.get(KeenQueryConstants.EVENT_COLLECTION).asText());
         assertEquals(TEST_TARGET_PROPERTY, filterRegexNode.get("property_name").asText());
         assertEquals("regex", filterRegexNode.get("operator").asText());
-        System.out.println(filterRegexNode.get("property_value").asInt());
         assertEquals(0, filterRegexNode.get("property_value").asInt());
     }
 
