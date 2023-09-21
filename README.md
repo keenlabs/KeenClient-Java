@@ -20,14 +20,14 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'io.keen:keen-client-api-java:5.6.0'
+    compile 'io.keen:keen-client-api-java:6.0.0'
 }
 ```
 
 For Android, use:
 
 ```groovy
-    compile 'io.keen:keen-client-api-android:5.6.0@aar'
+    compile 'io.keen:keen-client-api-android:6.0.0@aar'
 ```
 
 ### Maven
@@ -38,7 +38,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-java</artifactId>
-  <version>5.6.0</version>
+  <version>6.0.0</version>
 </dependency>
 ```
 
@@ -60,7 +60,7 @@ to use it. It is conventional to create a "libs" directory to contain external d
 
 * [Core library](http://repo1.maven.org/maven2/io/keen/keen-client-java-core) - This only includes an abstract client, so you will have to provide your own concrete implementation; see `JavaKeenClientBuilder` or `AndroidKeenClientBuilder` for examples.
 * ["Plain" Java Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-java) - Dependencies: Core plus the Jackson library for JSON handling.
-* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Dependencies: Core. Note: We publish both an AAR and a JAR; you may use whichever is more convenient based on your infrastructure and needs.
+* [Android Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-android) - Dependencies: Core.
 * [Query Client](http://repo1.maven.org/maven2/io/keen/keen-client-api-query) - Dependencies: Core, "Plain" Java, and a suitable JSON library.
 
 ### Build From Source
@@ -271,7 +271,7 @@ like to use the query client then you will need to ensure that you also have the
 
 ```groovy
 dependencies {
-    compile 'io.keen:keen-client-api-query:5.6.0' 
+    compile 'io.keen:keen-client-api-query:6.0.0' 
 }
 ```
 
@@ -283,7 +283,7 @@ Paste the following snippet into your pom.xml:
 <dependency>
   <groupId>io.keen</groupId>
   <artifactId>keen-client-api-query</artifactId>
-  <version>5.6.0</version>
+  <version>6.0.0</version>
 </dependency>
 ```
 
@@ -869,6 +869,13 @@ client.addEvent("collection-name", event, keenProperties);
 ```
 
 ## Changelog
+
+##### 6.0.0
+
++ Changed minimal java version to Java 7.
++ Bumped obsolete dependencies.
++ Updated build scripts.
++ Publish only aar for Android Client.
 
 ##### 5.6.0 
 

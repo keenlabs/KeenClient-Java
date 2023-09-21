@@ -6,15 +6,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.Test;
 
+import java.time.Instant;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-
-import javax.xml.bind.DatatypeConverter;
 
 import io.keen.client.java.result.Group;
 import io.keen.client.java.result.IntervalResultValue;
@@ -473,11 +473,11 @@ public class MultiAnalysisTest extends KeenQueryTestBase {
         for (IntervalResultValue value : result.getIntervalResults()) {
             // Do some simple validation of the timeframe.
             AbsoluteTimeframe timeframe = value.getTimeframe();
-            Calendar start = DatatypeConverter.parseDateTime(timeframe.getStart());
-            Calendar end = DatatypeConverter.parseDateTime(timeframe.getEnd());
-            assertEquals("October", start.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US));
-            assertEquals(2016, end.get(Calendar.YEAR));
-            assertTrue(start.before(end));
+            ZonedDateTime start = Instant.parse(timeframe.getStart()).atZone(ZoneId.of("UTC"));
+            ZonedDateTime end = Instant.parse(timeframe.getEnd()).atZone(ZoneId.of("UTC"));
+            assertEquals(Month.OCTOBER, start.getMonth());
+            assertEquals(2016, end.getYear());
+            assertTrue(start.isBefore(end));
 
             // Validate the QueryResult
             assertTrue(value.getResult() instanceof MultiAnalysisResult);
@@ -567,11 +567,11 @@ public class MultiAnalysisTest extends KeenQueryTestBase {
         for (IntervalResultValue value : result.getIntervalResults()) {
             // Do some simple validation of the timeframe.
             AbsoluteTimeframe timeframe = value.getTimeframe();
-            Calendar start = DatatypeConverter.parseDateTime(timeframe.getStart());
-            Calendar end = DatatypeConverter.parseDateTime(timeframe.getEnd());
-            assertEquals("October", start.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US));
-            assertEquals(2016, end.get(Calendar.YEAR));
-            assertTrue(start.before(end));
+            ZonedDateTime start = Instant.parse(timeframe.getStart()).atZone(ZoneId.of("UTC"));
+            ZonedDateTime end = Instant.parse(timeframe.getEnd()).atZone(ZoneId.of("UTC"));
+            assertEquals(Month.OCTOBER, start.getMonth());
+            assertEquals(2016, end.getYear());
+            assertTrue(start.isBefore(end));
 
             // Validate the nested GroupResults
 

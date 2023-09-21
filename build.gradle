@@ -1,9 +1,5 @@
 // Common build instructions & instructions for the root project.
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.14.1'
-}
-
 allprojects {
     apply plugin: 'idea'
 
@@ -11,12 +7,14 @@ allprojects {
     group = GROUP
 
     repositories {
+        google()
         mavenCentral()
     }
+
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.allTasks.any { it.name.contains("uploadArchives") }) {
+    if (taskGraph.allTasks.any { it.name.contains("publish") }) {
         if (project.hasProperty('signing.keyId') &&
             project.hasProperty('signing.secretKeyRingFile') &&
             project.hasProperty('sonatypeUsername') &&

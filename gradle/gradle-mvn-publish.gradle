@@ -1,4 +1,4 @@
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 def isReleaseBuild() {
@@ -11,50 +11,65 @@ if (isReleaseBuild()) {
 } else {
     sonatypeRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
 }
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = GROUP
+            artifactId = POM_ARTIFACT_ID
+            version = VERSION_NAME
 
-uploadArchives.repositories.mavenDeployer {
-    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            afterEvaluate {
+                from components.java
+            }
 
-    pom.artifactId = POM_ARTIFACT_ID
-    pom.groupId = GROUP
-    pom.version = VERSION_NAME
+            pom {
+                name = POM_NAME
+                packaging = POM_PACKAGING
+                description = POM_DESCRIPTION
 
-    if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
-        repository(url: sonatypeRepositoryUrl) {
-            authentication(userName: project.sonatypeUsername, password: project.sonatypePassword)
-        }
-    }
+                if (project.toString().contains('android')) {
+                    packaging = 'aar'
+                }
 
-    pom.project {
-        name POM_NAME
-        packaging POM_PACKAGING
-        description POM_DESCRIPTION
-        url POM_URL
+                url = POM_URL
 
-        organization {
-            name POM_ORG_NAME
-            url POM_ORG_URL
-        }
+                organization {
+                    name = POM_ORG_NAME
+                    url = POM_ORG_URL
+                }
 
-        scm {
-            url POM_SCM_URL
-            connection POM_SCM_CONNECTION
-            developerConnection POM_SCM_DEV_CONNECTION
-        }
+                scm {
+                    url = POM_SCM_URL
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEV_CONNECTION
+                }
 
-        licenses {
-            license {
-                name POM_LICENSE_NAME
-                url POM_LICENSE_URL
-                distribution POM_LICENSE_DIST
+                licenses {
+                    license {
+                        name = POM_LICENSE_NAME
+                        url = POM_LICENSE_URL
+                        distribution = POM_LICENSE_DIST
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
+                        email = POM_DEVELOPER_EMAIL
+                    }
+                }
             }
         }
+    }
+    repositories {
+        mavenLocal()
+        maven {
+            url = sonatypeRepositoryUrl
 
-        developers {
-            developer {
-                id POM_DEVELOPER_ID
-                name POM_DEVELOPER_NAME
-                email POM_DEVELOPER_EMAIL
+            credentials {
+                username = project.sonatypeUsername
+                password = project.sonatypePassword
             }
         }
     }
@@ -62,7 +77,7 @@ uploadArchives.repositories.mavenDeployer {
 
 signing {
     required {
-        isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives")
+        isReleaseBuild() && gradle.taskGraph.hasTask("publish")
     }
-    sign configurations.archives
+    sign publishing.publications.maven
 }

@@ -31,8 +31,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -137,7 +137,7 @@ public class AndroidJsonHandlerTest {
         assertThat((String) mapArgument.get("string_property"), equalTo("value1"));
         assertThat((Integer) mapArgument.get("numeric_property"), equalTo(10));
         assertThat((Boolean) mapArgument.get("boolean_property"), equalTo(true));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
@@ -160,7 +160,7 @@ public class AndroidJsonHandlerTest {
         assertThat((String) mapArguments.get(0).get("nested"), equalTo("value"));
         assertThat(mapArguments.get(1).size(), equalTo(1));
         assertThat(mapArguments.get(1).containsKey("keen"), equalTo(true));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
@@ -195,7 +195,7 @@ public class AndroidJsonHandlerTest {
         assertThat(mapArguments.get(3).containsKey("b"), equalTo(true));
         assertThat(mapArguments.get(4).size(), equalTo(1));
         assertThat(mapArguments.get(4).containsKey("a"), equalTo(true));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
@@ -223,7 +223,7 @@ public class AndroidJsonHandlerTest {
         assertThat(collectionArgument.contains("a"), equalTo(true));
         assertThat(collectionArgument.contains("b"), equalTo(true));
         assertThat(collectionArgument.contains("c"), equalTo(true));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
@@ -250,7 +250,7 @@ public class AndroidJsonHandlerTest {
         Collection<?> collectionArgument = collectionArgumentCaptor.getValue();
         assertThat(collectionArgument.size(), equalTo(3));
         assertThat((Collection<String>) collectionArgument, contains("a", "b", "c"));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
@@ -328,7 +328,7 @@ public class AndroidJsonHandlerTest {
         assertThat((Collection<Object>) collectionArguments.get(1), Matchers.<Object>hasItems("f", "l"));
         assertThat(collectionArguments.get(2).size(), equalTo(2));
         assertThat((Collection<Object>) collectionArguments.get(2), Matchers.<Object>hasItem("c"));
-        verify(mockJsonObjectManager).stringify(any(JSONObject.class));
+        verify(mockJsonObjectManager).stringify(nullable(JSONObject.class));
         verifyNoMoreInteractions(mockJsonObjectManager);
     }
 
