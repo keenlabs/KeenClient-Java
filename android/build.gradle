@@ -2,18 +2,20 @@
 
 buildscript {
     repositories {
-        jcenter()
+        google()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.3'
+        classpath 'com.android.tools.build:gradle:7.2.0'
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    namespace "io.keen.client.android"
+
+    compileSdk = 23
 
     defaultConfig {
         minSdkVersion 9
@@ -25,23 +27,18 @@ android {
     lintOptions {
         abortOnError false
     }
-}
 
-// Set the source and target to Java 6.
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
-}
-
-android.libraryVariants.all { variant ->
-    def name = variant.buildType.name
-
-    // Also define a task to create a raw JAR to support non-AAR users.
-    def rawJarTask = project.tasks.create(name: "rawAndroidJar${name.capitalize()}", type: Jar) {
-        archiveName="keen-client-api-android-${project.version}.jar"
-        from(variant.javaCompile.destinationDir)
+    buildTypes {
+        java {
+        }
     }
-    rawJarTask.dependsOn variant.javaCompile
 }
+
+// Set the source and target to Java 7.
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-source" << "1.7" << "-target" << "1.7"
+}
+
 
 configurations {
     // Exclude modules that are provided by Android to avoid compilation warning.
@@ -50,10 +47,10 @@ configurations {
 }
 
 dependencies {
-    compile project(':core')
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
-    testCompile 'junit:junit:4.11'
-    testCompile 'org.mockito:mockito-core:1.9.5'
+    api project(':core')
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
 }
 
 archivesBaseName = "keen-client-api-android"

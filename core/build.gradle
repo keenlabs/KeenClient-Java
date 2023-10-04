@@ -1,15 +1,10 @@
 // Build instructions for core library.
 
-apply plugin: 'java'
+apply plugin: 'java-library'
 
-// Set the source and target to Java 6. Note that if compiled using Java 7 (or later) this may
-// produce the following warning:
-//
-//   warning: [options] bootstrap class path not set in conjunction with -source 1.6
-//
-// It may be safe to ignore this warning, but the best approach is to just compile with Java 6.
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-source" << "1.6" << "-target" << "1.6"
+compileJava {
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
 }
 
 task verifyVersionFile {
@@ -25,11 +20,11 @@ task verifyVersionFile {
 compileJava.dependsOn verifyVersionFile
 
 dependencies {
-    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.3.0'
-    testCompile 'commons-io:commons-io:2.4'
-    testCompile 'junit:junit:4.11'
-    testCompile 'org.hamcrest:hamcrest-library:1.3'
-    testCompile 'org.mockito:mockito-core:1.9.5'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    testImplementation 'commons-io:commons-io:2.13.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
 }
 
 jar {
